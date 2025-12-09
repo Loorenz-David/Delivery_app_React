@@ -22,7 +22,15 @@ jobs:
         run: npm install
 
       - name: Build project
-        run: npm run build
+        run: |
+            echo "VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}" >> .env.production
+            echo "VITE_GOOGLE_MAPS_KEY=${{ vars.VITE_GOOGLE_MAPS_KEY }}" >> .env.production
+            echo "VITE_GOOGLE_MAPS_MAP_ID_LIGHT=${{ vars.VITE_GOOGLE_MAPS_MAP_ID_LIGHT }}" >> .env.production
+            echo "VITE_GOOGLE_MAPS_MAP_ID_DARK=${{ vars.VITE_GOOGLE_MAPS_MAP_ID_DARK }}" >> .env.production
+            echo "VITE_GOOGLE_MAPS_MAP_ID_COMON_MAP=${{ vars.VITE_GOOGLE_MAPS_MAP_ID_COMON_MAP }}" >> .env.production
+            echo "VITE_USE_DUMMY_DATA=${{ vars.VITE_USE_DUMMY_DATA }}" >> .env.production
+                
+            npm run build
 
       - name: Sync build to S3
         run: aws s3 sync dist/ s3://delivery-frontend-app --delete
