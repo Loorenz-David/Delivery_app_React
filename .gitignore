@@ -25,4 +25,5 @@ dist-ssr
 
 access_keys_aws
 .env
+env
 
