@@ -33,3 +33,4 @@ The dev server proxies directly to the Flask backend; make sure `Back_end/run.py
 ## Authentication
 
 Sign-in flows expect the Flask API to expose `/auth/login` and `/auth/refresh_token`. Tokens are stored in `sessionStorage` and added to every request. Use the backend README for seeding credentials until a registration route is provided.
+
