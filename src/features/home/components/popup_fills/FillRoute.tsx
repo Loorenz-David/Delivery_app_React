@@ -226,14 +226,14 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
             ) as AddressPayload,
             id: (resolvedRoute?.id as number | undefined) ?? targetRouteId,
             route_label:
+              (normalizedChangedFields.route_label as string | undefined) ??
               (resolvedRoute as RoutePayload | undefined)?.route_label ??
               baseRoute.route_label ??
-              (normalizedChangedFields.route_label as string | undefined) ??
               '',
             delivery_date:
+              (normalizedChangedFields.delivery_date as string | undefined) ??
               (resolvedRoute as RoutePayload | undefined)?.delivery_date ??
               baseRoute.delivery_date ??
-              (normalizedChangedFields.delivery_date as string | undefined) ??
               '',
             saved_optimizations: (
               (resolvedRoute as RoutePayload | undefined)?.saved_optimizations ?? baseRoute.saved_optimizations
@@ -268,6 +268,8 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
               omitKeys: ['id'],
             },
           ) as RouteCreatePayload
+
+
           const response = await createRouteService.createRoute(sanitizedPayload)
           const resolvedRoute = responseManager.resolveEntityFromResponse<RoutePayload>(response.data)
           const fallbackRoute = buildRoutePayloadFromFormState(

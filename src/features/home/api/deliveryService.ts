@@ -18,7 +18,7 @@ export interface RouteCreatePayload {
   end_location: AddressPayload | null
   set_start_time: string | null
   set_end_time: string | null
-  state_id: number | null
+  state_id?: number | null
 }
 
 export interface RouteUpdatePayload {

@@ -51,7 +51,6 @@ export const createInitialFormState = (deliveryDate?: string): RouteFormState =>
   end_location: null,
   set_start_time: '',
   set_end_time: '',
-  state_id: 1,
 })
 
 export function normalizeAddressPayload(location?: AddressPayload | null): AddressPayload {
