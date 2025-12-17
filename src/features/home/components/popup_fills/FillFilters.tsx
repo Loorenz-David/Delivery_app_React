@@ -4,12 +4,12 @@ import { BasicButton } from '../../../../components/buttons/BasicButton'
 import { Field } from '../../../../components/forms/FieldContainer'
 import { InputField } from '../../../../components/forms/InputField'
 import { PhoneField } from '../../../../components/forms/PhoneField'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
 import type { ActionComponentProps } from '../../../../resources_manager/managers/ActionManager'
-import type { RoutesPack, RoutePayload } from '../../types/backend'
+import type { RoutePayload } from '../../types/backend'
 import { MultiSelectDropDown } from '../../../../components/button/MultiSelectDropDown'
 import { ProfilePicture } from '../../../../components/forms/ProfilePicture'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
+import type { DriverOption, RouteStateOption } from '../../api/optionServices'
 
 type ActiveTab = 'route' | 'order'
 
@@ -111,10 +111,9 @@ export default function FillFilters({ payload, onClose }: ActionComponentProps<F
     onApply = () => {},
     onReset = () => {},
   } = payload ?? {}
-  const routesDataManager = useResourceManager('routesDataManager')
-  const routesSnapshot = useDataManager<RoutesPack>(routesDataManager)
-  const optionDataManager = useResourceManager('optionDataManager')
-  const optionSnapshot = useDataManager(optionDataManager)
+  const routes = useHomeStore((state) => state.routes)
+  const routeStates = useHomeStore((state) => state.routeStates)
+  const drivers = useHomeStore((state) => state.drivers)
 
   const parseInitialDate = (path: 'start' | 'end') => {
     const raw = initialFilters?.delivery_date?.value?.[path]
@@ -246,8 +245,9 @@ export default function FillFilters({ payload, onClose }: ActionComponentProps<F
       <div className="flex-1 overflow-y-auto">
         {activeTab === 'route' ? (
           <RouteFiltersBody
-            routesSnapshot={routesSnapshot}
-            optionSnapshot={optionSnapshot}
+            routes={routes}
+            routeStates={routeStates}
+            drivers={drivers}
             startDate={startDate}
             endDate={endDate}
             yearStart={yearStart}
@@ -289,8 +289,9 @@ export default function FillFilters({ payload, onClose }: ActionComponentProps<F
 }
 
 function RouteFiltersBody({
-  routesSnapshot,
-  optionSnapshot,
+  routes,
+  routeStates,
+  drivers,
   startDate,
   endDate,
   yearStart,
@@ -304,8 +305,9 @@ function RouteFiltersBody({
   onStartDateChange,
   onEndDateChange,
 }: {
-  routesSnapshot: any
-  optionSnapshot: any
+  routes: RoutePayload[]
+  routeStates: RouteStateOption[]
+  drivers: DriverOption[]
   startDate: Date
   endDate: Date
   yearStart: Date
@@ -333,8 +335,8 @@ function RouteFiltersBody({
         count: 0,
       })
     }
-    const routes = routesSnapshot.dataset?.routes ?? []
-    routes.forEach((route: RoutePayload) => {
+    const list = routes ?? []
+    list.forEach((route: RoutePayload) => {
       const d = route.delivery_date ? new Date(route.delivery_date) : null
       if (!d || Number.isNaN(d.valueOf())) return
       buckets.forEach((bucket) => {
@@ -344,7 +346,7 @@ function RouteFiltersBody({
       })
     })
     return buckets
-  }, [anchorMonth, routesSnapshot.dataset?.routes])
+  }, [anchorMonth, routes])
 
   const startOffset = Math.max(0, Math.min(11, Math.round(monthsDiff(anchorMonth, startDate))))
   const endOffset = Math.max(startOffset, Math.min(11, Math.round(monthsDiff(anchorMonth, endDate))))
@@ -385,24 +387,19 @@ function RouteFiltersBody({
     }
   }
 
-  const routeStates = (optionSnapshot.dataset as any)?.route_states ?? []
-  const driversMap = (optionSnapshot.dataset as any)?.drivers_map ?? {}
-  const driverOptions =
-    driversMap && typeof driversMap === 'object'
-      ? Object.values(driversMap).map((driver: any) => ({
-          value: driver.id,
-          display: (
-            <div className="flex items-center gap-2">
-              <ProfilePicture
-                src={driver.profile_picture ?? driver.avatar_url ?? null}
-                initials={(driver.username ?? driver.email ?? 'DR').slice(0, 2).toUpperCase()}
-                size={24}
-              />
-              <span>{driver.username ?? driver.email ?? `Driver ${driver.id}`}</span>
-            </div>
-          ),
-        }))
-      : []
+  const driverOptions = (drivers ?? []).map((driver) => ({
+    value: driver.id,
+    display: (
+      <div className="flex items-center gap-2">
+        <ProfilePicture
+          src={driver.profile_picture ?? driver.avatar_url ?? null}
+          initials={(driver.username ?? driver.email ?? 'DR').slice(0, 2).toUpperCase()}
+          size={24}
+        />
+        <span>{driver.username ?? driver.email ?? `Driver ${driver.id}`}</span>
+      </div>
+    ),
+  }))
 
   return (
     <div className="space-y-4">

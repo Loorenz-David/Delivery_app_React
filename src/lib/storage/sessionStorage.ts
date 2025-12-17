@@ -7,6 +7,7 @@ export interface SessionUser {
 export interface SessionSnapshot {
   accessToken: string
   refreshToken: string
+  socketToken?: string
   user?: SessionUser | null
   identity?: Record<string, unknown> | null
   updatedAt: number

@@ -42,6 +42,20 @@ body {
     stroke: currentColor;
   }
 }
+
+.app-icon-dark {
+  color: #828282;
+  fill: currentColor;
+  stroke: currentColor;
+
+  path{
+    color: #828282;
+    fill: currentColor;
+    stroke: currentColor;
+  }
+}
+
+
 .app-icon-page {
   color: var(--color-page);
   fill: currentColor;

@@ -1,51 +1,8 @@
-import type {
-  OrderPayload,
-  RoutePayload,
-  RoutesPack,
-  SavedOptimizations,
-  OptimizationOrderSequence,
-} from '../types/backend'
-import type { DataManager } from '../../../resources_manager/managers/DataManager'
+import type { OrderPayload, RoutePayload, SavedOptimizations, OptimizationOrderSequence } from '../types/backend'
 
 type OrderSequenceEntry = {
   delivery_arrangement?: number | null
   expected_arrival_time?: string | null
-}
-
-export function patchRouteInDataManager({
-  routesDataManager,
-  routeId,
-  updater,
-}: {
-  routesDataManager: DataManager<RoutesPack>
-  routeId: number
-  updater: (route: RoutePayload) => RoutePayload
-}): RoutePayload | null {
-  let updatedRoute: RoutePayload | null = null
-  routesDataManager.updateDataset((dataset) => {
-    if (!dataset) {
-      return dataset
-    }
-    const nextRoutes = dataset.routes.map((route) => {
-      if (route.id !== routeId) {
-        return route
-      }
-      updatedRoute = updater(route)
-      return updatedRoute
-    })
-    if (!updatedRoute) {
-      return dataset
-    }
-    return {
-      ...dataset,
-      routes: nextRoutes,
-    }
-  })
-  if (updatedRoute) {
-    const routeForSelection = updatedRoute as RoutePayload
-    routesDataManager.setActiveSelection('SelectedRoute', { id: routeForSelection.id, data: routeForSelection })
-  }
-  return updatedRoute
 }
 
 export function mergeRouteWithOptimizedData(route: RoutePayload, optimizedRoute: RoutePayload) {

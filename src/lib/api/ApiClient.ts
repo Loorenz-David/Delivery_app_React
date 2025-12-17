@@ -34,6 +34,18 @@ export class ApiClient {
     this.options.onUnauthenticated = handler
   }
 
+  getAccessToken(): string | null {
+    return this.options.sessionStorage.getSession()?.accessToken ?? null
+  }
+
+  getRefreshToken(): string | null {
+    return this.options.sessionStorage.getSession()?.refreshToken ?? null
+  }
+
+  getSocketToken(): string | null {
+    return this.options.sessionStorage.getSession()?.socketToken ?? null
+  }
+
   getSessionUserId(): string | number | null {
     const session = this.options.sessionStorage.getSession()
     return session?.user?.id ?? null
@@ -81,7 +93,7 @@ export class ApiClient {
 
     const rawText = await response.text()
     const envelope = rawText ? (JSON.parse(rawText) as ApiEnvelope<unknown>) : undefined
-    if ((response.status === 401 || response.status == 422) && requiresAuth) {
+    if ((response.status === 403 || response.status == 422) && requiresAuth) {
       if (attempt === 0 && (await this.tryRefresh())) {
 
         return this.request(options, attempt + 1)
@@ -160,12 +172,17 @@ export class ApiClient {
       const envelope = JSON.parse(rawText) as ApiEnvelope<Record<string, string>>
       const data = maybeDecompress<Record<string, string>>(envelope.data, envelope.is_compress)
       const nextAccess = data?.access_token
+      const nextSocket = data?.socket_token
 
       if (!nextAccess) {
         throw new Error('Refresh response missing access token')
       }
 
-      this.updateStoredSession(existing, nextAccess)
+      this.options.sessionStorage.setSession({
+        ...existing,
+        accessToken: nextAccess,
+        socketToken: nextSocket ?? existing.socketToken,
+      })
       return true
     })()
       .catch((error) => {
@@ -180,12 +197,15 @@ export class ApiClient {
     return this.refreshPromise
   }
 
-  private updateStoredSession(existing: SessionSnapshot, accessToken: string): void {
-    const { updatedAt: _ignored, ...rest } = existing
-
+  replaceTokens(nextAccessToken: string, nextRefreshToken: string, nextSocketToken?: string): void {
+    const existing = this.options.sessionStorage.getSession()
+    const base: Partial<SessionSnapshot> = existing ?? {}
     this.options.sessionStorage.setSession({
-      ...rest,
-      accessToken,
+      accessToken: nextAccessToken,
+      refreshToken: nextRefreshToken,
+      socketToken: nextSocketToken ?? base.socketToken,
+      user: base.user ?? null,
+      identity: base.identity ?? null,
     })
   }
 

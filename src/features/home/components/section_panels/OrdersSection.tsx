@@ -4,22 +4,22 @@ import type { ActionManager, ActionPayload } from '../../../../resources_manager
 
 import { useSectionPanel } from '../../contexts/SectionPanelContext'
 import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
-import type { ActiveSelection } from '../../../../resources_manager/managers/DataManager'
 import { useOrderDragAndDrop } from '../../hooks/useOrderDragAndDrop'
 import { useItemActions } from '../../hooks/useItemActions'
 
-
 import { BasicButton } from '../../../../components/buttons/BasicButton'
-import { OrderCard} from '../section_cards/OrderCard'
+import { OrderCard } from '../section_cards/OrderCard'
 
-
-import type{ RoutePayload, OrderPayload, SavedOptimizations } from '../../types/backend'
+import type { RoutePayload, OrderPayload, SavedOptimizations } from '../../types/backend'
 import { UpdateOrderService } from '../../api/deliveryService'
 import type { OrderMarkerDescriptor, PolylineDescriptor } from '../../../../google_maps/MapManager'
-import { SingleOrderIcon, ThunderIcon, StatsIcon } from '../../../../assets/icons'
+import type { ItemStateOption } from '../../api/optionServices'
+import { SingleOrderIcon, ThunderIcon, StatsIcon, MessageIcon, PlusIcon, SettingIcon } from '../../../../assets/icons'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import type { MessagePayload } from '../../../../message_manager/MessageManagerContext'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
+import { useMobileSectionHeader, type MobileHeaderAction } from '../../contexts/MobileSectionHeaderContext'
+import { deriveOrderStateFromItems } from '../../utils/orderState'
 
 
 interface BuildersProps{
@@ -29,6 +29,7 @@ interface BuildersProps{
     routeId?:number
     route?: RoutePayload | null
     showMessage?: (payload: MessagePayload) => void
+    isMobile?: boolean
 }
 
 const buildHeaderActions = ({ onClose }:BuildersProps)=>{
@@ -48,63 +49,29 @@ const buildHeaderActions = ({ onClose }:BuildersProps)=>{
         />
     ]
 }
-const buildInteractionActions = ({ popupManager, sectionManager, routeId, route, showMessage }:BuildersProps)=>{
-    const openOptimizationSection = () => {
-        if (!sectionManager) {
-            return
-        }
-        const hadExisting = sectionManager.closeByKey(['RouteOptimizationSection'])
-        const openSection = () => {
-            sectionManager.open({
-                key: 'RouteOptimizationSection',
-                payload: { routeId },
-                parentParams: {
-                    className: 'w-[400px] absolute right-full top-0 z-3 shadow-2xl',
-                    label: 'Route Optimization',
-                    icon: <ThunderIcon className="app-icon h-7 w-7 text-[var(--color-primary)]" />,
-                    animation: 'expand',
-                },
-            })
-        }
-        if (hadExisting) {
-            setTimeout(openSection, 0)
-        } else {
-            openSection()
-        }
-    }
+
+interface InteractionActionsProps {
+    onOpenStats: () => void
+    onEditRoute: () => void
+    onCreateOrder: () => void
+    onSendMessages: () => void
+    onOpenOptimization: () => void
+}
+
+const buildInteractionActions = ({ onOpenStats, onEditRoute, onCreateOrder, onSendMessages, onOpenOptimization }: InteractionActionsProps)=>{
     return[
          <BasicButton
             children={'Route Stats'}
             params={{
             variant:'secondary',
-            onClick: () => {
-                if (!sectionManager) {
-                    return
-                }
-                const hadExisting = sectionManager.closeByKey(['RouteStatsSection'])
-                const openSection = () =>
-                    sectionManager.open({
-                        key: 'RouteStatsSection',
-                        parentParams: {
-                            className: 'w-[400px] absolute right-full top-0 z-3 shadow-2xl',
-                            label: 'Route Stats',
-                            icon:<StatsIcon className="app-icon h-6 w-6 text-[var(--color-primary)]"/>,
-                            animation: 'expand',
-                        },
-                    })
-                if (hadExisting) {
-                    setTimeout(openSection, 0)
-                } else {
-                    openSection()
-                }
-            }
+            onClick: onOpenStats
             }}
         />,
         <BasicButton
             children={'Edit Route'}
             params={{
             variant:'secondary',
-            onClick:()=>{popupManager.open({key:'FillRoute', payload:{mode:'edit',routeId}})}
+            onClick:onEditRoute
             }}
         />,
         <BasicButton
@@ -112,7 +79,7 @@ const buildInteractionActions = ({ popupManager, sectionManager, routeId, route,
             params={{
             className:"w-[150px]",
             variant:'primary',
-            onClick:()=>{popupManager.open({key:'FillOrder', payload:{mode:'create', routeId}})}
+            onClick:onCreateOrder
             }}
         />,
         <BasicButton
@@ -120,19 +87,7 @@ const buildInteractionActions = ({ popupManager, sectionManager, routeId, route,
             params={{
                 variant:'secondary',
                 className:"w-[130px]",
-                onClick:()=> {
-                    if (!route || !route.delivery_orders || route.delivery_orders.length === 0) {
-                        showMessage?.({ status: 400, message: 'Open a route with orders before sending messages.' })
-                        return
-                    }
-                    popupManager.open({
-                        key:'SendMessages',
-                        payload:{
-                            targets: route.delivery_orders,
-                            arrival_time_range: route.delivery_time_range ?? 30
-                        }
-                    })
-                }
+                onClick:onSendMessages
             }}
         />,
         
@@ -140,7 +95,7 @@ const buildInteractionActions = ({ popupManager, sectionManager, routeId, route,
             children={'Optimization'}
             params={{
             variant:'secondary',
-            onClick: openOptimizationSection
+            onClick: onOpenOptimization
             }}
         />,
        
@@ -161,17 +116,20 @@ const OrdersSection = ({
     const {setHeaderActions, setInteractionActions} = useSectionPanel()
     const popupManager  = useResourceManager('popupManager')
     const sectionManager = useResourceManager('sectionManager')
-    const routesDataManager = useResourceManager('routesDataManager')
     const { showMessage } = useMessageManager()
-    const routesSnapshot = useDataManager(routesDataManager)
     const mapManager = useResourceManager('mapManager')
-    const selectedRouteSelection =
-        (routesSnapshot.activeSelections?.['SelectedRoute'] as ActiveSelection<RoutePayload> | undefined) ??
-        routesDataManager.getActiveSelection<RoutePayload>('SelectedRoute')
-    const selectedOrderSelection =
-        (routesSnapshot.activeSelections?.['SelectedOrder'] as ActiveSelection<OrderPayload> | undefined) ??
-        routesDataManager.getActiveSelection<OrderPayload>('SelectedOrder')
-    const route:RoutePayload | undefined = selectedRouteSelection?.data
+    const isMobile = useResourceManager('isMobileObject')
+    const mobileHeader = useMobileSectionHeader()
+    const registerHeader = mobileHeader?.registerHeader
+    const updateHeader = mobileHeader?.updateHeader
+    const removeHeader = mobileHeader?.removeHeader
+    
+    const selectedRouteId = useHomeStore((s) => s.selectedRouteId)
+    const selectedOrderId = useHomeStore((s) => s.selectedOrderId)
+
+    const { findRouteById, selectRoute, selectOrder, updateRoute } = useHomeStore.getState()
+    const itemStatesMap = useHomeStore((state) => state.itemStatesMap)
+    const route:RoutePayload | undefined = selectedRouteId != null ? findRouteById(selectedRouteId) ?? undefined : undefined
     const routeId = route?.id
     const rawOrders = route?.delivery_orders ?? []
     const optimization = useMemo(() => (route ? resolveOptimization(route) : null), [route])
@@ -179,8 +137,22 @@ const OrdersSection = ({
         () => optimization?.skipped_shipments?.map((entry) => entry.order_id) ?? [],
         [optimization],
     )
+    const markerSignature = useMemo(
+        () =>
+            JSON.stringify(
+                rawOrders.map((order) => ({
+                    id: order.id,
+                    coords: order.client_address?.coordinates ?? null,
+                    arrangement: order.delivery_arrangement ?? null,
+                })),
+            ),
+        [rawOrders],
+    )
+    const lastMarkerSignatureRef = useRef<string | null>(null)
     const [expandedOrders, setExpandedOrders] = useState<Record<number, boolean>>({})
     const { handleItemAction } = useItemActions({ route, routeId })
+    const mobileHeaderIdRef = useRef<string | null>(null)
+    const lastHeaderStateRef = useRef<{ title: string; orders: number; routeKey: string | null } | null>(null)
 
     const initialCleanupRef = useRef(true)
     // ____________________________________________________________________________________________________________
@@ -191,9 +163,84 @@ const OrdersSection = ({
     // helper functions 
 
     const handleClose = useCallback(() => {
-        routesDataManager.removeActiveSelection('SelectedRoute')
+        selectRoute(null)
+        selectOrder(null)
         onClose()
-    }, [onClose, routesDataManager])
+    }, [onClose, selectOrder, selectRoute])
+
+    const openRouteStats = useCallback(() => {
+        if (!sectionManager || !routeId) {
+            return
+        }
+        const hadExisting = sectionManager.closeByKey(['RouteStatsSection'])
+        const openSection = () =>
+            sectionManager.open({
+                key: 'RouteStatsSection',
+                parentParams: {
+                    className: isMobile?.isMobile ? 'w-full h-screen z-[5] absolute' : 'w-[400px] absolute right-full top-0 z-3 shadow-2xl',
+                    label: 'Route Stats',
+                    icon:<StatsIcon className="app-icon h-6 w-6 text-[var(--color-primary)]"/>,
+                    animation: 'expand',
+                },
+            })
+        if (hadExisting) {
+            setTimeout(openSection, 0)
+        } else {
+            openSection()
+        }
+    }, [isMobile?.isMobile, routeId, sectionManager])
+
+    const openEditRoute = useCallback(() => {
+        if (!routeId) {
+            return
+        }
+        popupManager.open({key:'FillRoute', payload:{mode:'edit',routeId}})
+    }, [popupManager, routeId])
+
+    const openCreateOrder = useCallback(() => {
+        if (!routeId) {
+            return
+        }
+        popupManager.open({key:'FillOrder', payload:{mode:'create', routeId}})
+    }, [popupManager, routeId])
+
+    const openSendMessages = useCallback(() => {
+        if (!route || !route.delivery_orders || route.delivery_orders.length === 0) {
+            showMessage?.({ status: 400, message: 'Open a route with orders before sending messages.' })
+            return
+        }
+        popupManager.open({
+            key:'SendMessages',
+            payload:{
+                targets: route.delivery_orders,
+                arrival_time_range: route.delivery_time_range ?? 30
+            }
+        })
+    }, [popupManager, route, showMessage])
+
+    const openOptimizationSection = useCallback(() => {
+        if (!sectionManager || !routeId) {
+            return
+        }
+        const hadExisting = sectionManager.closeByKey(['RouteOptimizationSection'])
+        const openSection = () => {
+            sectionManager.open({
+                key: 'RouteOptimizationSection',
+                payload: { routeId },
+                parentParams: {
+                    className: isMobile?.isMobile ? 'w-full h-screen z-[5] absolute' : 'w-[400px] absolute right-full top-0 z-3 shadow-2xl',
+                    label: 'Route Optimization',
+                    icon: <ThunderIcon className="app-icon h-7 w-7 text-[var(--color-primary)]" />,
+                    animation: 'expand',
+                },
+            })
+        }
+        if (hadExisting) {
+            setTimeout(openSection, 0)
+        } else {
+            openSection()
+        }
+    }, [isMobile?.isMobile, routeId, sectionManager])
 
 
     const [updateOrderService] = useState(() => new UpdateOrderService())
@@ -246,45 +293,16 @@ const OrdersSection = ({
                 delivery_arrangement: index,
             }))
 
-            routesDataManager.updateDataset((dataset) => {
-                if (!dataset) {
-                    return dataset
-                }
-                const nextRoutes = dataset.routes.map((entry) =>
-                    entry.id === route.id
-                        ? {
-                              ...entry,
-                              delivery_orders: normalizedOrders,
-                          }
-                        : entry,
-                )
-                return {
-                    ...dataset,
-                    routes: nextRoutes,
-                }
-            })
-            
-            routesDataManager.setActiveSelection('SelectedRoute', {
-                id: route.id,
-                data: {
-                    ...route,
-                    delivery_orders: normalizedOrders,
-                },
-            })
+            updateRoute(route.id, (entry) => ({
+                ...entry,
+                delivery_orders: normalizedOrders,
+            }))
 
-            const selectedOrder = routesDataManager.getActiveSelection<OrderPayload>('SelectedOrder')
-            const selectedOrderId =
-                typeof selectedOrder?.id === 'number' ? (selectedOrder.id as number) : null
             if (selectedOrderId != null) {
                 const updatedOrder = normalizedOrders.find((order) => order.id === selectedOrderId) ?? null
-                routesDataManager.setActiveSelection('SelectedOrder', {
-                    id: selectedOrderId,
-                    data: updatedOrder,
-                    meta: {
-                        routeId: route.id,
-                        ...selectedOrder?.meta,
-                    },
-                })
+                if (updatedOrder) {
+                    selectOrder(selectedOrderId, { routeId: route.id })
+                }
             }
             if (meta?.movedOrderId != null) {
                 const updatedOrder = normalizedOrders.find((order) => order.id === meta.movedOrderId)
@@ -293,7 +311,7 @@ const OrdersSection = ({
                 }
             }
         },
-        [route, routesDataManager, sendArrangementUpdate],
+        [route, selectedOrderId, sendArrangementUpdate, selectOrder, updateRoute],
     )
     
 
@@ -316,32 +334,21 @@ const OrdersSection = ({
     })
 
     const buildSectionSingleOrder = useCallback((orderId:number)=>{
-        const orderMatch = rawOrders.find((entry) => entry.id === orderId) ?? null
-        routesDataManager.setActiveSelection('SelectedOrder', {
-            id: orderId,
-            data: orderMatch,
-            meta: { routeId: route?.id ?? null }
-        })
+        selectOrder(orderId, { routeId: route?.id ?? null })
         mapManager.highlightMarker(orderId)
-        const hadExisting = sectionManager.closeByKey(['SingleOrder'])
-        const openSingleOrder = () => {
-            
+
+        if (!sectionManager.hasKey('SingleOrder')) {
             sectionManager.open({
-            key:'SingleOrder',
-            parentParams:{
-                className:'w-[400px] absolute right-full top-0 z-3 shadow-2xl',
-                label:"Order details", 
-                icon:<SingleOrderIcon className="app-icon h-4 w-4" />,
-                animation:'expand',
-                }
-            })
+                key:'SingleOrder',
+                parentParams:{
+                    className:isMobile.isMobile ? 'w-full h-full absolute top-0 z-[5] ' : 'w-[400px] absolute right-full top-0 z-3 shadow-2xl',
+                    label:"Order details", 
+                    icon:<SingleOrderIcon className="app-icon h-4 w-4" />,
+                    animation:'expand',
+                    }
+                })
         }
-        if (hadExisting) {
-            setTimeout(openSingleOrder, 0)
-        } else {
-            openSingleOrder()
-        }
-        }, [mapManager, rawOrders, routesDataManager, route?.id, sectionManager])
+        }, [mapManager, rawOrders, route?.id, sectionManager, selectOrder])
     // ____________________________________________________________________________________________________________
 
 
@@ -351,22 +358,154 @@ const OrdersSection = ({
                 initialCleanupRef.current = false
                 return
             }
-            routesDataManager.removeActiveSelection('SelectedRoute')
+            selectRoute(null)
+            selectOrder(null)
         }
-    }, [routesDataManager])
+    }, [selectOrder, selectRoute])
 
     // useEffects 
     useEffect(()=>{
 
-        if(setHeaderActions){
-            setHeaderActions( buildHeaderActions( { popupManager, onClose: handleClose } ) )
+        if(!setHeaderActions || !setInteractionActions){
+            return
         }
-        if( setInteractionActions ){
-            setInteractionActions( buildInteractionActions( { popupManager, sectionManager, routeId, route: route ?? null, showMessage} ) )
+        if(isMobile?.isMobile){
+            setHeaderActions([])
+            setInteractionActions([])
+            return
         }
+        setHeaderActions( buildHeaderActions( { popupManager, onClose: handleClose } ) )
+        setInteractionActions(
+            buildInteractionActions({
+                onOpenStats: openRouteStats,
+                onEditRoute: openEditRoute,
+                onCreateOrder: openCreateOrder,
+                onSendMessages: openSendMessages,
+                onOpenOptimization: openOptimizationSection,
+            })
+        )
         
         
-    },[handleClose, popupManager, route, routeId, sectionManager, setHeaderActions, setInteractionActions, showMessage])
+    },[
+        handleClose,
+        isMobile?.isMobile,
+        openCreateOrder,
+        openEditRoute,
+        openOptimizationSection,
+        openRouteStats,
+        openSendMessages,
+        popupManager,
+        setHeaderActions,
+        setInteractionActions
+    ])
+
+    useEffect(() => {
+        if (!removeHeader) {
+            return
+        }
+        return () => {
+            if (mobileHeaderIdRef.current) {
+                removeHeader(mobileHeaderIdRef.current)
+                mobileHeaderIdRef.current = null
+            }
+        }
+    }, [removeHeader])
+
+    useEffect(() => {
+        if (!registerHeader || !updateHeader || !removeHeader) {
+            return
+        }
+        if (!isMobile?.isMobile) {
+            if (mobileHeaderIdRef.current) {
+                removeHeader(mobileHeaderIdRef.current)
+                mobileHeaderIdRef.current = null
+            }
+            return
+        }
+
+        const headerTitle = route?.route_label ?? 'Orders'
+        const headerKey = route ? `${route.id}-${route.route_label ?? ''}` : 'no-route'
+        const headerOrdersCount = rawOrders.length
+        const secondaryContent = route ? (
+            <div className="flex w-full items-center justify-between gap-2">
+                
+                <span className="text-xs text-[var(--color-muted)]">{headerOrdersCount} orders</span>
+            </div>
+        ) : (
+            <span className="text-sm text-[var(--color-muted)]">Select a route to manage orders.</span>
+        )
+
+        const menuActions: MobileHeaderAction[] = [
+            {
+                label: 'Route Stats',
+                icon: <StatsIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: openRouteStats,
+            },
+            {
+                label: 'Edit Route',
+                icon: <SettingIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: openEditRoute,
+            },
+            {
+                label: '+ Order',
+                icon: <PlusIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: openCreateOrder,
+            },
+            {
+                label: 'Send Messages',
+                icon: <MessageIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: openSendMessages,
+            },
+            {
+                label: 'Optimization',
+                icon: <ThunderIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: openOptimizationSection,
+            },
+        ]
+
+        const nextHeaderState = { title: headerTitle, orders: headerOrdersCount, routeKey: headerKey }
+        const prevHeaderState = lastHeaderStateRef.current
+
+        if (!mobileHeaderIdRef.current) {
+            mobileHeaderIdRef.current = registerHeader({
+                title: headerTitle,
+                onBack: handleClose,
+                menuActions,
+                secondaryContent,
+            })
+            lastHeaderStateRef.current = nextHeaderState
+        } else {
+            const hasChanged =
+                !prevHeaderState ||
+                prevHeaderState.title !== nextHeaderState.title ||
+                prevHeaderState.orders !== nextHeaderState.orders ||
+                prevHeaderState.routeKey !== nextHeaderState.routeKey
+
+            if (hasChanged) {
+                updateHeader(mobileHeaderIdRef.current, {
+                    title: headerTitle,
+                    onBack: handleClose,
+                    menuActions,
+                    secondaryContent,
+                })
+                lastHeaderStateRef.current = nextHeaderState
+            }
+        }
+    }, [
+        handleClose,
+        isMobile?.isMobile,
+        openCreateOrder,
+        openEditRoute,
+        openOptimizationSection,
+        openRouteStats,
+        openSendMessages,
+        registerHeader,
+        removeHeader,
+        rawOrders.length,
+        route?.route_label,
+        route,
+        updateHeader,
+    ])
 
     useEffect(() => {
         if (!route) {
@@ -375,7 +514,7 @@ const OrdersSection = ({
             mapManager.highlightMarker(null)
             return
         }
-        
+
         const markers: OrderMarkerDescriptor[] = []
         const startCoords = route.start_location?.coordinates
         if (startCoords) {
@@ -383,7 +522,7 @@ const OrdersSection = ({
                 id: 'route-start',
                 position: startCoords,
                 label: 'S',
-                status: 'delivered' as const,
+                status: 'default' as const,
             })
         }
         markers.push(
@@ -392,6 +531,8 @@ const OrdersSection = ({
             if (!coords) {
                 return []
             }
+            const state = deriveOrderStateFromItems(order.delivery_items ?? [], itemStatesMap as Record<number, ItemStateOption>)
+            const markerColor = state?.color
             const label =
                 order.delivery_arrangement != null ? String(order.delivery_arrangement + 1) : String(index + 1)
             return [
@@ -400,6 +541,7 @@ const OrdersSection = ({
                     position: coords,
                     label,
                     status: 'pending' as const,
+                    color: markerColor,
                     onClick: () => buildSectionSingleOrder(order.id),
                 },
             ]
@@ -411,12 +553,14 @@ const OrdersSection = ({
                 id: 'route-end',
                 position: endCoords,
                 label: 'E',
-                status: 'failed' as const,
+                status: 'default' as const,
             })
         }
-        mapManager.syncMarkers(markers)
-        if (selectedOrderSelection?.id) {
-            mapManager.highlightMarker(selectedOrderSelection.id)
+        const markersChanged = markerSignature !== lastMarkerSignatureRef.current
+        mapManager.syncMarkers(markers, { fitBounds: markersChanged })
+        lastMarkerSignatureRef.current = markerSignature
+        if (selectedOrderId) {
+            mapManager.highlightMarker(selectedOrderId)
         }
 
         if (optimization?.polylines) {
@@ -441,11 +585,18 @@ const OrdersSection = ({
             mapManager.clearPolylines()
         }
 
+    }, [buildSectionSingleOrder, mapManager, markerSignature, optimization, rawOrders, route, selectedOrderId])
+
+    useEffect(() => {
         return () => {
             mapManager.clearMarkers()
             mapManager.clearPolylines()
         }
-    }, [buildSectionSingleOrder, mapManager, optimization, rawOrders, route, selectedOrderSelection?.id])
+    }, [mapManager])
+
+    useEffect(() => {
+        mapManager.highlightMarker(selectedOrderId ?? null)
+    }, [mapManager, selectedOrderId])
     // ____________________________________________________________________________________________________________
 
 

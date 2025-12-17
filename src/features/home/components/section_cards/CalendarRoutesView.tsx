@@ -24,12 +24,14 @@ const getRouteItemsCount = (route: RoutePayload) =>
 const STORAGE_KEY = 'calendar-routes-view:badge-toggles'
 
 export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateDrop }: CalendarRoutesViewProps) {
+  const isMobile = useResourceManager('isMobileObject')
   const popupManager = useResourceManager('popupManager')
   const [referenceDate, setReferenceDate] = useState(() => {
     const today = new Date()
     today.setDate(1)
     return today
   })
+  const selectedDateRef = useRef<string>('')
   const [isNarrow, setIsNarrow] = useState(false)
   const [badgePrefs, setBadgePrefs] = useState(() => {
     if (typeof window === 'undefined') return { showOrders: true, showItems: true }
@@ -67,6 +69,7 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
     const day = String(today.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   }, [])
+
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -138,6 +141,7 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
   }
 
   const handleDateClick = (cell: { dateKey: string; routes: RoutePayload[] }, event: React.MouseEvent) => {
+    selectedDateRef.current = cell.dateKey 
     if (!cell.routes.length) {
       popupManager.open({ key: 'FillRoute', payload: { mode: 'create', deliveryDate: cell.dateKey } })
       return
@@ -327,16 +331,26 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
                   type="button"
                   className={`relative flex min-h-[96px] flex-col rounded-xl border p-2 text-left transition hover:border-[var(--color-primary)] ${
                     cell.inCurrentMonth ? 'bg-white border-[var(--color-border)]' : 'bg-[var(--color-surface)] border-[var(--color-border)]/60'
-                  } ${isToday ? 'border-[var(--color-dark-blue)]/60 shadow-[0_0_10px_2px_rgba(0,0,139,0.1)]'  : ''}`}
+                  } 
+                  ${cell.dateKey == selectedDateRef.current ? 'border-[var(--color-light-blue)] shadow-[0_0_10px_var(--color-light-blue)]/50' : ''}
+                  `}
                   onClick={(event) => handleDateClick(cell, event)}
                   onDragOver={(event) => handleCellDragOver(cell, event)}
                   onDrop={(event) => handleCellDrop(cell, event)}
                   onDragLeave={clearHoverPopoverTimeout}
                 >
                   <span
-                    className={`text-sm font-semibold ${isToday ? 'text-[var(--color-primary)]' : cell.inCurrentMonth ? 'text-[var(--color-text)]' : 'text-[var(--color-muted)]'}`}
+                    className={`flex items-center justify-center ${
+                      isToday
+                        ? 'bg-[var(--color-dark-blue)]/80 text-[var(--color-page)] ring-1s ring-[var(--color-primary)]/20'
+                        : cell.inCurrentMonth
+                          ? 'text-[var(--color-text)]'
+                          : 'text-[var(--color-muted)]'
+                    } ${isMobile.isMobile ? 
+                      ` rounded-full text-[10px] font-semibold`
+                      :`flex h-8 w-8  rounded-full text-sm font-semibold `}`}
                   >
-                    {cell.label ?? ''} 
+                    {cell.label ?? ''}
                   </span>
                   {cell.routes.length ? (
                     <div className="mt-auto flex flex-wrap items-center gap-1">

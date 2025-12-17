@@ -2,14 +2,11 @@ import { useCallback, useEffect, useMemo } from 'react'
 
 import { FillUserAccount, type FillUserAccountPayload } from '../popup_fills/FillUserAccount'
 import type { SettingsUserProfile } from '../../types'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
-import type { DataManager } from '../../../../resources_manager/managers/DataManager'
-import type { SettingsDataset } from '../../types'
 import { AccountSettingsService } from '../../api/accountService'
 import { normalizeUserPayload } from '../../utils/userTransformers'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import { apiClient } from '../../../../lib/api/ApiClient'
+import { useSettingsStore } from '../../../../store/settings/useSettingsStore'
 
 type AccountPanelMode = 'self' | 'manage' | 'create'
 
@@ -19,9 +16,9 @@ interface AccountSectionPanelProps {
 }
 
 export function AccountSectionPanel({ mode = 'self', initialUser }: AccountSectionPanelProps) {
-  const settingsDataManager = useResourceManager<DataManager<SettingsDataset>>('settingsDataManager')
-  const snapshot = useDataManager(settingsDataManager)
-  const cachedUser = snapshot.dataset?.UserInfo ?? null
+  const dataset = useSettingsStore((state) => state.dataset)
+  const updateDataset = useSettingsStore((state) => state.updateDataset)
+  const cachedUser = dataset?.UserInfo ?? null
   const accountService = useMemo(() => new AccountSettingsService(), [])
   const { showMessage } = useMessageManager()
   const sessionUserId = useMemo(() => apiClient.getSessionUserId(), [])
@@ -62,7 +59,7 @@ export function AccountSectionPanel({ mode = 'self', initialUser }: AccountSecti
           return
         }
         const normalized = normalizeUserPayload(record)
-        settingsDataManager.updateDataset((prev) => ({
+        updateDataset((prev) => ({
           ...(prev ?? { UserInfo: null, UsersList: null, MessageTemplates: null }),
           UserInfo: normalized,
         }))
@@ -77,7 +74,7 @@ export function AccountSectionPanel({ mode = 'self', initialUser }: AccountSecti
     return () => {
       isMounted = false
     }
-  }, [accountService, mode, sessionUserId, settingsDataManager, showMessage, targetUser])
+  }, [accountService, mode, sessionUserId, showMessage, targetUser, updateDataset])
 
   return (
     <div className="space-y-6">

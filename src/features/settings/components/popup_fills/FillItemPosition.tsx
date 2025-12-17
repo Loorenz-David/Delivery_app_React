@@ -5,12 +5,10 @@ import { InputField } from '../../../../components/forms/InputField'
 import { useInputWarning } from '../../../../components/forms/useInputWarning'
 import { BasicButton } from '../../../../components/buttons/BasicButton'
 import type { ActionComponentProps } from '../../../../resources_manager/managers/ActionManager'
-import type { DataManager } from '../../../../resources_manager/managers/DataManager'
 import { ResponseManager } from '../../../../resources_manager/managers/ResponseManager'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import type { SettingsDataset } from '../../types'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import { ItemPropertiesService, type ItemPositionDetails } from '../../api/itemPropertiesService'
+import { useSettingsStore } from '../../../../store/settings/useSettingsStore'
 
 type FillItemPositionMode = 'create' | 'update'
 
@@ -39,7 +37,7 @@ export function FillItemPosition({
   const itemService = useMemo(() => new ItemPropertiesService(), [])
   const responseManager = useMemo(() => new ResponseManager(), [])
   const { showMessage } = useMessageManager()
-  const settingsDataManager = useResourceManager<DataManager<SettingsDataset>>('settingsDataManager')
+  const upsertIntoCollection = useSettingsStore((state) => state.upsertIntoCollection)
 
   const [formState, setFormState] = useState<ItemPositionFormState>(() => createInitialFormState(targetPosition))
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -119,7 +117,7 @@ export function FillItemPosition({
           description: formState.description,
           default: formState.default,
         }
-        upsertCollection(settingsDataManager, 'ItemPositions', entity)
+        upsertIntoCollection('ItemPositions', entity)
         showMessage({ status: 200, message: 'Item position created.' })
       } else if (targetPosition) {
         const response = await itemService.updateItemPosition({
@@ -130,7 +128,7 @@ export function FillItemPosition({
           responseManager.resolveEntityFromResponse<ItemPositionDetails>(response.data ?? null),
           { ...targetPosition, ...formState },
         )
-        upsertCollection(settingsDataManager, 'ItemPositions', updated)
+        upsertIntoCollection('ItemPositions', updated)
         showMessage({ status: 200, message: 'Item position updated.' })
       }
       initialSnapshotRef.current = createSnapshot(formState)
@@ -148,9 +146,9 @@ export function FillItemPosition({
     mode,
     onClose,
     responseManager,
-    settingsDataManager,
     showMessage,
     targetPosition,
+    upsertIntoCollection,
     validateForm,
   ])
 
@@ -226,23 +224,4 @@ function resolveChangedFields(initial: Snapshot, current: ItemPositionFormState)
   if (initial.description !== current.description) changed.description = current.description
   if (initial.default !== current.default) changed.default = current.default
   return changed
-}
-
-function upsertCollection<T extends { id: number }>(
-  manager: DataManager<SettingsDataset>,
-  key: keyof SettingsDataset | string,
-  entity: T,
-) {
-  manager.updateDataset((dataset) => {
-    const next = { ...(dataset ?? {}) } as Record<string, unknown>
-    const collection = Array.isArray(next[key as string]) ? ([...(next[key as string] as unknown[])] as T[]) : []
-    const index = collection.findIndex((item) => item.id === entity.id)
-    if (index >= 0) {
-      collection[index] = entity
-    } else {
-      collection.push(entity)
-    }
-    next[key as string] = collection
-    return next as SettingsDataset
-  })
 }

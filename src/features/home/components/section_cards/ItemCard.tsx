@@ -10,8 +10,7 @@ import {
 
 import type { ItemPayload } from '../../types/backend'
 import { DropDown } from '../../../../components/buttons/DropDown'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
 
 type ItemCardVariant = 'default' | 'draft'
 
@@ -22,13 +21,13 @@ interface ItemCardProps {
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({ item, onAction, variant = 'default' }) => {
-  const optionDataManager = useResourceManager('optionDataManager')
-  const optionSnapshot = useDataManager(optionDataManager)
-  const itemStatesMap = optionSnapshot.dataset?.item_states_map ?? {}
-  const itemPositionsMap = optionSnapshot.dataset?.item_positions_map ?? {}
+  const itemStates = useHomeStore((state) => state.itemStates)
+  const itemPositions = useHomeStore((state) => state.itemPositions)
+  const itemStatesMap = useHomeStore((state) => state.itemStatesMap)
+  const itemPositionsMap = useHomeStore((state) => state.itemPositionsMap)
   const itemStateOptions = useMemo(
     () =>
-      (optionSnapshot.dataset?.item_states ?? []).map((state) => ({
+      (itemStates ?? []).map((state) => ({
         value: state.id,
         display: (
           <span className="flex items-center gap-2">
@@ -40,11 +39,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onAction, variant = 'd
           </span>
         ),
       })),
-    [optionSnapshot.dataset?.item_states],
+    [itemStates],
   )
   const itemPositionOptions = useMemo(
-    () => (optionSnapshot.dataset?.item_positions ?? []).map((position) => ({ value: position.id, display: position.name })),
-    [optionSnapshot.dataset?.item_positions],
+    () => (itemPositions ?? []).map((position) => ({ value: position.id, display: position.name })),
+    [itemPositions],
   )
   const [expanded, setExpanded] = useState(false);
   const normalizedStateId = typeof item.item_state_id === 'number' ? item.item_state_id : undefined
@@ -192,14 +191,15 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onAction, variant = 'd
             {propertyEntries.length ? (
               <div className="pt-1">
                 <p className="text-xs font-medium text-gray-500">Properties</p>
-                <div className="mt-1 flex flex-wrap gap-2">
+                <div className="mt-1 space-y-1">
                   {propertyEntries.map(([key, value]) => (
-                    <span
+                    <div
                       key={key}
-                      className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-[13px] text-[var(--color-text)]"
+                      className="flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-[13px] text-[var(--color-text)]"
                     >
-                      {String(value)}
-                    </span>
+                      <span className="font-semibold text-[var(--color-muted)]">{key}:</span>
+                      <span className="truncate">{String(value)}</span>
+                    </div>
                   ))}
                 </div>
               </div>

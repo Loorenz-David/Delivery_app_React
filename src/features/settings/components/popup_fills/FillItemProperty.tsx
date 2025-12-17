@@ -6,10 +6,7 @@ import { DropDown } from '../../../../components/buttons/DropDown'
 import { useInputWarning } from '../../../../components/forms/useInputWarning'
 import { BasicButton } from '../../../../components/buttons/BasicButton'
 import type { ActionComponentProps } from '../../../../resources_manager/managers/ActionManager'
-import type { DataManager } from '../../../../resources_manager/managers/DataManager'
 import { ResponseManager } from '../../../../resources_manager/managers/ResponseManager'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import type { SettingsDataset } from '../../types'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import {
   ItemPropertiesService,
@@ -18,6 +15,7 @@ import {
 } from '../../api/itemPropertiesService'
 import { SelectItemPropertiesRelationships } from '../ui/SelectItemPropertiesRelationships'
 import { DropdownOptionsEditor, type DropdownOption } from '../ui/DropdownOptionsEditor'
+import { useSettingsStore } from '../../../../store/settings/useSettingsStore'
 
 type FillItemPropertyMode = 'create' | 'update'
 
@@ -53,7 +51,7 @@ export function FillItemProperty({
   const itemService = useMemo(() => new ItemPropertiesService(), [])
   const responseManager = useMemo(() => new ResponseManager(), [])
   const { showMessage } = useMessageManager()
-  const settingsDataManager = useResourceManager<DataManager<SettingsDataset>>('settingsDataManager')
+  const upsertIntoCollection = useSettingsStore((state) => state.upsertIntoCollection)
 
   const [formState, setFormState] = useState<ItemPropertyFormState>(() => createInitialFormState(targetProperty))
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -162,7 +160,7 @@ export function FillItemProperty({
             .filter((type) => formState.item_types.includes(type.id))
             .map((type) => ({ id: type.id, name: type.name })),
         }
-        upsertCollection(settingsDataManager, 'ItemSubProperties', entity)
+        upsertIntoCollection('ItemSubProperties', entity)
         showMessage({ status: 200, message: 'Item property created.' })
       } else if (targetProperty) {
         const response = await itemService.updateItemProperty({
@@ -183,7 +181,7 @@ export function FillItemProperty({
               .map((type) => ({ id: type.id, name: type.name })),
           },
         )
-        upsertCollection(settingsDataManager, 'ItemSubProperties', updated)
+        upsertIntoCollection('ItemSubProperties', updated)
         showMessage({ status: 200, message: 'Item property updated.' })
       }
       initialSnapshotRef.current = createSnapshot(formState)
@@ -201,9 +199,9 @@ export function FillItemProperty({
     mode,
     onClose,
     responseManager,
-    settingsDataManager,
     showMessage,
     targetProperty,
+    upsertIntoCollection,
     typeOptions,
     validateForm,
   ])
@@ -335,23 +333,4 @@ function areArraysEqual(a: number[], b: number[]) {
 function areOptionsEqual(a: DropdownOption[], b: DropdownOption[]) {
   if (a.length !== b.length) return false
   return a.every((opt, index) => opt.display === b[index].display && opt.value === b[index].value)
-}
-
-function upsertCollection<T extends { id: number }>(
-  manager: DataManager<SettingsDataset>,
-  key: keyof SettingsDataset | string,
-  entity: T,
-) {
-  manager.updateDataset((dataset) => {
-    const next = { ...(dataset ?? {}) } as Record<string, unknown>
-    const collection = Array.isArray(next[key as string]) ? ([...(next[key as string] as unknown[])] as T[]) : []
-    const index = collection.findIndex((item) => item.id === entity.id)
-    if (index >= 0) {
-      collection[index] = entity
-    } else {
-      collection.push(entity)
-    }
-    next[key as string] = collection
-    return next as SettingsDataset
-  })
 }

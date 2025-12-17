@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
-import type { AddressPayload, OrderPayload, RoutePayload } from '../../types/backend'
+import type { AddressPayload, OrderPayload } from '../../types/backend'
 import type { ActionComponentProps } from '../../../../resources_manager/managers/ActionManager'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
 import { ResponseManager } from '../../../../resources_manager/managers/ResponseManager'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import { ApiError } from '../../../../lib/api/ApiClient'
@@ -13,15 +11,17 @@ import type { OrderCreatePayload, OrderItemCreatePayload } from '../../api/deliv
 
 import { Field } from '../../../../components/forms/FieldContainer'
 import { PhoneField, type PhoneValue } from '../../../../components/forms/PhoneField'
+import { TextAreaField } from '../../../../components/forms/TextAreaField'
 import { BasicButton } from '../../../../components/buttons/BasicButton'
 import { DropDown } from '../../../../components/buttons/DropDown'
 import { AddressAutocomplete } from '../../../../google_maps/components/AddressAutocomplete'
-import { fieldContainer,fieldInput } from '../../../../constants/classes'
+import { fieldContainer, fieldInput } from '../../../../constants/classes'
+import { apiClient } from '../../../../lib/api/ApiClient'
 import { ItemCard } from '../section_cards/ItemCard'
 import { OrderIcon } from '../../../../assets/icons'
 import SendMessages from './SendMessages'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
 import {
-  appendOrderToRoute,
   applyCreatedItemIds,
   buildDraftItemCard,
   buildInitialItemSnapshotMap,
@@ -39,10 +39,9 @@ import {
   languageOptions,
   mergeOrderWithResponse,
   normalizeDraftLabelValue,
-  replaceOrderInRoute,
-  removeOrderFromRoute,
   resolveDefaultStateIds,
 } from './utils/orderFormHelpers'
+import { formBridge, type FormHandoffPayload } from '../../../../webrtc/formBridge'
 import type {
   CreatedItemResponse,
   DraftItem,
@@ -71,16 +70,28 @@ const TAB_CONFIG: Array<{ key: TabKey; label: string }> = [
 
 const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, openConfirm }: ActionComponentProps<FillOrderPayload>) => {
   const mode: FillOrderMode = payload?.mode ?? 'create'
-  const optionDataManager = useResourceManager('optionDataManager')
-  const routesDataManager = useResourceManager('routesDataManager')
   const optionService = useMemo(() => new OptionService(), [])
-  const optionSnapshot = useDataManager(optionDataManager)
-  const routesSnapshot = useDataManager(routesDataManager)
   const responseManager = useMemo(() => new ResponseManager(), [])
   const createOrderService = useMemo(() => new CreateOrderService(), [])
   const updateOrderService = useMemo(() => new UpdateOrderService(), [])
   const deleteOrderService = useMemo(() => new DeleteOrderService(), [])
   const deleteItemService = useMemo(() => new DeleteItemService(), [])
+  const routes = useHomeStore((state) => state.routes)
+  const selectedRouteId = useHomeStore((state) => state.selectedRouteId)
+  const selectedOrderId = useHomeStore((state) => state.selectedOrderId)
+  const storeItemOptions = useHomeStore((state) => state.itemOptions)
+  const itemStates = useHomeStore((state) => state.itemStates)
+  const itemPositions = useHomeStore((state) => state.itemPositions)
+  const { findOrderById } = useHomeStore.getState()
+  const {
+    findRouteById,
+    selectRoute,
+    selectOrder,
+    appendOrderToRoute,
+    replaceOrderInRoute,
+    removeOrderFromRoute,
+    setItemOptions,
+  } = useHomeStore.getState()
   const { showMessage } = useMessageManager()
   const [activeTab, setActiveTab] = useState<TabKey>('customer')
   const [orderState, setOrderState] = useState<OrderFormState>(() => createEmptyOrderState())
@@ -106,17 +117,18 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
       setActiveTab('customer')
     }
   }, [activeTab, sendConfirmation])
-  const itemOptions = (optionSnapshot.dataset?.item_options as ItemCategoryOption[] | undefined) ?? null
-  const itemStates = (optionSnapshot.dataset?.item_states as ItemStateOption[] | undefined) ?? []
-  const itemPositions = (optionSnapshot.dataset?.item_positions as ItemStatePosition[] | undefined) ?? []
-  const activeRouteSelection = routesDataManager.getActiveSelection<RoutePayload>('SelectedRoute')
-  const activeOrderSelection = routesDataManager.getActiveSelection<OrderPayload>('SelectedOrder')
-  const fallbackRoute =
+  const itemOptions = storeItemOptions ?? null
+  const resolvedRouteId =
     typeof payload?.routeId === 'number'
-      ? routesSnapshot.dataset?.routes?.find((route) => route.id === payload.routeId) ?? null
-      : null
-  const targetRoute = activeRouteSelection?.data ?? fallbackRoute ?? null
-  const targetRouteId = targetRoute?.id ?? null
+      ? payload.routeId
+      : selectedRouteId ?? null
+  const targetRoute = resolvedRouteId != null ? findRouteById(resolvedRouteId) : null
+  const targetRouteId = targetRoute?.id ?? resolvedRouteId ?? null
+  const resolvedOrderId =
+    typeof payload?.orderId === 'number'
+      ? payload.orderId
+      : selectedOrderId ?? null
+  const locatedOrder = resolvedOrderId != null ? findOrderById(resolvedOrderId, targetRouteId) : null
   const isEditMode = mode === 'edit'
   const initialOrderSnapshotRef = useRef<OrderSnapshot | null>(null)
   const initialItemsSnapshotRef = useRef<Record<number, ItemSnapshot>>({})
@@ -138,10 +150,20 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     () => <FillOrderHeader mode={mode} />,
     [mode],
   )
-  const tabs = useMemo<Array<{ key: TabKey; label: string }>>(
-    () => (sendConfirmation ? [...TAB_CONFIG, { key: 'messages', label: 'Messages' }] : TAB_CONFIG),
-    [sendConfirmation],
+  const visibleItemCount = useMemo(
+    () => orderState.delivery_items.filter((item) => item.action !== 'delete').length,
+    [orderState.delivery_items],
   )
+
+  const tabs = useMemo<Array<{ key: TabKey; label: string }>>(() => {
+    const itemsLabel = visibleItemCount > 0 ? `Items (${visibleItemCount})` : 'Items'
+    const baseTabs = [
+      TAB_CONFIG[0],
+      TAB_CONFIG[1],
+      { key: 'items', label: itemsLabel } as const,
+    ]
+    return sendConfirmation ? [...baseTabs, { key: 'messages', label: 'Messages' }] : baseTabs
+  }, [sendConfirmation, visibleItemCount])
 
   const itemFormValid = Boolean(
     draftItem.article_number.trim() &&
@@ -187,7 +209,16 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     }
 
     setEditingItemIndex(null)
-    setDraftItem(createEmptyItem())
+    const nextDefaults = resolveDefaultStateIds(
+      {
+        ...createEmptyItem(),
+        item_state_id: payloadItem.item_state_id ?? null,
+        item_position_id: payloadItem.item_position_id ?? null,
+      },
+      itemStates,
+      itemPositions,
+    )
+    setDraftItem(nextDefaults)
     setActiveTab('items')
   }
 
@@ -238,7 +269,9 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
           setOrderState(nextState)
           const nextOrderPayload = buildOrderFromExisting(editingOrderRef.current, nextState)
           editingOrderRef.current = nextOrderPayload
-          replaceOrderInRoute(routesDataManager, targetRouteId, nextOrderPayload)
+          if (targetRouteId != null) {
+            replaceOrderInRoute(targetRouteId, nextOrderPayload)
+          }
           initialItemsSnapshotRef.current = buildInitialItemSnapshotMap(nextOrderPayload.delivery_items)
           initialOrderSnapshotRef.current = buildOrderSnapshot(convertOrderPayloadToFormState(nextOrderPayload))
           showMessage({
@@ -273,7 +306,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
       editingItemIndex,
       isEditMode,
       orderState,
-      routesDataManager,
+      replaceOrderInRoute,
       showMessage,
       targetRouteId,
     ],
@@ -388,12 +421,12 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
       setIsSubmitting(true)
 
       try {
-        console.log('before submition')
+
         const response = await updateOrderService.updateOrder({
           id: payload.orderId,
           fields: updateFields,
         })
-        console.log('after sumbimion', response)
+
         const responseData = response.data as Record<string, unknown> | undefined
         const createdItemsRaw = responseData?.['created_items']
         const createdItemsInfo = Array.isArray(createdItemsRaw)
@@ -406,7 +439,10 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
         }
         const fallbackOrder = buildOrderFromExisting(editingOrderRef.current, updatedState)
         setOrderState(updatedState)
-        replaceOrderInRoute(routesDataManager, targetRouteId, fallbackOrder)
+        if (targetRouteId != null) {
+          replaceOrderInRoute(targetRouteId, fallbackOrder)
+          selectOrder(fallbackOrder.id, { routeId: targetRouteId })
+        }
         editingOrderRef.current = fallbackOrder
         initialItemsSnapshotRef.current = buildInitialItemSnapshotMap(fallbackOrder.delivery_items)
         initialOrderSnapshotRef.current = buildOrderSnapshot(convertOrderPayloadToFormState(fallbackOrder))
@@ -432,6 +468,8 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
 
     const deliveryArrangement = computeNextDeliveryArrangement(targetRoute)
     const normalizedSecondaryPhone = orderState.secondary_phone.number.trim() ? orderState.secondary_phone : null
+    const currentUserId = apiClient.getSessionUserId()
+    // notes chat on create not supported by payload typing
     const sanitizedItems = orderState.delivery_items.filter((item) => item.action !== 'delete').map((item) => {
       const baseItemPayload = buildOrderItemCreatePayload(item)
       return responseManager.sanitizePayload<OrderItemCreatePayload>(baseItemPayload)
@@ -469,9 +507,14 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
         routeId: targetRouteId,
         fallbackOrderId: typeof resolvedOrder?.id === 'number' ? resolvedOrder.id : undefined,
         deliveryArrangement,
+        senderId: currentUserId,
       })
       const mergedOrder = mergeOrderWithResponse(fallbackOrder, resolvedOrder)
-      appendOrderToRoute(routesDataManager, targetRouteId, mergedOrder)
+      if (targetRouteId != null) {
+        appendOrderToRoute(targetRouteId, mergedOrder)
+        selectRoute(targetRouteId, { routeId: targetRouteId })
+        selectOrder(mergedOrder.id, { routeId: targetRouteId })
+      }
       showMessage({
         status: response.status ?? 200,
         message: response.message ?? 'Order created successfully.',
@@ -521,10 +564,13 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     onClose,
     orderState,
     payload?.orderId,
+    replaceOrderInRoute,
+    appendOrderToRoute,
     responseManager,
-    routesDataManager,
     setActiveTab,
     setDraftItem,
+    selectOrder,
+    selectRoute,
     showMessage,
     sendConfirmation,
     templateSelection,
@@ -544,8 +590,10 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     setIsDeletingOrder(true)
     try {
       const response = await deleteOrderService.deleteOrder({ id: payload.orderId })
-      removeOrderFromRoute(routesDataManager, targetRouteId, payload.orderId)
-      routesDataManager.removeActiveSelection?.('SelectedOrder')
+      if (targetRouteId != null) {
+        removeOrderFromRoute(targetRouteId, payload.orderId)
+      }
+      selectOrder(null)
       showMessage({
         status: response.status ?? 200,
         message: response.message ?? 'Order deleted successfully.',
@@ -559,7 +607,17 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     } finally {
       setIsDeletingOrder(false)
     }
-  }, [deleteOrderService, isDeletingOrder, isEditMode, onClose, payload?.orderId, routesDataManager, showMessage, targetRouteId])
+  }, [
+    deleteOrderService,
+    isDeletingOrder,
+    isEditMode,
+    onClose,
+    payload?.orderId,
+    removeOrderFromRoute,
+    selectOrder,
+    showMessage,
+    targetRouteId,
+  ])
 
   const handleDeleteOrder = useCallback(() => {
     if (!openConfirm) {
@@ -587,7 +645,6 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
             onDelete={handleDeleteOrder}
             showDelete={isEditMode}
             isDeleting={isDeletingOrder}
-            showTerms={mode === 'create'}
             sendConfirmation={sendConfirmation}
             onToggleSendConfirmation={handleToggleSendConfirmation}
             onOpenTemplateSelector={openTemplateSelector}
@@ -655,11 +712,13 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     setDraftItem((prev) => resolveDefaultStateIds(prev, itemStates, itemPositions))
   }, [itemStates, itemPositions])
 
+  const hasFetchedItemOptionsRef = useRef(false)
   useEffect(() => {
     let cancelled = false
-    if (itemOptions && itemOptions.length > 0) {
+    if (hasFetchedItemOptionsRef.current || (itemOptions && itemOptions.length > 0)) {
       return
     }
+    hasFetchedItemOptionsRef.current = true
     ;(async () => {
       try {
         const data = await optionService.fetchItemOptions()
@@ -667,17 +726,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
         if (cancelled) {
           return
         }
-        optionDataManager.updateDataset((prev) => ({
-          ...(prev ?? {
-            route_states: [],
-            drivers: [],
-            item_states: [],
-            item_positions: [],
-            default_warehouses: [],
-            item_options: [],
-          }),
-          item_options: data,
-        }))
+        setItemOptions(data ?? [])
       } catch (error) {
         if (!cancelled) {
           console.error('Failed to fetch item options', error)
@@ -687,7 +736,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     return () => {
       cancelled = true
     }
-  }, [itemOptions, optionDataManager, optionService])
+  }, [itemOptions, optionService, setItemOptions])
 
   useEffect(() => {
     if (!registerBeforeClose) {
@@ -707,57 +756,35 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     if (!isEditMode || isPrefilled) {
       return
     }
-    const orderId = payload?.orderId ?? (typeof activeOrderSelection?.id === 'number' ? activeOrderSelection.id : undefined)
-    let locatedOrder: OrderPayload | null = null
+    const orderId = resolvedOrderId
+    let orderToUse: OrderPayload | null = locatedOrder ?? null
 
-    if (activeOrderSelection?.data) {
-      const selectedId =
-        typeof activeOrderSelection.id === 'number'
-          ? (activeOrderSelection.id as number)
-          : activeOrderSelection.data.id
-      if (!orderId || selectedId === orderId) {
-        locatedOrder = activeOrderSelection.data
-      }
-    }
-
-    if (!locatedOrder && orderId != null) {
-      locatedOrder =
-        routesDataManager.find<OrderPayload>(orderId, {
-          selectionKey: 'SelectedRoute',
-          collectionKey: 'delivery_orders',
-          targetKey: 'id',
-        }) ?? null
-    }
-
-    if (!locatedOrder && orderId != null && routesSnapshot.dataset?.routes?.length) {
-      for (const route of routesSnapshot.dataset.routes) {
+    if (!orderToUse && orderId != null) {
+      for (const route of routes) {
         const match = route.delivery_orders?.find((order) => order.id === orderId)
         if (match) {
-          locatedOrder = match
+          orderToUse = match
           break
         }
       }
     }
 
-    if (!locatedOrder) {
+    if (!orderToUse) {
       return
     }
 
-    const preparedState = convertOrderPayloadToFormState(locatedOrder)
-    editingOrderRef.current = locatedOrder
+    const preparedState = convertOrderPayloadToFormState(orderToUse)
+    editingOrderRef.current = orderToUse
     initialOrderSnapshotRef.current = buildOrderSnapshot(preparedState)
-    initialItemsSnapshotRef.current = buildInitialItemSnapshotMap(locatedOrder.delivery_items)
+    initialItemsSnapshotRef.current = buildInitialItemSnapshotMap(orderToUse.delivery_items)
     setOrderState(preparedState)
     setItemSequence(calculateNextItemSequence(preparedState.delivery_items))
     setIsPrefilled(true)
-  }, [
-    activeOrderSelection,
-    isEditMode,
-    isPrefilled,
-    payload?.orderId,
-    routesDataManager,
-    routesSnapshot.dataset?.routes,
-  ])
+    if (orderToUse.route_id) {
+      selectRoute(orderToUse.route_id, { routeId: orderToUse.route_id })
+      selectOrder(orderToUse.id, { routeId: orderToUse.route_id })
+    }
+  }, [isEditMode, isPrefilled, locatedOrder, resolvedOrderId, routes, selectOrder, selectRoute])
 
   useEffect(() => {
     if (!isEditMode || !payload?.itemId) {
@@ -846,11 +873,40 @@ interface CustomerInfoTabProps {
   onDelete?: () => void
   showDelete?: boolean
   isDeleting?: boolean
-  showTerms?: boolean
   sendConfirmation: boolean
   onToggleSendConfirmation: () => void
   onOpenTemplateSelector: () => void
   templateSelection: Partial<Record<'email' | 'sms', number>>
+}
+
+const buildHandoffPayloadFromOrder = (state: OrderFormState): FormHandoffPayload => ({
+  client_first_name: state.first_name,
+  client_second_name: state.last_name,
+  client_email: state.client_email,
+  client_primary_phone: state.primary_phone,
+  client_secondary_phone: state.secondary_phone?.number.trim() ? state.secondary_phone : undefined,
+  client_address: state.client_address,
+  open_form: true,
+})
+
+const applyFormResponseToOrderState = (prev: OrderFormState, payload: FormHandoffPayload): OrderFormState => {
+  const mergePhone = (current: PhoneValue, incoming?: PhoneValue): PhoneValue =>
+    incoming
+      ? {
+          prefix: incoming.prefix ?? current.prefix,
+          number: incoming.number ?? current.number,
+        }
+      : current
+
+  return {
+    ...prev,
+    first_name: payload.client_first_name ?? prev.first_name,
+    last_name: payload.client_second_name ?? prev.last_name,
+    client_email: payload.client_email ?? prev.client_email,
+    primary_phone: mergePhone(prev.primary_phone, payload.client_primary_phone),
+    secondary_phone: mergePhone(prev.secondary_phone, payload.client_secondary_phone),
+    client_address: payload.client_address ?? prev.client_address,
+  }
 }
 
 function CustomerInfoTab({
@@ -862,12 +918,38 @@ function CustomerInfoTab({
   onDelete,
   showDelete = false,
   isDeleting = false,
-  showTerms = true,
   sendConfirmation,
   onToggleSendConfirmation,
   onOpenTemplateSelector,
   templateSelection,
 }: CustomerInfoTabProps) {
+  const { showMessage } = useMessageManager()
+  const [bridgeStatus, setBridgeStatus] = useState(formBridge.getStatus())
+  const [bridgeError, setBridgeError] = useState<string | null>(formBridge.getLastError())
+
+  useEffect(() => {
+    formBridge.ensureConnection({ initiate: false })
+    const unsubStatus = formBridge.onStatusChange((status, error) => {
+      setBridgeStatus(status)
+      setBridgeError(error ?? null)
+    })
+    const unsubMessage = formBridge.onMessage((message) => {
+      console.log('Received form message', message.payload)
+      if (message.type === 'form-response') {
+        setState((prev) => applyFormResponseToOrderState(prev, message.payload))
+        showMessage({
+          status: 200,
+          message: 'Form received from the linked device.',
+        })
+      }
+    })
+
+    return () => {
+      unsubStatus()
+      unsubMessage()
+    }
+  }, [setState, showMessage])
+
   const handleLanguageChange = (value?: string) => {
     if (!value) return
     setState((prev) => ({ ...prev, client_language: value }))
@@ -899,12 +981,42 @@ function CustomerInfoTab({
     const { value } = event.target
     setState((prev) => ({ ...prev, [field]: value }))
   }
-  const handleTermsToggle = () => {
-    setState((prev) => ({ ...prev, termsAccepted: !prev.termsAccepted }))
+ 
+
+  const handleSendFormToDevice = () => {
+    const payload = buildHandoffPayloadFromOrder(state)
+    const success = formBridge.sendFormRequest(payload)
+    console.log('Success:', success)
+    showMessage({
+      status: success ? 200 : 'warning',
+      message: success ? 'Form sent to linked device.' : 'Unable to send form. Connection not ready.',
+    })
   }
 
   return (
     <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-page)] px-4 py-3">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-[var(--color-text)]">Share form to another device</p>
+          <p className="text-xs text-[var(--color-muted)]">
+            Send this customer form to your linked device for them to fill and send back.
+          </p>
+          <p className="text-xs font-semibold text-[var(--color-text)]">
+            Status: {bridgeStatus}{' '}
+            {bridgeError ? <span className="text-red-600">({bridgeError})</span> : null}
+          </p>
+        </div>
+        <BasicButton
+          params={{
+            variant: 'primary',
+            onClick: handleSendFormToDevice,
+            disabled: bridgeStatus !== 'connected',
+          }}
+        >
+          Send form
+        </BasicButton>
+      </div>
+
       <Field label="Client Language" required>
         <DropDown
           buttonClassName="gap-2 items-center justify-between"
@@ -978,17 +1090,21 @@ function CustomerInfoTab({
         </Field>
       </div>
 
-      {showTerms ? (
-        <label className="flex items-center gap-2 text-sm text-[var(--color-text)]">
-          <input
-            type="checkbox"
-            checked={state.termsAccepted}
-            onChange={handleTermsToggle}
-            className="h-4 w-4 rounded border-gray-300 text-[var(--color-primary)]"
+      {mode === 'create' ? (
+        <Field label="Customer Notes (optional)">
+          <TextAreaField
+            placeholder="Anything else the customer wants to share..."
+            value={state.note}
+            onChange={(event) => setState((prev) => ({ ...prev, note: event.target.value }))}
+            rows={3}
           />
-          I accept the terms and conditions.
-        </label>
+          <p className="mt-1 text-xs text-[var(--color-muted)]">
+            Notes will be sent as chat entries in the order (not required).
+          </p>
+        </Field>
       ) : null}
+
+      
       {mode === 'create' ? (
         <div className="flex items-center gap-3 text-sm text-[var(--color-text)]">
           <input
@@ -1031,7 +1147,7 @@ function CustomerInfoTab({
         <BasicButton
           params={{
             variant: 'primary',
-            disabled: (showTerms && !state.termsAccepted) || isSubmitting,
+            disabled: isSubmitting,
             onClick: onSubmit,
           }}
         >

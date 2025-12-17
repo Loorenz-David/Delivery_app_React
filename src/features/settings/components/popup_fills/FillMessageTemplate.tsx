@@ -9,12 +9,11 @@ import { useInputWarning } from '../../../../components/forms/useInputWarning'
 import type { ActionComponentProps } from '../../../../resources_manager/managers/ActionManager'
 import { MessageTemplateService } from '../../api/messageTemplateService'
 import type { SettingsDataset, SettingsMessageTemplate } from '../../types'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import type { DataManager } from '../../../../resources_manager/managers/DataManager'
 import { ResponseManager } from '../../../../resources_manager/managers/ResponseManager'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import type { CreateMessageTemplatePayload } from '../../api/messageTemplateService'
 import { ApiError } from '../../../../lib/api/ApiClient'
+import { useSettingsStore, type SettingsDatasetUpdater } from '../../../../store/settings/useSettingsStore'
 
 type FillMessageTemplateMode = 'create' | 'edit'
 
@@ -59,7 +58,7 @@ export function FillMessageTemplate({
   const templateService = useMemo(() => new MessageTemplateService(), [])
   const responseManager = useMemo(() => new ResponseManager(), [])
   const { showMessage } = useMessageManager()
-  const settingsDataManager = useResourceManager<DataManager<SettingsDataset>>('settingsDataManager')
+  const updateDataset = useSettingsStore((state) => state.updateDataset)
 
   const [formState, setFormState] = useState<TemplateFormState>(() => createInitialState(targetTemplate))
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -131,14 +130,14 @@ export function FillMessageTemplate({
         await handleCreateTemplate(formState, {
           templateService,
           responseManager,
-          settingsDataManager,
+          updateDataset,
           showMessage,
         })
       } else if (targetTemplate) {
         await handleUpdateTemplate({
           templateService,
           responseManager,
-          settingsDataManager,
+          updateDataset,
           showMessage,
           templateId: targetTemplate.id,
           fallbackTemplate: targetTemplate,
@@ -158,10 +157,10 @@ export function FillMessageTemplate({
     mode,
     onClose,
     responseManager,
-    settingsDataManager,
     showMessage,
     targetTemplate,
     templateService,
+    updateDataset,
     validateForm,
   ])
 
@@ -312,11 +311,11 @@ async function handleCreateTemplate(
   context: {
     templateService: MessageTemplateService
     responseManager: ResponseManager
-    settingsDataManager: DataManager<SettingsDataset>
+    updateDataset: SettingsDatasetUpdater
     showMessage: (payload: { status: number; message: string }) => void
   },
 ) {
-  const { templateService, responseManager, settingsDataManager, showMessage } = context
+  const { templateService, responseManager, updateDataset, showMessage } = context
   const response = await templateService.createTemplate({
     name: formState.name,
     content: formState.content,
@@ -330,7 +329,7 @@ async function handleCreateTemplate(
     channel: formState.channel,
   }
   const merged = responseManager.mergeWithFallback(resolved, fallback)
-  persistTemplate(settingsDataManager, merged)
+  persistTemplate(updateDataset, merged)
   showMessage({
     status: response.status ?? 200,
     message: response.message ?? 'Message template created successfully.',
@@ -340,13 +339,13 @@ async function handleCreateTemplate(
 async function handleUpdateTemplate(options: {
   templateService: MessageTemplateService
   responseManager: ResponseManager
-  settingsDataManager: DataManager<SettingsDataset>
+  updateDataset: SettingsDatasetUpdater
   showMessage: (payload: { status: number; message: string }) => void
   templateId: number
   fallbackTemplate: SettingsMessageTemplate
   changedFields: Partial<CreateMessageTemplatePayload>
 }) {
-  const { templateService, responseManager, settingsDataManager, showMessage, templateId, fallbackTemplate, changedFields } = options
+  const { templateService, responseManager, updateDataset, showMessage, templateId, fallbackTemplate, changedFields } = options
   const sanitized = responseManager.sanitizePayload(changedFields)
   const response = await templateService.updateTemplate({
     id: templateId,
@@ -358,15 +357,15 @@ async function handleUpdateTemplate(options: {
     ...changedFields,
   }
   const merged = responseManager.mergeWithFallback(resolved, fallback)
-  persistTemplate(settingsDataManager, merged)
+  persistTemplate(updateDataset, merged)
   showMessage({
     status: response.status ?? 200,
     message: response.message ?? 'Message template updated successfully.',
   })
 }
 
-function persistTemplate(manager: DataManager<SettingsDataset>, template: SettingsMessageTemplate) {
-  manager.updateDataset((prev) => {
+function persistTemplate(updateDataset: SettingsDatasetUpdater, template: SettingsMessageTemplate) {
+  updateDataset((prev) => {
     const base: SettingsDataset = prev ?? { UserInfo: null, UsersList: null, MessageTemplates: [] }
     const list = Array.isArray(base.MessageTemplates) ? [...base.MessageTemplates] : []
     const index = list.findIndex((candidate) => candidate.id === template.id)

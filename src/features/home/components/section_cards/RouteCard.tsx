@@ -11,7 +11,7 @@ import {
   WeightIcon,
 } from "../../../../assets/icons";
 import type { RoutePayload } from '../../types/backend'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
 
 export interface RouteInfo {
   id: number;
@@ -40,14 +40,12 @@ interface RouteCardProps {
 // the quantities and weights will be derive from the orders and items with in the payload passed
 
 export const RouteCard: React.FC<RouteCardProps> = ({ route, onSelect, compact = false, onRouteDragOver, onRouteDrop }) => {
-  const optionDataManager = useResourceManager('optionDataManager')
-  const dependencies = optionDataManager.getDataset()
+  const driversMap = useHomeStore((state) => state.driversMap)
+  const routeStatesMap = useHomeStore((state) => state.routeStatesMap)
   const driverId = route.driver_id ?? null
   const routeStateId = route.state_id ?? route.route_state?.id ?? null
-  const driver =
-    (driverId != null ? dependencies?.drivers_map?.[driverId] : null) ?? route.driver ?? null
-  const routeState =
-    (routeStateId != null ? dependencies?.route_states_map?.[routeStateId] : null) ?? route.route_state ?? null
+  const driver = (driverId != null ? driversMap?.[driverId] : null) ?? route.driver ?? null
+  const routeState = (routeStateId != null ? routeStatesMap?.[routeStateId] : null) ?? route.route_state ?? null
   const totalDistance = formatDistance(route.total_distance_meters)
   const totalDuration = formatDuration(route.total_duration_seconds)
   const totalWeight = formatWeight(route.total_weight)

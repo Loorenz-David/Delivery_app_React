@@ -21,6 +21,7 @@ export interface MapControlsOptions {
   streetViewControl?: boolean
   customControls?: {
     locateButton?: boolean
+    mapTypeToggle?: boolean
   }
 }
 
@@ -31,6 +32,7 @@ export interface OrderMarkerDescriptor {
   status?: OrderMarkerStatus
   highlighted?: boolean
   onClick?: (orderId: number | string) => void
+  color?: string
 }
 
 export interface PolylineDescriptor {
@@ -61,24 +63,33 @@ export class MapManager {
   private locationPickerMarker: google.maps.marker.AdvancedMarkerElement | null = null
   private locationPickerListener: google.maps.MapsEventListener | null = null
   private locateControl: HTMLElement | null = null
+  private mapTypeControl: HTMLElement | null = null
+  private customControlContainer: HTMLElement | null = null
   private userLocationMarker: google.maps.marker.AdvancedMarkerElement | null = null
   private selectedMarkerId: number | string | null = null
+  private pendingPadding: any | null = null
+  private currentMapType: 'roadmap' | 'satellite' = 'roadmap'
+  private initialMapId: string | null = null
 
   async initialize(container: HTMLElement, options: MapManagerOptions) {
     const google = (await loadGoogleMaps()) as any
-    const mapsLibrary = google.maps?.importLibrary ? await google.maps.importLibrary('maps') : null
-    const markerLibrary = google.maps?.importLibrary ? await google.maps.importLibrary('marker') : null
+    const mapsLibrary = google.maps?.importLibrary ? ((await google.maps.importLibrary('maps')) as any) : null
+    const markerLibrary = google.maps?.importLibrary ? ((await google.maps.importLibrary('marker')) as any) : null
 
-    const MapConstructor = (mapsLibrary as any)?.Map ?? google.maps.Map
-    this.map = new MapConstructor(container, {
+    const MapCtor = mapsLibrary?.Map ?? google.maps?.Map
+    if (typeof MapCtor !== 'function') {
+      throw new Error('Google Maps Map constructor is unavailable.')
+    }
+    this.initialMapId = options.mapId ?? getMapId(options.theme ?? 'light') ?? null
+    this.map = new MapCtor(container, {
       center: options.center,
       zoom: options.zoom ?? 12,
       disableDefaultUI: options.disableDefaultUI ?? true,
-      mapId: options.mapId ?? getMapId(options.theme ?? 'light'),
+      mapId: this.initialMapId,
     })
 
     this.AdvancedMarkerCtor =
-      (markerLibrary as any)?.AdvancedMarkerElement ?? google.maps.marker?.AdvancedMarkerElement ?? null
+      markerLibrary?.AdvancedMarkerElement ?? google.maps.marker?.AdvancedMarkerElement ?? null
     if (!this.AdvancedMarkerCtor) {
       throw new Error('AdvancedMarkerElement is not available. Ensure the marker library is enabled.')
     }
@@ -87,6 +98,10 @@ export class MapManager {
     this.setTheme(options.theme ?? 'light')
     if (options.controls) {
       this.setControlsVisibility(options.controls)
+    }
+    if (this.pendingPadding && this.map) {
+      this.map.setOptions({ padding: this.pendingPadding } as any)
+      this.pendingPadding = null
     }
   }
 
@@ -119,6 +134,11 @@ export class MapManager {
     } else if (!options.customControls?.locateButton) {
       this.removeLocateButton()
     }
+    if (options.customControls?.mapTypeToggle) {
+      this.renderMapTypeToggle()
+    } else if (!options.customControls?.mapTypeToggle) {
+      this.removeMapTypeToggle()
+    }
   }
 
   clearMarkers() {
@@ -128,6 +148,14 @@ export class MapManager {
     this.markers.clear()
     this.markerMetadata.clear()
     this.selectedMarkerId = null
+  }
+
+  setPadding(padding: any) {
+    this.pendingPadding = padding
+    if (!this.map) {
+      return
+    }
+    this.map.setOptions({ padding } as any)
   }
 
   removeMarker(id: number | string) {
@@ -152,6 +180,7 @@ export class MapManager {
       label: descriptor.label,
       status: descriptor.status,
       highlighted: descriptor.highlighted,
+      color: descriptor.color,
     })
     if (existing) {
       existing.position = descriptor.position
@@ -180,7 +209,7 @@ export class MapManager {
     return marker
   }
 
-  syncMarkers(descriptors: OrderMarkerDescriptor[]) {
+  syncMarkers(descriptors: OrderMarkerDescriptor[], options?: { fitBounds?: boolean }) {
     const desiredIds = new Set(descriptors.map((descriptor) => descriptor.id))
     for (const id of this.markers.keys()) {
       if (!desiredIds.has(id)) {
@@ -188,7 +217,9 @@ export class MapManager {
       }
     }
     descriptors.forEach((descriptor) => this.upsertMarker(descriptor))
-    this.fitBoundsToMarkers()
+    if (options?.fitBounds ?? true) {
+      this.fitBoundsToMarkers()
+    }
   }
 
   updateMarkerStatus(id: number | string, status: OrderMarkerStatus, label?: string) {
@@ -256,12 +287,12 @@ export class MapManager {
    
     const polyline = new google.maps.Polyline({
       path: descriptor.path,
-      strokeColor: descriptor.strokeColor ?? '#2563eb',
+      strokeColor: descriptor.strokeColor ?? '#3e7bff',
       strokeOpacity: descriptor.strokeOpacity ?? 1,
       strokeWeight: descriptor.strokeWeight ?? 4,
       map: this.map,
     })
-    console.log(descriptor.id,'created the polyline object')
+
     this.polylines.set(descriptor.id, polyline)
 
     return polyline
@@ -366,11 +397,17 @@ export class MapManager {
     if (!this.map) {
       return
     }
+    const container = this.ensureControlContainer()
+    if (!container) {
+      return
+    }
     this.removeLocateButton()
     const button = document.createElement('button')
     button.type = 'button'
     button.className =
       'map-control-locate rounded-full bg-white p-2 shadow-lg ring-1 ring-black/5 flex items-center justify-center'
+    button.style.width = '42px'
+    button.style.height = '42px'
     button.innerHTML =
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1f2937" width="20" height="20"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 3h-1.07a7.002 7.002 0 00-5.93-5.93V4a1 1 0 00-2 0v1.07a7.002 7.002 0 00-5.93 5.93H4a1 1 0 000 2h1.07a7.002 7.002 0 005.93 5.93V20a1 1 0 002 0v-1.07a7.002 7.002 0 005.93-5.93H21a1 1 0 000-2zM12 17a5 5 0 110-10 5 5 0 010 10z"/></svg>'
     button.addEventListener('click', () => {
@@ -396,7 +433,33 @@ export class MapManager {
       )
     })
     this.locateControl = button
-    this.map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(button)
+    container.appendChild(button)
+  }
+
+  private renderMapTypeToggle() {
+    if (!this.map) {
+      return
+    }
+    const container = this.ensureControlContainer()
+    if (!container) {
+      return
+    }
+    this.removeMapTypeToggle()
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className =
+      'map-control-maptype rounded-full bg-white p-2 shadow-lg ring-1 ring-black/5 flex items-center justify-center'
+    button.style.width = '42px'
+    button.style.height = '42px'
+    button.title = 'Switch map type'
+    button.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M12 4 4 8l8 4 8-4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 16l8 4 8-4"/></svg>'
+    button.addEventListener('click', () => {
+      const nextType = this.currentMapType === 'roadmap' ? 'satellite' : 'roadmap'
+      this.setMapType(nextType)
+    })
+    this.mapTypeControl = button
+    container.appendChild(button)
   }
 
   highlightMarker(id: number | string | null) {
@@ -406,12 +469,17 @@ export class MapManager {
     if (this.selectedMarkerId != null && this.selectedMarkerId !== id) {
       this.updateMarkerHighlight(this.selectedMarkerId, false)
     }
+    const alreadyHighlighted =
+      id != null && this.markerMetadata.get(id)?.highlighted === true && this.selectedMarkerId === id
+
     this.selectedMarkerId = id
     if (id == null) {
       return
     }
-    this.updateMarkerHighlight(id, true)
-    this.ensureMarkerInView(id)
+    if (!alreadyHighlighted) {
+      this.updateMarkerHighlight(id, true)
+      this.ensureMarkerInView(id)
+    }
   }
 
   private updateMarkerHighlight(id: number | string, highlighted: boolean) {
@@ -447,12 +515,14 @@ export class MapManager {
     }
     const bounds = map.getBounds?.()
     const isInBounds = typeof bounds?.contains === 'function' ? bounds.contains(position) : false
-    if (!bounds || !isInBounds) {
-      map.panTo?.(position)
-      const zoom = map.getZoom?.() ?? 14
-      if (zoom < 14) {
-        map.setZoom?.(14)
-      }
+    if (!bounds || isInBounds) {
+      return
+    }
+
+    map.panTo?.(position)
+    const zoom = map.getZoom?.() ?? 14
+    if (zoom < 14) {
+      map.setZoom?.(14)
     }
   }
 
@@ -487,14 +557,74 @@ export class MapManager {
   private removeLocateButton() {
     if (this.locateControl) {
       const controlArray = this.map?.controls[google.maps.ControlPosition.RIGHT_BOTTOM]
-      if (controlArray) {
-        const index = controlArray.getArray().indexOf(this.locateControl)
-        if (index > -1) {
-          controlArray.removeAt(index)
-        }
+      if (controlArray && this.locateControl.parentElement === this.customControlContainer) {
+        this.locateControl.remove()
       }
       this.locateControl = null
     }
+    this.cleanupControlContainer()
+  }
+
+  private removeMapTypeToggle() {
+    if (this.mapTypeControl) {
+      if (this.mapTypeControl.parentElement === this.customControlContainer) {
+        this.mapTypeControl.remove()
+      }
+      this.mapTypeControl = null
+    }
+    this.cleanupControlContainer()
+  }
+
+  private setMapType(mode: 'roadmap' | 'satellite') {
+    if (!this.map) {
+      return
+    }
+    this.currentMapType = mode
+    if (mode === 'satellite') {
+      this.map.setOptions({
+        mapTypeId: 'satellite',
+        mapId: undefined,
+      } as any)
+    } else {
+      this.map.setOptions({
+        mapTypeId: 'roadmap',
+        mapId: this.initialMapId ?? undefined,
+      } as any)
+    }
+  }
+
+  private ensureControlContainer() {
+    if (!this.map) {
+      return null
+    }
+    if (this.customControlContainer) {
+      return this.customControlContainer
+    }
+    const container = document.createElement('div')
+    container.style.display = 'flex'
+    container.style.flexDirection = 'row'
+    container.style.gap = '8px'
+    container.style.padding = '8px'
+    container.style.alignItems = 'center'
+    container.style.justifyContent = 'flex-end'
+    this.map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(container)
+    this.customControlContainer = container
+    return container
+  }
+
+  private cleanupControlContainer() {
+    if (!this.customControlContainer) {
+      return
+    }
+    if (this.customControlContainer.childElementCount > 0) {
+      return
+    }
+    const controlArray = this.map?.controls[google.maps.ControlPosition.RIGHT_BOTTOM]
+    const index = controlArray?.getArray().indexOf(this.customControlContainer) ?? -1
+    if (controlArray && index > -1) {
+      controlArray.removeAt(index)
+    }
+    this.customControlContainer = null
   }
   
 }

@@ -13,12 +13,10 @@ import { AccountSettingsService, type CreateUserPayload, type UserAccountPayload
 import { normalizeUserPayload } from '../../utils/userTransformers'
 import type { ActionComponentProps } from '../../../../resources_manager/managers/ActionManager'
 import { ResponseManager } from '../../../../resources_manager/managers/ResponseManager'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
-import type { DataManager } from '../../../../resources_manager/managers/DataManager'
 import type { SettingsDataset, SettingsUserProfile } from '../../types'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import { ApiError } from '../../../../lib/api/ApiClient'
+import { useSettingsStore, type SettingsDatasetUpdater } from '../../../../store/settings/useSettingsStore'
 
 type FillUserAccountMode = 'create' | 'manage' | 'self'
 
@@ -52,9 +50,9 @@ export function FillUserAccount({
   const accountService = useMemo(() => new AccountSettingsService(), [])
   const responseManager = useMemo(() => new ResponseManager(), [])
   const { showMessage } = useMessageManager()
-  const settingsDataManager = useResourceManager<DataManager<SettingsDataset>>('settingsDataManager')
-  const settingsSnapshot = useDataManager(settingsDataManager)
-  const currentUserFromDataset = settingsSnapshot.dataset?.UserInfo ?? null
+  const dataset = useSettingsStore((state) => state.dataset)
+  const updateDataset = useSettingsStore((state) => state.updateDataset)
+  const currentUserFromDataset = dataset?.UserInfo ?? null
 
   const targetUser = useMemo<SettingsUserProfile | null>(() => {
     if (payload?.user) {
@@ -250,7 +248,7 @@ export function FillUserAccount({
         await handleCreate(formState, {
           accountService,
           responseManager,
-          settingsDataManager,
+          updateDataset,
           showMessage,
         })
         onClose()
@@ -258,7 +256,7 @@ export function FillUserAccount({
         const normalized = await handleUpdate({
           accountService,
           responseManager,
-          settingsDataManager,
+          updateDataset,
           showMessage,
           formState,
           changedFields: changedFields ?? {},
@@ -287,10 +285,10 @@ export function FillUserAccount({
     isSubmitting,
     onClose,
     responseManager,
-    settingsDataManager,
     showMessage,
     targetUser,
     validateForm,
+    updateDataset,
   ])
 
   useEffect(() => {
@@ -525,11 +523,11 @@ async function handleCreate(
   context: {
     accountService: AccountSettingsService
     responseManager: ResponseManager
-    settingsDataManager: DataManager<SettingsDataset>
+    updateDataset: SettingsDatasetUpdater
     showMessage: (payload: { status: number; message: string }) => void
   },
 ): Promise<SettingsUserProfile> {
-  const { accountService, responseManager, settingsDataManager, showMessage } = context
+  const { accountService, responseManager, updateDataset, showMessage } = context
   const payload = responseManager.sanitizePayload({
     username: formState.username,
     email: formState.email,
@@ -552,7 +550,7 @@ async function handleCreate(
     team: null,
   }
   const normalized = normalizeUserPayload(responseManager.mergeWithFallback(resolved, fallback))
-  persistUser(settingsDataManager, normalized, { appendIfMissing: true })
+  persistUser(updateDataset, normalized, { appendIfMissing: true })
   showMessage({
     status: response.status ?? 200,
     message: response.message ?? 'User created successfully.',
@@ -563,7 +561,7 @@ async function handleCreate(
 async function handleUpdate(options: {
   accountService: AccountSettingsService
   responseManager: ResponseManager
-  settingsDataManager: DataManager<SettingsDataset>
+  updateDataset: SettingsDatasetUpdater
   showMessage: (payload: { status: number; message: string }) => void
   formState: UserFormState
   changedFields: Partial<UpdateUserPayloadFields>
@@ -573,7 +571,7 @@ async function handleUpdate(options: {
   const {
     accountService,
     responseManager,
-    settingsDataManager,
+    updateDataset,
     showMessage,
     formState,
     changedFields,
@@ -598,7 +596,7 @@ async function handleUpdate(options: {
     team: targetUser.rawTeam ?? null,
   }
   const normalized = normalizeUserPayload(responseManager.mergeWithFallback(resolved, fallback))
-  persistUser(settingsDataManager, normalized, {
+  persistUser(updateDataset, normalized, {
     appendIfMissing: true,
     updateUserInfo: options.updateUserInfo,
   })
@@ -610,11 +608,11 @@ async function handleUpdate(options: {
 }
 
 function persistUser(
-  manager: DataManager<SettingsDataset>,
+  updateDataset: SettingsDatasetUpdater,
   user: SettingsUserProfile,
   options?: { appendIfMissing?: boolean; updateUserInfo?: boolean },
 ) {
-  manager.updateDataset((prev) => {
+  updateDataset((prev) => {
     const base: SettingsDataset = prev ?? { UserInfo: null, UsersList: [], MessageTemplates: null }
     const list = Array.isArray(base.UsersList) ? [...base.UsersList] : []
     const index = list.findIndex((candidate) => candidate.id === user.id)

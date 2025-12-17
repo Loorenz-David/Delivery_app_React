@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '../../../components/ui/Button'
 import { TextField } from '../../../components/ui/TextField'
 import { ApiError } from '../../../lib/api/ApiClient'
+import { useMessageManager } from '../../../message_manager/MessageManagerContext'
 import { useAuth } from '../context/AuthContext'
 import { authService } from '../api/authService'
 import type { LoginPayload, RegisterPayload } from '../types'
@@ -18,6 +19,7 @@ interface AuthFormProps {
 const DEFAULT_FORM = {
   email: '',
   password: '',
+  confirmPassword: '',
   name: '',
   teamName: '',
 }
@@ -28,11 +30,30 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [formState, setFormState] = useState(DEFAULT_FORM)
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { showMessage } = useMessageManager()
 
   useEffect(() => {
     setFeedback(null)
     setFormState({ ...DEFAULT_FORM })
   }, [mode])
+
+  const passwordMismatch =
+    mode === 'register' &&
+    formState.confirmPassword !== '' &&
+    formState.password !== formState.confirmPassword
+
+  useEffect(() => {
+    if (mode !== 'register') return
+
+    if (passwordMismatch) {
+      setFeedback((prev) =>
+        prev?.message === 'Passwords do not match.' ? prev : { type: 'error', message: 'Passwords do not match.' },
+      )
+      return
+    }
+
+    setFeedback((prev) => (prev?.message === 'Passwords do not match.' ? null : prev))
+  }, [mode, passwordMismatch])
 
   const buttonLabel = mode === 'login' ? 'Access dashboard' : 'Create account'
   const helperLabel =
@@ -49,18 +70,28 @@ export function AuthForm({ mode }: AuthFormProps) {
       return true
     }
 
-    if (mode === 'register' && (!formState.name || !formState.teamName)) {
+    if (mode === 'register' && (!formState.name || !formState.confirmPassword)) {
+      return true
+    }
+
+    if (passwordMismatch) {
       return true
     }
 
     return false
-  }, [formState, mode])
+  }, [formState, mode, passwordMismatch])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (isSubmitting) return
+
+    if (mode === 'register' && passwordMismatch) {
+      setFeedback({ type: 'error', message: 'Passwords do not match.' })
+      return
+    }
+
     setFeedback(null)
-    
-    if(isSubmitting) return;
+
     setIsSubmitting(true)
 
     try {
@@ -78,18 +109,17 @@ export function AuthForm({ mode }: AuthFormProps) {
           email: formState.email.trim(),
           password: formState.password,
           name: formState.name.trim(),
-          team: { name: formState.teamName.trim() },
         }
 
         await authService.register(payload)
-        setFeedback({
-          type: 'success',
-          message: 'Registration submitted. You can now sign in once your account is approved.',
-        })
+        showMessage({ status: 'success', message: 'Registration Successful. You can now sign in.' })
+        navigate('/auth/login')
       }
     } catch (error) {
+      
       const message =
         error instanceof ApiError ? error.message : 'Something went wrong while processing your request. Try again.'
+        
       setFeedback({ type: 'error', message })
     } finally {
       setIsSubmitting(false)
@@ -137,14 +167,16 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         {mode === 'register' && (
           <TextField
-            label="Team name"
-            name="teamName"
-            value={formState.teamName}
-            onChange={handleChange('teamName')}
-            placeholder="Beyo Team"
-            helperText="This creates your workspace; you can invite other users afterward."
+            label="Confirm password"
+            type="password"
+            name="confirmPassword"
+            autoComplete="new-password"
+            value={formState.confirmPassword}
+            onChange={handleChange('confirmPassword')}
+            placeholder="••••••••"
           />
         )}
+
       </div>
 
       {feedback && (

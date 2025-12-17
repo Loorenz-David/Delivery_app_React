@@ -6,11 +6,10 @@ import { ChevronDownIcon, DragHandleIcon, ItemIcon, TimeIcon } from "../../../..
 import { cn } from '../../../../lib/utils/cn'
 
 import type { OrderPayload } from '../../types/backend'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
 import type { ItemStateOption } from '../../api/optionServices'
 import { deriveOrderStateFromItems } from '../../utils/orderState'
 import { ItemCard } from "./ItemCard";
+import { useHomeStore } from '../../../../store/home/useHomeStore'
 
 
 
@@ -48,13 +47,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   const { className: dragHandleClassName, onDragStart, onDragEnd, ...restDragHandle } = dragHandleProps ?? {}
   const cardRef = useRef<HTMLDivElement>(null)
   const dragPreviewRef = useRef<HTMLElement | null>(null)
-  const optionDataManager = useResourceManager('optionDataManager')
-  const optionSnapshot = useDataManager(optionDataManager)
+  const itemStatesMap = useHomeStore((state) => state.itemStatesMap)
   const formattedArrivalTime = useMemo(() => formatExpectedTime(order.expected_arrival_time), [order.expected_arrival_time])
   const derivedOrderState = useMemo(() => {
-    const stateMap = optionSnapshot.dataset?.item_states_map as Record<number, ItemStateOption> | undefined
+    const stateMap = itemStatesMap as Record<number, ItemStateOption> | undefined
     return deriveOrderStateFromItems(order.delivery_items ?? [], stateMap ?? {})
-  }, [order.delivery_items, optionSnapshot.dataset?.item_states_map])
+  }, [itemStatesMap, order.delivery_items])
   const orderStateLabel = derivedOrderState?.name ?? 'Pending'
   const orderStateColor = derivedOrderState?.color ?? '#facc15'
   const items = order.delivery_items ?? []

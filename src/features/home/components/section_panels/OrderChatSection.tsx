@@ -1,17 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useSectionPanel } from '../../contexts/SectionPanelContext'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { SendIcon } from '../../../../assets/icons'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
+import { CloseIcon, SendIcon } from '../../../../assets/icons'
 
 import { BasicButton } from '../../../../components/buttons/BasicButton'
 import { ProfilePicture } from '../../../../components/forms/ProfilePicture'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import { ChatService } from '../../api/chatService'
 import { sessionStorage } from '../../../../lib/storage/sessionStorage'
-import type { ChatNote, OrderPayload, RoutePayload } from '../../types/backend'
+import type { ChatNote, OrderPayload } from '../../types/backend'
 
 import type { ActionPayload } from '../../../../resources_manager/managers/ActionManager'
+import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
+import { useMobileSectionHeader } from '../../contexts/MobileSectionHeaderContext'
 
 
 interface ChatOrderSectionProps{
@@ -25,36 +27,40 @@ const ChatSection = ({
 }:ChatOrderSectionProps) => {
      // Use Contexts
     const {setHeaderActions, setInteractionActions} = useSectionPanel()
-    const routesDataManager = useResourceManager('routesDataManager')
-    const optionDataManager = useResourceManager('optionDataManager')
+    const isMobile = useResourceManager('isMobileObject')
+    const mobileHeader = useMobileSectionHeader()
+    const registerHeader = mobileHeader?.registerHeader
+    const updateHeader = mobileHeader?.updateHeader
+    const removeHeader = mobileHeader?.removeHeader
+    const mobileHeaderIdRef = useRef<string | null>(null)
+    const lastHeaderStateRef = useRef<{ title: string; messages: number; orderKey: string | null } | null>(null)
+
     const { showMessage } = useMessageManager()
     const chatService = useMemo(() => new ChatService(), [])
     const [draft, setDraft] = useState('')
     const [isSending, setIsSending] = useState(false)
     const [messages, setMessages] = useState<ChatNote[]>([])
+    const selectedRouteId = useHomeStore((state) => state.selectedRouteId)
+    const selectedOrderId = useHomeStore((state) => state.selectedOrderId)
+    const driversMap = useHomeStore((state) => state.driversMap)
+    const { findRouteById, findOrderById, updateOrderInRoute, selectOrder, selectRoute } = useHomeStore.getState()
 
     const payloadRecord = payload as Record<string, unknown> | undefined
     const payloadRouteId = typeof payloadRecord?.['routeId'] === 'number' ? (payloadRecord['routeId'] as number) : undefined
     const payloadOrderId = typeof payloadRecord?.['orderId'] === 'number' ? (payloadRecord['orderId'] as number) : undefined
 
-    const selectedRoute = routesDataManager.getActiveSelection<RoutePayload>('SelectedRoute')
-    const selectedOrder = routesDataManager.getActiveSelection<OrderPayload>('SelectedOrder')
-    const resolvedRouteId =
-        (typeof selectedOrder?.meta?.['routeId'] === 'number' ? (selectedOrder.meta?.['routeId'] as number) : undefined) ??
-        (typeof selectedRoute?.id === 'number' ? (selectedRoute.id as number) : undefined) ??
-        payloadRouteId ??
-        null
+    const resolvedRouteId = selectedRouteId ?? payloadRouteId ?? null
     const route =
-        selectedRoute?.data ??
-        (resolvedRouteId != null
-            ? routesDataManager.find<RoutePayload>(resolvedRouteId, { collectionKey: 'routes', targetKey: 'id' }) ?? null
-            : null)
-    const resolvedOrderId = (typeof selectedOrder?.id === 'number' ? (selectedOrder.id as number) : undefined) ?? payloadOrderId
+        resolvedRouteId != null
+            ? findRouteById(resolvedRouteId) ?? null
+            : null
+    const resolvedOrderId = selectedOrderId ?? payloadOrderId ?? null
     const order =
-        selectedOrder?.data ??
-        (resolvedOrderId != null
-            ? route?.delivery_orders?.find((entry: OrderPayload) => entry.id === resolvedOrderId) ?? null
-            : null)
+        resolvedOrderId != null
+            ? findOrderById(resolvedOrderId, resolvedRouteId) ??
+              route?.delivery_orders?.find((entry: OrderPayload) => entry.id === resolvedOrderId) ??
+              null
+            : null
 
     const notes = useMemo(() => {
         const entries: ChatNote[] = Array.isArray(order?.notes_chat) ? (order.notes_chat as ChatNote[]) : []
@@ -71,25 +77,107 @@ const ChatSection = ({
     }, [notes, order?.id])
 
     useEffect(() => {
-        if (setHeaderActions) {
-            setHeaderActions([
-                <BasicButton
-                    key="close-chat"
-                    params={{ variant: 'secondary', onClick: onClose }}
-                    children={
-                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text)]">
-                            Close
-                        </div>
-                    }
-                />,
-            ])
+        if (!setHeaderActions || !setInteractionActions) {
+            return
         }
-        if (setInteractionActions) {
+        if (isMobile?.isMobile) {
+            setHeaderActions([])
             setInteractionActions([])
+            return
         }
-    }, [onClose, setHeaderActions, setInteractionActions])
+        setHeaderActions([
+            <BasicButton
+                key="close-chat"
+                params={{ variant: 'secondary', onClick: onClose }}
+                children={
+                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text)]">
+                        Close
+                    </div>
+                }
+            />,
+        ])
+        setInteractionActions([])
+    }, [isMobile?.isMobile, onClose, setHeaderActions, setInteractionActions])
 
-    const driversMap = optionDataManager.getDataset()?.drivers_map as Record<string | number, any> | undefined
+    useEffect(() => {
+        if (!removeHeader) {
+            return
+        }
+        return () => {
+            if (mobileHeaderIdRef.current) {
+                removeHeader(mobileHeaderIdRef.current)
+                mobileHeaderIdRef.current = null
+                lastHeaderStateRef.current = null
+            }
+        }
+    }, [removeHeader])
+
+    useEffect(() => {
+        if (!registerHeader || !updateHeader || !removeHeader) {
+            return
+        }
+        if (!isMobile?.isMobile) {
+            if (mobileHeaderIdRef.current) {
+                removeHeader(mobileHeaderIdRef.current)
+                mobileHeaderIdRef.current = null
+                lastHeaderStateRef.current = null
+            }
+            return
+        }
+
+        const headerTitle = order ? `Chat with ${order.client_first_name ?? 'client'}` : 'Chat'
+        const secondaryContent = order ? (
+            <div className="flex w-full items-center justify-between gap-2">
+                <span className="truncate text-sm font-semibold text-[var(--color-text)]">Order #{order.id}</span>
+                <span className="text-xs text-[var(--color-muted)]">{messages.length} messages</span>
+            </div>
+        ) : (
+            <span className="text-sm text-[var(--color-muted)]">Open an order to view chat.</span>
+        )
+
+        const menuActions = [
+            {
+                label: 'Close',
+                icon: <CloseIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: onClose,
+            },
+        ]
+
+        const nextState = {
+            title: headerTitle,
+            messages: messages.length,
+            orderKey: order ? `${order.id}` : 'no-order',
+        }
+        const prevState = lastHeaderStateRef.current
+
+        if (!mobileHeaderIdRef.current) {
+            mobileHeaderIdRef.current = registerHeader({
+                title: headerTitle,
+                onBack: onClose,
+                menuActions,
+                secondaryContent,
+            })
+            lastHeaderStateRef.current = nextState
+        } else {
+            const changed =
+                !prevState ||
+                prevState.title !== nextState.title ||
+                prevState.messages !== nextState.messages ||
+                prevState.orderKey !== nextState.orderKey
+
+            if (changed) {
+                updateHeader(mobileHeaderIdRef.current, {
+                    title: headerTitle,
+                    onBack: onClose,
+                    menuActions,
+                    secondaryContent,
+                })
+                lastHeaderStateRef.current = nextState
+            }
+        }
+    }, [isMobile?.isMobile, messages.length, onClose, order, registerHeader, removeHeader, updateHeader])
+
+   
 
     const resolveUser = useCallback(
         (id: number | string | null | undefined) => {
@@ -172,44 +260,13 @@ const ChatSection = ({
             await chatService.appendChat({ id: order.id, chat: next })
             setMessages((prev) => [...prev, next])
 
-            routesDataManager.updateDataset((prev) => {
-                if (!prev || !Array.isArray(prev.routes)) return prev
-                const updatedRoutes = prev.routes.map((routeEntry) => {
-                    if (routeEntry.id !== resolvedRouteId) return routeEntry
-                    const updatedOrders = (routeEntry.delivery_orders ?? []).map((ord) => {
-                        if (ord.id !== order.id) return ord
-                        const existingChat = Array.isArray(ord.notes_chat) ? ord.notes_chat : []
-                        return {
-                            ...ord,
-                            notes_chat: [...existingChat, next],
-                        }
-                    })
-                    return { ...routeEntry, delivery_orders: updatedOrders }
-                })
-                return { ...prev, routes: updatedRoutes }
-            })
-            // refresh active route selection with latest orders for consumers that rely on it
-            const activeRoute = routesDataManager.getActiveSelection<RoutePayload>('SelectedRoute')
-            if (activeRoute && activeRoute.id === resolvedRouteId) {
-                const updatedRouteData = routesDataManager.getDataset()?.routes?.find((r) => r.id === resolvedRouteId)
-                if (updatedRouteData) {
-                    routesDataManager.setActiveSelection('SelectedRoute', {
-                        id: resolvedRouteId ?? null,
-                        data: updatedRouteData,
-                        meta: activeRoute.meta,
-                    })
-                }
-            }
-
             const updatedOrder = {
                 ...order,
                 notes_chat: [...(Array.isArray(order.notes_chat) ? order.notes_chat : []), next],
             }
-            routesDataManager.setActiveSelection('SelectedOrder', {
-                id: order.id,
-                data: updatedOrder,
-                meta: selectedOrder?.meta,
-            })
+            updateOrderInRoute(resolvedRouteId ?? order.route_id ?? 0, order.id, () => updatedOrder)
+            selectRoute(resolvedRouteId ?? order.route_id ?? null, { routeId: resolvedRouteId ?? order.route_id ?? null })
+            selectOrder(order.id, { routeId: resolvedRouteId ?? order.route_id ?? null })
 
             setDraft('')
             
@@ -226,7 +283,10 @@ const ChatSection = ({
     }
 
     return (
-        <div className="flex h-full flex-col gap-3 py-3">
+        <div
+            className="flex h-full flex-col gap-3 py-3 relative"
+
+        >
            
             <div className="flex-1 overflow-y-auto rounded-2xl border border-[var(--color-border)] bg-white p-3 shadow-sm">
                 {messages.length === 0 ? (
@@ -246,7 +306,7 @@ const ChatSection = ({
                     </div>
                 )}
             </div>
-            <div className="flex items-center gap-3 rounded-md border border-[var(--color-border)] bg-white p-3 shadow-sm">
+            <div className=" flex  items-center gap-3 rounded-md border border-[var(--color-border)] bg-white p-3 shadow-sm">
                 <textarea
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}

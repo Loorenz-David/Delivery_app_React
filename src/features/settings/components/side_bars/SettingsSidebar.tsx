@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BasicButton } from '../../../../components/buttons/BasicButton'
+import { apiClient } from '../../../../lib/api/ApiClient'
 
 interface SettingsSidebarOption {
   key: string
@@ -54,6 +55,20 @@ export function SettingsSidebar({ options, activeKey, onSelect }: SettingsSideba
           })}
         </ul>
       </nav>
+      <div className="border-t border-[var(--color-border)] px-6 py-6">
+        <BasicButton
+          params={{
+            variant: 'secondary',
+            className: 'w-full',
+            onClick: () => {
+              apiClient.replaceTokens('', '')
+              navigate('/auth')
+            },
+          }}
+        >
+          Log out
+        </BasicButton>
+      </div>
     </aside>
   )
 }

@@ -14,6 +14,8 @@ export interface DriverOption {
   username: string
   profile_picture?: string | null
   phone_number?: string | null
+  avatar_url?: string | null
+  email?: string | null
 }
 
 export interface ItemStateOption {

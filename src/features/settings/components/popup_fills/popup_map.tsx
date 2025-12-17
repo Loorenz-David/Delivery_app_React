@@ -6,6 +6,7 @@ import { FillItemPosition } from './FillItemPosition'
 import { FillItemType } from './FillItemType'
 import { FillItemCategory } from './FillItemCategory'
 import { FillItemProperty } from './FillItemProperty'
+import LocationPickerPopup from '../../../../google_maps/components/LocationPickerPopup'
 
 export const popupMap = {
     FillUserAccount: FillUserAccount,
@@ -15,4 +16,5 @@ export const popupMap = {
     FillItemType,
     FillItemCategory,
     FillItemProperty,
+    MapLocationPicker: LocationPickerPopup,
 }

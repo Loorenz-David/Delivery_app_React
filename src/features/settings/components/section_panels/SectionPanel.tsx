@@ -4,12 +4,10 @@ import type { ReactNode } from 'react'
 import { BasicButton } from '../../../../components/buttons/BasicButton'
 import { SettingsSearchBar } from '../ui/SearchBar'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import type { DataManager } from '../../../../resources_manager/managers/DataManager'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
 import type { SettingsDataset } from '../../types'
+import { useSettingsStore } from '../../../../store/settings/useSettingsStore'
 
-type ResponseWithItems<TItem> = {
+export type ResponseWithItems<TItem> = {
   data?: {
     items?: TItem[]
   }
@@ -20,7 +18,7 @@ type FilterOption = {
   label: string
 }
 
-interface SectionPanelServices<TResponse, TQuery extends Record<string, unknown>> {
+export interface SectionPanelServices<TResponse, TQuery extends Record<string, unknown>> {
   queryAllService: () => Promise<ResponseWithItems<TResponse>>
   queryByInputService: (queryFilters: TQuery) => Promise<ResponseWithItems<TResponse>>
 }
@@ -54,6 +52,8 @@ interface SectionPanelProps<
     value: string
     filter?: string
   } | null
+  hideCreateButton?: boolean
+  headerAction?: ReactNode
 }
 
 export function SectionPanel<
@@ -81,12 +81,13 @@ export function SectionPanel<
   listClassName = 'flex flex-col gap-3',
   searchBarClassName,
   searchInjection,
+  hideCreateButton = false,
+  headerAction,
 }: SectionPanelProps<TItem, TQuery, TResponse>) {
-  const settingsDataManager = useResourceManager<DataManager<SettingsDataset>>('settingsDataManager')
-  const snapshot = useDataManager(settingsDataManager)
   const { showMessage } = useMessageManager()
   const { queryAllService, queryByInputService } = services
-  const datasetRecord = snapshot.dataset as Record<string, unknown> | null
+  const datasetRecord = useSettingsStore((state) => state.dataset as Record<string, unknown> | null)
+  const updateDataset = useSettingsStore((state) => state.updateDataset)
   const cachedItems = useMemo(
     () => (datasetRecord?.[dataManagerKey] as TItem[] | null | undefined) ?? null,
     [dataManagerKey, datasetRecord],
@@ -111,7 +112,7 @@ export function SectionPanel<
       const response = await queryAllService()
       const normalized = normalizeItems(response.data?.items ?? undefined)
       setItems(normalized)
-      settingsDataManager.updateDataset((prev) => {
+      updateDataset((prev) => {
         const next = { ...(prev ?? {}) } as SettingsDataset
         next[dataManagerKey] = normalized
         return next
@@ -122,10 +123,11 @@ export function SectionPanel<
     } finally {
       setIsLoading(false)
     }
-  }, [dataManagerKey, normalizeItems, queryAllService, settingsDataManager, showMessage])
+  }, [dataManagerKey, normalizeItems, queryAllService, showMessage, updateDataset])
 
   useEffect(() => {
-    if (cachedItems && cachedItems.length > 0) {
+    // Treat an empty array as a valid, already-fetched state to avoid re-query loops.
+    if (cachedItems !== null) {
       setItems(cachedItems)
       return
     }
@@ -182,15 +184,20 @@ export function SectionPanel<
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-white px-5 py-4">
-        <BasicButton
-          params={{
-            variant: 'primary',
-            onClick: onCreate,
-          }}
-        >
-          {createButtonLabel}
-        </BasicButton>
-        <p className="text-sm text-[var(--color-muted)]">{counterValue}</p>
+        {hideCreateButton ? null : (
+          <BasicButton
+            params={{
+              variant: 'primary',
+              onClick: onCreate,
+            }}
+          >
+            {createButtonLabel}
+          </BasicButton>
+        )}
+        <div className="flex items-center gap-3">
+          {headerAction ?? null}
+          <p className="text-sm text-[var(--color-muted)]">{counterValue}</p>
+        </div>
       </div>
 
       {isLoading ? (

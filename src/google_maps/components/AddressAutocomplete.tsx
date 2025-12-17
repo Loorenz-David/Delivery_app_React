@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
 
-import { MapPinIcon, LoaderIcon, LocationIcon } from '../../assets/icons'
+import { PinLocationMapIcon, LoaderIcon, LocationIcon } from '../../assets/icons'
+import { BasicButton } from '../../components/buttons/BasicButton'
 
 import type { InputWarningController } from '../../components/forms/useInputWarning'
 import { usePlacesAutocomplete } from '../hooks/usePlacesAutocomplete'
@@ -204,18 +205,18 @@ export function AddressAutocomplete({
   }, [handleSelectSuggestion, isDropdownVisible, predictions.isLoading, suggestions])
 
   const mapPickerButton = enableManualPicker ? (
-    <button
-      type="button"
-      className="cursor-pointer ml-2 flex h-8 w-8 items-center justify-center border border-gray-300 rounded-md text-[var(--color-muted)] transition hover:bg-[var(--color-accent)]"
-      onClick={(event) => {
-        event.preventDefault()
-        openMapPicker()
+    <BasicButton
+      params={{
+        variant: 'rounded',
+        onClick: () => {
+          openMapPicker()
+        },
+        ariaLabel: 'Pick location on map',
+        className: 'ml-2 h-8 w-8',
       }}
-      onMouseDown={(event) => event.preventDefault()}
-      aria-label="Pick location on map"
     >
-      <MapPinIcon className="app-icon h-5 w-5" />
-    </button>
+      <PinLocationMapIcon className="app-icon-dark h-5 w-5" />
+    </BasicButton>
   ) : null
 
   const hasAdornment = enableManualPicker || Boolean(rightAdornment)

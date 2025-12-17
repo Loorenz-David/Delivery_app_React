@@ -14,18 +14,20 @@ export const MapPanel = () => {
     }
     ;(async () => {
       try {
-        const isNotMobile = window.innerWidth > 500
+        const isMobileViewport = window.innerWidth < 1000
+        const showDesktopControls = !isMobileViewport
         await mapManager.initialize(container, {
           center: { lat: 40.7128, lng: -74.006 },
           zoom: 12,
           theme: 'dark',
           controls: {
-            zoomControl: isNotMobile,
-            mapTypeControl: isNotMobile,
-            fullscreenControl: isNotMobile,
-            streetViewControl: isNotMobile,
+            zoomControl: showDesktopControls,
+            mapTypeControl: showDesktopControls,
+            fullscreenControl: showDesktopControls,
+            streetViewControl: showDesktopControls,
             customControls: {
-              locateButton: isNotMobile,
+              locateButton: true,
+              mapTypeToggle: isMobileViewport,
             },
           },
         })

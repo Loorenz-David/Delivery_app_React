@@ -1,12 +1,10 @@
 import { useCallback, useMemo } from 'react'
 
-import { ApiError } from '../../../lib/api/ApiClient'
-import { useMessageManager } from '../../../message_manager/MessageManagerContext'
-import { useResourceManager } from '../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../resources_manager/managers/DataManager'
 import { UpdateItemService } from '../api/deliveryService'
 import { deriveOrderStateFromItems } from '../utils/orderState'
 import type { ItemPayload, OrderPayload, RoutePayload } from '../types/backend'
+import { useHomeStore } from '../../../store/home/useHomeStore'
+import { useResourceManager } from '../../../resources_manager/resourcesManagerContext'
 
 interface UseItemActionsArgs {
   route?: RoutePayload | null
@@ -16,13 +14,10 @@ interface UseItemActionsArgs {
 type ItemActionHandler = (order: OrderPayload | null, action: string, itemId: number, data?: unknown) => void
 
 export function useItemActions({ route, routeId }: UseItemActionsArgs): { handleItemAction: ItemActionHandler } {
-  const routesDataManager = useResourceManager('routesDataManager')
-  const optionDataManager = useResourceManager('optionDataManager')
   const popupManager = useResourceManager('popupManager')
-  const optionSnapshot = useDataManager(optionDataManager)
-  const { showMessage } = useMessageManager()
   const updateItemService = useMemo(() => new UpdateItemService(), [])
   const resolvedRouteId = route?.id ?? routeId ?? null
+  const { updateOrderInRoute, selectOrder, findRouteById, mapItemStates } = useHomeStore.getState()
 
   const applyItemUpdate = useCallback(
     (order: OrderPayload, itemId: number, pendingFields: Partial<ItemPayload>, updatedItem?: ItemPayload | null) => {
@@ -30,13 +25,7 @@ export function useItemActions({ route, routeId }: UseItemActionsArgs): { handle
       if (!order || targetRouteId == null) {
         return
       }
-      const baseRoute =
-        route ??
-        routesDataManager.find<RoutePayload>(targetRouteId, {
-          collectionKey: 'routes',
-          targetKey: 'id',
-        }) ??
-        null
+      const baseRoute = route ?? findRouteById(targetRouteId)
       if (!baseRoute) {
         return
       }
@@ -44,50 +33,17 @@ export function useItemActions({ route, routeId }: UseItemActionsArgs): { handle
       const updatedItems = (order.delivery_items ?? []).map((item) =>
         item.id === itemId ? { ...item, ...pendingFields, ...(updatedItem ?? {}) } : item,
       )
-      const derivedOrderState = deriveOrderStateFromItems(updatedItems, optionSnapshot.dataset?.item_states_map ?? {})
+      const derivedOrderState = deriveOrderStateFromItems(updatedItems, mapItemStates())
       const derivedOrderStateName = derivedOrderState?.name ?? null
       const nextOrder: OrderPayload = {
         ...order,
         order_state: derivedOrderStateName ?? order.order_state ?? null,
         delivery_items: updatedItems,
       }
-      const nextOrders = (baseRoute.delivery_orders ?? []).map((entry) =>
-        entry.id === nextOrder.id ? nextOrder : entry,
-      )
-
-      routesDataManager.updateDataset((dataset) => {
-        if (!dataset) {
-          return dataset
-        }
-        const nextRoutes = dataset.routes.map((entry) =>
-          entry.id === targetRouteId
-            ? {
-                ...entry,
-                delivery_orders: nextOrders,
-              }
-            : entry,
-        )
-        return {
-          ...dataset,
-          routes: nextRoutes,
-        }
-      })
-
-      routesDataManager.setActiveSelection('SelectedRoute', {
-        id: targetRouteId,
-        data: {
-          ...baseRoute,
-          delivery_orders: nextOrders,
-        },
-      })
-
-      routesDataManager.setActiveSelection('SelectedOrder', {
-        id: nextOrder.id,
-        data: nextOrder,
-        meta: { routeId: targetRouteId },
-      })
+      updateOrderInRoute(targetRouteId, nextOrder.id, () => nextOrder)
+      selectOrder(nextOrder.id, { routeId: targetRouteId })
     },
-    [optionSnapshot.dataset?.item_states_map, route, routeId, routesDataManager],
+    [findRouteById, mapItemStates, route, routeId, selectOrder, updateOrderInRoute],
   )
 
   const updateItemInline = useCallback(
@@ -106,17 +62,11 @@ export function useItemActions({ route, routeId }: UseItemActionsArgs): { handle
             ? ((payload as { instance: ItemPayload }).instance ?? null)
             : (payload as ItemPayload | null | undefined)
         applyItemUpdate(order, itemId, fields, resolvedItem)
-        showMessage({
-          status: response.status ?? 200,
-          message: response.message ?? 'Item updated successfully.',
-        })
       } catch (error) {
-        const status = error instanceof ApiError ? error.status : 500
-        const message = error instanceof ApiError && error.message ? error.message : 'Failed to update item.'
-        showMessage({ status, message })
+        console.error('Failed to update item inline', error)
       }
     },
-    [applyItemUpdate, showMessage, updateItemService],
+    [applyItemUpdate, updateItemService],
   )
 
   const handleItemAction = useCallback<ItemActionHandler>(

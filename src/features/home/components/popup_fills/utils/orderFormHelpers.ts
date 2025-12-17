@@ -1,6 +1,5 @@
-import type { AddressPayload, ItemPayload, OrderPayload, RoutePayload, RoutesPack } from '../../../types/backend'
+import type { AddressPayload, ItemPayload, OrderPayload, RoutePayload } from '../../../types/backend'
 import type { PhoneValue } from '../../../../../components/forms/PhoneField'
-import type { DataManager } from '../../../../../resources_manager/managers/DataManager'
 import type { OrderItemCreatePayload } from '../../../api/deliveryService'
 import type { ItemStateOption, ItemStatePosition } from '../../../api/optionServices'
 
@@ -40,6 +39,7 @@ export interface OrderFormState {
   secondary_phone: PhoneValue
   delivery_after: string
   delivery_before: string
+  note: string
   termsAccepted: boolean
   delivery_items: DraftItem[]
 }
@@ -81,9 +81,20 @@ export const createEmptyOrderState = (): OrderFormState => ({
   secondary_phone: { prefix: DEFAULT_PREFIX, number: '' },
   delivery_after: '',
   delivery_before: '',
+  note: '',
   termsAccepted: false,
   delivery_items: [],
 })
+
+export const formatNoteTimestamp = (date: Date = new Date()): string => {
+  const pad = (value: number) => value.toString().padStart(2, '0')
+  const year = date.getFullYear()
+  const month = pad(date.getMonth() + 1)
+  const day = pad(date.getDate())
+  const hours = pad(date.getHours())
+  const minutes = pad(date.getMinutes())
+  return `${year}/${month}/${day}-${hours}:${minutes}`
+}
 
 export function normalizeDraftLabelValue(value: DraftItem['item_category']): string {
   if (!value) {
@@ -223,6 +234,7 @@ interface BuildOrderPayloadOptions {
   routeId: number
   fallbackOrderId?: number
   deliveryArrangement: number
+  senderId?: number | string | null
 }
 
 export function buildOrderPayloadFromState(state: OrderFormState, options: BuildOrderPayloadOptions): OrderPayload {
@@ -231,6 +243,17 @@ export function buildOrderPayloadFromState(state: OrderFormState, options: Build
   const items = filteredItems.map((item, index) =>
     convertDraftItemToPayload(item, fallbackOrderId, getItemIdentifier(item) || index + 1),
   )
+  const notesChat =
+    state.note.trim() === ''
+      ? []
+      : [
+          {
+            timestamp: formatNoteTimestamp(),
+            message: state.note.trim(),
+            sender: options.senderId ?? null,
+            seenBy: [],
+          },
+        ]
 
   return {
     id: fallbackOrderId,
@@ -244,7 +267,7 @@ export function buildOrderPayloadFromState(state: OrderFormState, options: Build
     client_secondary_phone: state.secondary_phone,
     client_address: state.client_address as AddressPayload,
     client_language: state.client_language,
-    notes_chat: [],
+    notes_chat: Array.isArray(notesChat) ? (notesChat as any[]) : [],
     expected_arrival_time: '',
     actual_arrival_time: null,
     marketing_messages: false,
@@ -326,6 +349,10 @@ export function convertOrderPayloadToFormState(order: OrderPayload): OrderFormSt
     secondary_phone: order.client_secondary_phone ?? { prefix: DEFAULT_PREFIX, number: '' },
     delivery_after: order.delivery_after ?? '',
     delivery_before: order.delivery_before ?? '',
+    note:
+      Array.isArray((order as any).notes_chat) && (order as any).notes_chat.length
+        ? String((order as any).notes_chat[0].message ?? '')
+        : '',
     termsAccepted: true,
     delivery_items: draftItems,
   }
@@ -349,6 +376,7 @@ export interface OrderSnapshot {
   client_language: string
   delivery_after: string
   delivery_before: string
+  note: string
 }
 
 export interface ItemSnapshot {
@@ -392,6 +420,7 @@ export function buildOrderSnapshot(state: OrderFormState): OrderSnapshot {
     client_language: state.client_language,
     delivery_after: state.delivery_after,
     delivery_before: state.delivery_before,
+    note: state.note.trim(),
   }
 }
 
@@ -527,6 +556,7 @@ export function diffOrderSnapshots(base: OrderSnapshot | null, current: OrderSna
       client_language: current.client_language,
       delivery_after: current.delivery_after,
       delivery_before: current.delivery_before,
+      note: current.note,
     }
   }
   const changed: Record<string, unknown> = {}
@@ -551,144 +581,22 @@ export function areValuesEqual(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b)
 }
 
-export function appendOrderToRoute(manager: DataManager<RoutesPack>, routeId: number, order: OrderPayload): void {
-  manager.updateDataset((dataset) => {
-    if (!dataset) {
-      return dataset
-    }
-    const nextRoutes = dataset.routes.map((route) => {
-      if (route.id !== routeId) {
-        return route
-      }
-      const nextOrders = [...(route.delivery_orders ?? []), order]
-      return {
-        ...route,
-        delivery_orders: nextOrders,
-        total_orders: route.total_orders != null ? route.total_orders + 1 : nextOrders.length,
-        total_items: route.total_items != null ? route.total_items + order.delivery_items.length : route.total_items,
-      }
-    })
-    return {
-      ...dataset,
-      routes: nextRoutes,
-    }
-  })
-
-  const activeSelection = manager.getActiveSelection<RoutePayload>('SelectedRoute')
-  const baseRoute = activeSelection?.data
-  if (activeSelection?.id === routeId && baseRoute) {
-    const nextOrders = [...(baseRoute.delivery_orders ?? []).filter((entry: OrderPayload) => entry.id !== order.id), order]
-    manager.setActiveSelection('SelectedRoute', {
-      id: routeId,
-      data: {
-        ...baseRoute,
-        delivery_orders: nextOrders,
-      },
-    })
-  }
-}
-
-export function replaceOrderInRoute(manager: DataManager<RoutesPack>, routeId?: number | null, order?: OrderPayload | null): void {
-  if (!order) {
-    return
-  }
-  const targetRouteId = routeId ?? order.route_id ?? null
-  if (targetRouteId == null) {
-    return
-  }
-  manager.updateDataset((dataset) => {
-    if (!dataset) {
-      return dataset
-    }
-    const nextRoutes = dataset.routes.map((route) => {
-      if (route.id !== targetRouteId) {
-        return route
-      }
-      const nextOrders = (route.delivery_orders ?? []).map((entry: OrderPayload) => (entry.id === order.id ? order : entry))
-
-      return {
-        ...route,
-        delivery_orders: nextOrders,
-      }
-    })
-    return {
-      ...dataset,
-      routes: nextRoutes,
-    }
-  })
-
-  const activeSelection = manager.getActiveSelection<RoutePayload>('SelectedRoute')
-  if (activeSelection?.id === targetRouteId) {
-    const nextOrders = (activeSelection.data?.delivery_orders ?? []).map((entry: OrderPayload) =>
-      entry.id === order.id ? order : entry,
-    )
-    manager.setActiveSelection('SelectedRoute', {
-      id: targetRouteId,
-      data: {
-        ...(activeSelection.data ?? {}),
-        delivery_orders: nextOrders,
-      },
-    })
-  }
-
-  const activeOrder = manager.getActiveSelection<OrderPayload>('SelectedOrder')
-  if (activeOrder?.id === order.id) {
-    manager.setActiveSelection('SelectedOrder', {
-      id: order.id,
-      data: order,
-      meta: {
-        ...(activeOrder.meta ?? {}),
-        routeId: targetRouteId,
-      },
-    })
-  }
-}
-
-export function removeOrderFromRoute(manager: DataManager<RoutesPack>, routeId: number, orderId: number): void {
-  manager.updateDataset((dataset) => {
-    if (!dataset) {
-      return dataset
-    }
-    const nextRoutes = dataset.routes.map((route) => {
-      if (route.id !== routeId) {
-        return route
-      }
-      const filteredOrders = (route.delivery_orders ?? []).filter((entry) => entry.id !== orderId)
-      return {
-        ...route,
-        delivery_orders: filteredOrders,
-        total_orders: route.total_orders != null ? Math.max(0, route.total_orders - 1) : filteredOrders.length,
-      }
-    })
-    return {
-      ...dataset,
-      routes: nextRoutes,
-    }
-  })
-
-  const activeRoute = manager.getActiveSelection<RoutePayload>('SelectedRoute')
-  if (activeRoute?.id === routeId && activeRoute.data) {
-    const filteredOrders = (activeRoute.data.delivery_orders ?? []).filter((entry) => entry.id !== orderId)
-    manager.setActiveSelection('SelectedRoute', {
-      id: routeId,
-      data: {
-        ...activeRoute.data,
-        delivery_orders: filteredOrders,
-      },
-    })
-  }
-
-  const activeOrder = manager.getActiveSelection<OrderPayload>('SelectedOrder')
-  if (activeOrder?.id === orderId) {
-    manager.removeActiveSelection?.('SelectedOrder')
-  }
-}
-
 export function buildOrderFromExisting(baseOrder: OrderPayload | null, state: OrderFormState): OrderPayload {
   const fallbackId = baseOrder?.id ?? Date.now()
   const items = state.delivery_items
     .filter((item) => item.action !== 'delete')
     .map((item, index) => convertDraftItemToPayload(item, fallbackId, getItemIdentifier(item) || index + 1))
+  const notesChat =
+    state.note.trim() === ''
+      ? baseOrder?.notes_chat ?? []
+      : [
+          {
+            timestamp: formatNoteTimestamp(),
+            message: state.note.trim(),
+            sender: null,
+            seenBy: [],
+          },
+        ]
 
   return {
     ...(baseOrder ?? ({} as OrderPayload)),
@@ -705,6 +613,7 @@ export function buildOrderFromExisting(baseOrder: OrderPayload | null, state: Or
     client_language: state.client_language,
     delivery_after: state.delivery_after || undefined,
     delivery_before: state.delivery_before || undefined,
+    notes_chat: Array.isArray(notesChat) ? (notesChat as any[]) : [],
     delivery_items: items,
   }
 }

@@ -35,6 +35,7 @@ export interface UpdateUserPayload {
     phone_number: PhoneValue | null
     profile_picture: unknown
     password: string
+    role_id: number | null
   }>
 }
 

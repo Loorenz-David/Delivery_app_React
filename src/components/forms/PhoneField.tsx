@@ -9,6 +9,7 @@ import {
   phonePrefixOptions,
 } from '../../constants/dropDownOptions'
 
+const PHONE_PREFIX_DETECTED_KEY = 'defaultPhonePrefixDetected'
 
 export interface PhoneValue {
   prefix: string
@@ -82,6 +83,36 @@ export function PhoneField({ label, value, onChange, required = false }: PhoneFi
     [onChange, persistSelection, value.number],
   )
 
+  const resolveRegionCode = useCallback(() => {
+    try {
+      const locale = Intl.DateTimeFormat().resolvedOptions().locale || navigator.language || ''
+      const match = locale.match(/[-_]([A-Za-z]{2,3})(?:-|$)/)
+      return match ? match[1].toUpperCase() : null
+    } catch (error) {
+      console.warn('Failed to resolve region code from locale', error)
+      return null
+    }
+  }, [])
+
+  const findPrefixForRegion = useCallback(
+    (regionCode: string | null) => {
+      if (!regionCode) return null
+      try {
+        const displayNames = new Intl.DisplayNames([navigator.language || 'en'], { type: 'region' })
+        const regionName = displayNames.of(regionCode)
+        if (!regionName) return null
+        const match = phonePrefixOptions.find((option) =>
+          option.display.toLowerCase().includes(regionName.toLowerCase()),
+        )
+        return match?.value ?? null
+      } catch (error) {
+        console.warn('Failed to map region to country prefix', error)
+        return null
+      }
+    },
+    [],
+  )
+
   useEffect(() => {
     const storedPreference = ensureStoredPrefix()
     if (!storedPreference) {
@@ -95,6 +126,31 @@ export function PhoneField({ label, value, onChange, required = false }: PhoneFi
     }
     onChange({ prefix: storedPreference.prefix, number: value.number })
   }, [ensureStoredPrefix, onChange, value.number, value.prefix])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    const hasDetectedPrefix = window.localStorage.getItem(PHONE_PREFIX_DETECTED_KEY) === 'true'
+    if (hasDetectedPrefix) {
+      return
+    }
+    if (value.prefix !== DEFAULT_PREFIX) {
+      return
+    }
+    const storedPrefix = window.localStorage.getItem(PHONE_PREFIX_STORAGE_KEY)
+    if (storedPrefix && storedPrefix !== DEFAULT_PREFIX) {
+      return
+    }
+    const regionCode = resolveRegionCode()
+    const regionPrefix = findPrefixForRegion(regionCode)
+    if (!regionPrefix || regionPrefix === value.prefix) {
+      return
+    }
+    persistSelection(regionPrefix)
+    window.localStorage.setItem(PHONE_PREFIX_DETECTED_KEY, 'true')
+    onChange({ prefix: regionPrefix, number: value.number })
+  }, [findPrefixForRegion, onChange, persistSelection, resolveRegionCode, value.number, value.prefix])
 
   return (
     <Field label={label} required={required}>

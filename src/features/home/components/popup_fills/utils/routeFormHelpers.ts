@@ -5,6 +5,31 @@ export type RouteFormState = RouteCreatePayload & {
   id?: number
 }
 
+const buildOrdinalSuffix = (day: number) => {
+  const remainder = day % 100
+  if (remainder >= 11 && remainder <= 13) {
+    return 'th'
+  }
+  switch (day % 10) {
+    case 1:
+      return 'st'
+    case 2:
+      return 'nd'
+    case 3:
+      return 'rd'
+    default:
+      return 'th'
+  }
+}
+
+const buildDefaultRouteLabel = (deliveryDate?: string) => {
+  const fallback = new Date()
+  const date = deliveryDate ? new Date(deliveryDate) : fallback
+  const validDate = Number.isNaN(date.getTime()) ? fallback : date
+  const day = validDate.getDate()
+  return `Route for the ${day}${buildOrdinalSuffix(day)}`
+}
+
 export const ROUTE_MUTABLE_FIELDS: Array<keyof RouteCreatePayload> = [
   'route_label',
   'delivery_date',
@@ -18,7 +43,7 @@ export const ROUTE_MUTABLE_FIELDS: Array<keyof RouteCreatePayload> = [
 ]
 
 export const createInitialFormState = (deliveryDate?: string): RouteFormState => ({
-  route_label: '',
+  route_label: buildDefaultRouteLabel(deliveryDate),
   delivery_date: deliveryDate ? formatDateForInput(deliveryDate) : '',
   arrival_time_range: 30,
   driver_id: null,

@@ -141,6 +141,10 @@ export class ActionManager {
     return this.entries
   }
 
+  hasKey(key: string): boolean {
+    return this.entries.some((entry) => entry.key === key && !entry.isClosing)
+  }
+
   renderStack(): ReactNode[] {
     return this.entries.map((entry, index) => {
       const component = this.registry[entry.key]

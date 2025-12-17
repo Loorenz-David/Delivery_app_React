@@ -3,18 +3,17 @@ import type { ReactNode } from 'react'
 
 import { useSectionPanel } from '../../contexts/SectionPanelContext'
 import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
-import { CalendarIcon, GridIcon, OrderIcon } from '../../../../assets/icons'
+import { CalendarIcon, GridIcon, OrderIcon, PlusIcon } from '../../../../assets/icons'
 import { CalendarRoutesView } from '../section_cards/CalendarRoutesView'
 
 import { BasicButton } from '../../../../components/buttons/BasicButton'
 import { DropDown } from '../../../../components/buttons/DropDown'
 import { RouteCard } from '../section_cards/RouteCard'
 import type { OrderPayload, RoutePayload } from '../../types/backend'
-import { DeliveryService } from '../../api/deliveryService'
-import { UpdateOrderService } from '../../api/deliveryService'
+import { DeliveryService, UpdateOrderService } from '../../api/deliveryService'
 
 import type { ActionManager } from '../../../../resources_manager/managers/ActionManager'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
 
 
 interface RoutesSectionProps {
@@ -27,46 +26,40 @@ const RoutesSection = ({isCompact = false, onViewModeChange}:RoutesSectionProps)
     const {setHeaderActions, setInteractionActions} = useSectionPanel()
     const popupManager  = useResourceManager('popupManager')
     const sectionManager = useResourceManager('sectionManager')
-    const routesDataManager = useResourceManager('routesDataManager')
-    const routesSnapshot = useDataManager(routesDataManager)
+    const isMobile = useResourceManager('isMobileObject')
     const [deliveryService] = useState(() => new DeliveryService())
+    const [updateOrderService] = useState(() => new UpdateOrderService())
     const [groupingMode, setGroupingMode] = useState<GroupingMode>('date')
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>(() => {
         if (typeof window === 'undefined') return 'list'
         const stored = window.localStorage.getItem('routes_view_mode')
         return stored === 'calendar' ? 'calendar' : 'list'
     })
+    const routes = useHomeStore((state) => state.routes)
+    const { findRouteById, findOrderById, selectRoute, selectOrder, updateRoute, optimisticUpdateRoutes } = useHomeStore.getState()
     // ____________________________________________________________________________________________________________
 
-    
+
     // helper functions
     const buildOrders = useCallback(async (routeId: number)=>{
-        let route:RoutePayload | undefined = routesDataManager.find(routeId,{collectionKey:'routes'})
+        let route:RoutePayload | null | undefined = findRouteById(routeId)
         if (route && route.is_unpack === false) {
             const refreshed = await deliveryService.fetchRouteById(routeId)
             if (refreshed) {
-                routesDataManager.updateDataset((dataset) => {
-                    if (!dataset) {
-                        return dataset
-                    }
-                    const nextRoutes = dataset.routes.map((entry) =>
-                        entry.id === routeId ? refreshed : entry,
-                    )
-                    return {
-                        ...dataset,
-                        routes: nextRoutes,
-                    }
-                })
+                updateRoute(routeId, () => refreshed)
                 route = refreshed
             }
         }
-        routesDataManager.setActiveSelection( 'SelectedRoute', { id: routeId, data: route } )
+        selectRoute(routeId, { routeId }, route ?? null)
         const hadExisting = sectionManager.closeByKey(['SingleOrder', 'OrdersSection','ItemSection','ChatSection'])
         const openOrders = () => {
+          if (isMobile?.isMobile && typeof isMobile.setIsMobileMenuOpen === 'function') {
+            isMobile.setIsMobileMenuOpen(false)
+          }
           sectionManager.open({
             key:'OrdersSection',
             parentParams:{
-              className:'w-[400px] z-[4] relative',
+              className: isMobile.isMobile ? 'w-full h-screen z-[4] relative' : 'w-[400px] z-[4] relative',
               label:'Orders', 
               icon:<OrderIcon className="app-icon h-4 w-4" />, 
               animation:'expand',
@@ -79,49 +72,7 @@ const RoutesSection = ({isCompact = false, onViewModeChange}:RoutesSectionProps)
         } else {
           openOrders()
         }
-      }, [deliveryService, routesDataManager, sectionManager])
-
-    const routes = routesSnapshot.dataset?.routes ?? []
-
-    const refreshRouteSelection = useCallback((routeId: number | null | undefined) => {
-        if (routeId == null) {
-            return
-        }
-        const dataset = routesDataManager.getDataset()
-        const nextRoute = dataset?.routes?.find((entry) => entry.id === routeId) ?? null
-        if (!nextRoute) {
-            return
-        }
-        const activeRoute = routesDataManager.getActiveSelection<RoutePayload>('SelectedRoute')
-        if (activeRoute?.id === routeId) {
-            routesDataManager.setActiveSelection('SelectedRoute', { id: routeId, data: nextRoute })
-        }
-    }, [routesDataManager])
-
-    const refreshOrderSelection = useCallback((orderId: number | null | undefined, routeId: number | null | undefined) => {
-        if (orderId == null || routeId == null) {
-            return
-        }
-        const dataset = routesDataManager.getDataset()
-        const route = dataset?.routes?.find((entry) => entry.id === routeId) ?? null
-        if (!route) {
-            return
-        }
-        const order = route.delivery_orders?.find((entry) => entry.id === orderId) ?? null
-        const activeOrder = routesDataManager.getActiveSelection<OrderPayload>('SelectedOrder')
-        if (activeOrder?.id === orderId) {
-            routesDataManager.setActiveSelection('SelectedOrder', {
-                id: orderId,
-                data: order,
-                meta: {
-                    ...(activeOrder.meta ?? {}),
-                    routeId,
-                },
-            })
-        }
-    }, [routesDataManager])
-
-    const [updateOrderService] = useState(() => new UpdateOrderService())
+      }, [deliveryService, findRouteById, selectRoute, sectionManager, updateRoute])
 
     const moveOrderBetweenRoutes = useCallback(
         (orderId: number | null | undefined, sourceRouteId: number | null | undefined, targetRouteId: number | null | undefined) => {
@@ -133,101 +84,95 @@ const RoutesSection = ({isCompact = false, onViewModeChange}:RoutesSectionProps)
             ) {
                 return
             }
+
             let movedOrder: OrderPayload | null = null
-            let movedItemsCount = 0
-            routesDataManager.updateDataset((dataset) => {
-                if (!dataset) {
-                    return dataset
-                }
-                const nextRoutes = dataset.routes.map((route) => {
-                    if (route.id !== sourceRouteId) {
-                        return route
-                    }
-                    const filtered: OrderPayload[] = []
-                    ;(route.delivery_orders ?? []).forEach((order) => {
-                        if (order.id === orderId) {
-                            movedOrder = order
-                            movedItemsCount = order.delivery_items?.length ?? 0
-                        } else {
-                            filtered.push(order)
-                        }
-                    })
-                    if (!movedOrder) {
-                        return route
-                    }
-                    const normalized = filtered.map((order, index) => ({
-                        ...order,
-                        delivery_arrangement: index + 1,
-                    }))
-                    return {
-                        ...route,
-                        delivery_orders: normalized,
-                        total_orders: route.total_orders != null ? Math.max(route.total_orders - 1, 0) : normalized.length,
-                        total_items:
-                            route.total_items != null
-                                ? Math.max(route.total_items - movedItemsCount, 0)
-                                : undefined,
-                    }
-                })
+            const previousSelection = useHomeStore.getState()
+            const rollback = optimisticUpdateRoutes((currentRoutes) => {
+                const sourceRoute = currentRoutes.find((route) => route.id === sourceRouteId)
+                movedOrder = sourceRoute?.delivery_orders?.find((order) => order.id === orderId) ?? null
                 if (!movedOrder) {
-                    return dataset
+                    return currentRoutes
                 }
-                const updatedRoutes = nextRoutes.map((route) => {
-                    if (route.id !== targetRouteId) {
-                        return route
+                const movedItemsCount = movedOrder ? movedOrder.delivery_items?.length ?? 0 : 0
+                return currentRoutes.map((route) => {
+                    if (route.id === sourceRouteId) {
+                        const filtered = (route.delivery_orders ?? []).filter((order) => order.id !== orderId)
+                        const normalized = filtered.map((order, index) => ({
+                            ...order,
+                            delivery_arrangement: index + 1,
+                        }))
+                        return {
+                            ...route,
+                            delivery_orders: normalized,
+                            total_orders: route.total_orders != null ? Math.max(route.total_orders - 1, 0) : normalized.length,
+                            total_items:
+                                route.total_items != null
+                                    ? Math.max(route.total_items - movedItemsCount, 0)
+                                    : undefined,
+                        }
                     }
-                    const existing = [...(route.delivery_orders ?? [])]
-                    const maxArrangement = existing.reduce<number>(
-                        (max, order) =>
-                            order.delivery_arrangement != null
-                                ? Math.max(max, order.delivery_arrangement)
-                                : max,
-                        -1,
-                    )
-                    const nextArrangement = maxArrangement >= 0 ? maxArrangement + 1 : 0
-                    const nextOrder: OrderPayload = {
-                        ...movedOrder!,
-                        route_id: targetRouteId,
-                        delivery_arrangement: nextArrangement,
-                    }
-                    existing.push(nextOrder)
-                    return {
-                        ...route,
-                        delivery_orders: existing,
-                        total_orders: route.total_orders != null ? route.total_orders + 1 : existing.length,
-                        total_items:
-                            route.total_items != null ? route.total_items + movedItemsCount : undefined,
-                    }
-                })
-                return {
-                    ...dataset,
-                    routes: updatedRoutes,
-                }
-            })
-            if (movedOrder) {
-                const moved = movedOrder as OrderPayload
-                const movedOrderId = moved.id
-                const arrangement = routesDataManager
-                    .getDataset()
-                    ?.routes?.find((entry) => entry.id === targetRouteId)
-                    ?.delivery_orders?.find((order) => order.id === movedOrderId)?.delivery_arrangement
-                updateOrderService
-                    .updateOrder({
-                        id: movedOrderId,
-                        fields: {
+                    if (route.id === targetRouteId && movedOrder) {
+                        const existing = [...(route.delivery_orders ?? [])]
+                        const maxArrangement = existing.reduce<number>(
+                            (max, order) =>
+                                order.delivery_arrangement != null
+                                    ? Math.max(max, order.delivery_arrangement)
+                                    : max,
+                            -1,
+                        )
+                        const nextArrangement = maxArrangement >= 0 ? maxArrangement + 1 : 0
+                        const nextOrder: OrderPayload = {
+                            ...(movedOrder as OrderPayload),
+                            id: movedOrder.id,
                             route_id: targetRouteId,
-                            delivery_arrangement: arrangement ?? 0,
-                        },
-                    })
-                    .catch((error) => {
-                        console.error('Failed to update order route assignment', error)
-                    })
+                            delivery_arrangement: nextArrangement,
+                        }
+                        existing.push(nextOrder)
+                        return {
+                            ...route,
+                            delivery_orders: existing,
+                            total_orders: route.total_orders != null ? route.total_orders + 1 : existing.length,
+                            total_items:
+                                route.total_items != null
+                                    ? route.total_items + movedItemsCount
+                                    : undefined,
+                        }
+                    }
+                    return route
+                })
+            })
+
+            if (!movedOrder) {
+                return
             }
-            refreshRouteSelection(sourceRouteId)
-            refreshRouteSelection(targetRouteId)
-            refreshOrderSelection(orderId, targetRouteId)
+
+            const movedOrderId = (movedOrder as OrderPayload).id
+            const targetOrder = findOrderById(movedOrderId, targetRouteId)
+            const arrangement = targetOrder?.delivery_arrangement ?? 0
+            updateOrderService
+                .updateOrder({
+                    id: movedOrderId,
+                    fields: {
+                        route_id: targetRouteId,
+                        delivery_arrangement: arrangement,
+                    },
+                })
+                .catch((error) => {
+                    console.error('Failed to update order route assignment', error)
+                    rollback()
+                })
+            const originalRouteId = previousSelection.selectedRouteId ?? null
+            const originalOrderId = previousSelection.selectedOrderId ?? null
+            if (originalRouteId != null) {
+                selectRoute(originalRouteId, { routeId: originalRouteId })
+                const stillExists = originalOrderId ? findOrderById(originalOrderId, originalRouteId) : null
+                selectOrder(stillExists ? originalOrderId : null, { routeId: originalRouteId })
+            } else {
+                selectRoute(null)
+                selectOrder(null)
+            }
         },
-        [refreshOrderSelection, refreshRouteSelection, routesDataManager, updateOrderService],
+        [findOrderById, optimisticUpdateRoutes, selectOrder, selectRoute, updateOrderService],
     )
 
     const handleRouteDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -327,7 +272,7 @@ const RoutesSection = ({isCompact = false, onViewModeChange}:RoutesSectionProps)
     useEffect(()=>{
 
         if(setHeaderActions){
-            setHeaderActions( buildHeaderActions( { popupManager } ) )
+            setHeaderActions( buildHeaderActions( { popupManager, isMobile: isMobile.isMobile } ) )
         }
         if( setInteractionActions ){
             setInteractionActions( buildInteractionActions( {
@@ -361,7 +306,7 @@ const RoutesSection = ({isCompact = false, onViewModeChange}:RoutesSectionProps)
                         <RouteCard
                             key={`Route_${route.id}`}
                             route={route}
-                            compact={isCompact}
+                            compact={isMobile?.isMobile ?  false : isCompact}
                             onSelect={(selected) => buildOrders(selected.id)}
                             onRouteDragOver={handleRouteDragOver}
                             onRouteDrop={handleRouteDrop}
@@ -394,14 +339,17 @@ const dateOptions =[
 ]
 
 interface BuildersProps{
-    popupManager: ActionManager
+    popupManager: ActionManager,
+    isMobile?: boolean
 }
-const buildHeaderActions = ({popupManager}:BuildersProps)=>{
+const buildHeaderActions = ({popupManager, isMobile}:BuildersProps)=>{
     return [
          <BasicButton
-            children={'+ Route'}
+            children={isMobile ? 
+                <PlusIcon className="app-icon-dark h-5 w-5" />
+                : '+ Route'}
             params={{
-                variant:'primary',
+                variant:isMobile ? 'rounded' :'primary',
                 onClick:()=>{popupManager.open({key:'FillRoute', payload:{mode:'create'}})}
             }}
         />

@@ -9,7 +9,7 @@ export function loadGoogleMaps(): Promise<GoogleMapsClient> {
     return Promise.reject(new Error('Google Maps can only be loaded in the browser.'))
   }
 
-  if (window.google?.maps?.places) {
+  if (window.google?.maps?.Map || window.google?.maps?.importLibrary) {
     return Promise.resolve(window.google)
   }
 
@@ -35,6 +35,7 @@ export function loadGoogleMaps(): Promise<GoogleMapsClient> {
         key: apiKey,
         libraries: 'places,marker',
         v: 'weekly',
+        loading: 'async',
       })
 
       script.src = `${MAPS_API_URL}?${params.toString()}`
@@ -43,11 +44,26 @@ export function loadGoogleMaps(): Promise<GoogleMapsClient> {
 
       script.addEventListener('load', () => {
         script.dataset.loaded = 'true'
-        if (window.google?.maps?.places) {
-          resolve(window.google)
+        const settle = () => {
+          if (window.google?.maps?.Map || window.google?.maps?.importLibrary) {
+            resolve(window.google)
+            return true
+          }
+          return false
+        }
+        if (settle()) {
           return
         }
-        reject(new Error('Google Maps loaded without the Places library.'))
+        let attempts = 0
+        const interval = window.setInterval(() => {
+          attempts += 1
+          if (settle() || attempts > 30) {
+            window.clearInterval(interval)
+            if (attempts > 30) {
+              reject(new Error('Google Maps loaded without the Maps library.'))
+            }
+          }
+        }, 100)
       })
 
       script.addEventListener('error', () => {

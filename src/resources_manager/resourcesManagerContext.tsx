@@ -2,21 +2,24 @@ import { createContext, useContext } from 'react'
 import type { ReactNode } from 'react'
 
 import type { ActionManager } from './managers/ActionManager'
-import type { DataManager } from './managers/DataManager'
-import type { RoutesPack } from '../features/home/types/backend'
-import type { RouteDependencies } from '../features/home/api/optionServices'
 import type { MapManager } from '../google_maps/MapManager'
-import type { SettingsDataset } from '../features/settings/types'
+
+interface isMobileObject {
+  isMobile: boolean
+  isMenuOpen: boolean
+  setIsMobileMenuOpen: (open: boolean) => void
+  setIsMobileViewport: (isMobile: boolean) => void
+}
 
 type KnownResourceRegistry = {
   popupManager: ActionManager
   sectionManager: ActionManager
-  routesDataManager: DataManager<RoutesPack>
-  optionDataManager: DataManager<RouteDependencies>
   mapManager: MapManager
-  settingsDataManager: DataManager<SettingsDataset>
   settingsPopupManager: ActionManager
+  popupConfirmationManager: ActionManager
+  isMobileObject: isMobileObject
 }
+
 
 type ResourceRegistry = Partial<KnownResourceRegistry> & Record<string, unknown>
 
@@ -38,14 +41,12 @@ function useResourcesContext() {
   }
   return context
 }
-
+export function useResourceManager(key: 'isMobileObject'): isMobileObject
 export function useResourceManager(key: 'popupManager'): ActionManager
 export function useResourceManager(key: 'sectionManager'): ActionManager
-export function useResourceManager(key: 'routesDataManager'): DataManager<RoutesPack>
-export function useResourceManager(key: 'optionDataManager'): DataManager<RouteDependencies>
 export function useResourceManager(key: 'mapManager'): MapManager
-export function useResourceManager(key: 'settingsDataManager'): DataManager<SettingsDataset>
 export function useResourceManager(key: 'settingsPopupManager'): ActionManager
+export function useResourceManager(key: 'popupConfirmationManager'): ActionManager
 export function useResourceManager<T = unknown>(key: string): T
 export function useResourceManager(key: string) {
   const context = useResourcesContext()

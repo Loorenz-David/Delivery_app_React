@@ -17,8 +17,10 @@ function HeaderRow({
   headerContent?: ReactNode | null
   onClose?: () => void
 }) {
+  const isMobile = useResourceManager('isMobileObject')
   return (
-    <header className="border-b border-[var(--color-border)] px-6 py-4">
+    <header className={isMobile.isMobile ? `border-b border-[var(--color-border)] px-4 py-4`
+    :`border-b border-[var(--color-border)] px-6 py-4`}>
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
           {headerContent ?? (
@@ -41,7 +43,9 @@ function HeaderRow({
 }
 
 function Body({ children }: { children: ReactNode }) {
-  return <div className="flex-1 overflow-y-auto px-6 py-5 min-h-[500px]">{children}</div>
+  const isMobile = useResourceManager('isMobileObject')
+  return <div className={isMobile.isMobile ? `flex-1 overflow-y-auto px-3 py-5 h-full`
+    :`flex-1 overflow-y-auto px-6 py-5 min-h-[500px]`}>{children}</div>
 }
 
 
@@ -64,6 +68,7 @@ const Popup_1 = ({ params, children, onRequestClose }:PopupType ) => {
   const popupManager = useResourceManager('popupManager')
   const beforeCloseConfigRef = useRef<BeforeCloseConfig | null>(null)
   const isMountedRef = useRef(true)
+  const isMobile = useResourceManager('isMobileObject')
   useEffect(() => {
     return () => {
       isMountedRef.current = false
@@ -155,7 +160,9 @@ const Popup_1 = ({ params, children, onRequestClose }:PopupType ) => {
 
       {/* Popup element */}
       <motion.div
-        className="relative z-10 pointer-events-auto flex h-full w-full max-h-[800px] max-w-[600px] flex-col rounded-none border border-[var(--color-border)] bg-white text-[var(--color-text)] md:rounded-3xl"
+        className={isMobile.isMobile ?`relative z-10 pointer-events-auto flex h-full w-full  flex-col  bg-white text-[var(--color-text)]`:
+        `relative z-10 pointer-events-auto flex h-full w-full max-h-[800px] max-w-[600px] flex-col rounded-none border border-[var(--color-border)] bg-white text-[var(--color-text)] md:rounded-3xl`
+        }
         initial={{ opacity: 0, x: 100 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 100 }}

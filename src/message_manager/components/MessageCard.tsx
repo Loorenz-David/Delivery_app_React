@@ -40,6 +40,8 @@ export function MessageCard({ status, message, details, onDismiss }: MessageCard
   const [isExpanded, setIsExpanded] = useState(false)
   const { icon: Icon, container } = STATUS_STYLES[status]
   const hasDetails = Boolean(details)
+  const isTruncated = message.length > 150
+  const canExpand = hasDetails || isTruncated
   const displayText = useMemo(() => {
     if (isExpanded || message.length <= 150) {
       return message
@@ -48,23 +50,22 @@ export function MessageCard({ status, message, details, onDismiss }: MessageCard
   }, [isExpanded, message])
 
   const toggleExpanded = () => {
-    if (hasDetails) {
-      setIsExpanded((prev) => !prev)
-    }
+    if (!canExpand) return
+    setIsExpanded((prev) => !prev)
   }
 
   return (
     <div className="pointer-events-auto">
       <div
         className={`relative w-full rounded-2xl px-4 py-3 text-white shadow-2xl ring-1 transition ${container} ${
-          hasDetails ? 'cursor-pointer' : ''
+          canExpand ? 'cursor-pointer' : ''
         }`}
         onClick={toggleExpanded}
-        role={hasDetails ? 'button' : undefined}
-        tabIndex={hasDetails ? 0 : undefined}
-        aria-expanded={hasDetails ? isExpanded : undefined}
+        role={canExpand ? 'button' : undefined}
+        tabIndex={canExpand ? 0 : undefined}
+        aria-expanded={canExpand ? isExpanded : undefined}
         onKeyDown={(event) => {
-          if (!hasDetails) return
+          if (!canExpand) return
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
             toggleExpanded()

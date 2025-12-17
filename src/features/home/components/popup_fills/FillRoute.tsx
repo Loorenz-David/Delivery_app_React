@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { ChangeEvent, FormEvent } from 'react'
 
-import type { AddressPayload, RoutePayload, RoutesPack } from '../../types/backend'
+import type { AddressPayload, RoutePayload } from '../../types/backend'
 import type { ActionComponentProps } from '../../../../resources_manager/managers/ActionManager'
 
 import { BasicButton } from '../../../../components/buttons/BasicButton'
@@ -14,8 +14,6 @@ import { useInputWarning } from '../../../../components/forms/useInputWarning'
 import { ProfilePicture } from '../../../../components/forms/ProfilePicture'
 
 import type { AddressPickerOption } from '../../../../components/buttons/AddressPicker'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
 import { ResponseManager } from '../../../../resources_manager/managers/ResponseManager'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import { ApiError } from '../../../../lib/api/ApiClient'
@@ -31,6 +29,7 @@ import {
   areAddressesEqual,
   type RouteFormState,
 } from './utils/routeFormHelpers'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
 
 type FillRouteMode = 'create' | 'edit'
 
@@ -55,9 +54,10 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { showMessage } = useMessageManager()
-  const optionDataManager = useResourceManager('optionDataManager')
-  const routesDataManager = useResourceManager('routesDataManager')
-  const routesSnapshot = useDataManager(routesDataManager)
+  const routes = useHomeStore((state) => state.routes)
+  const drivers = useHomeStore((state) => state.drivers)
+  const defaultWarehouses = useHomeStore((state) => state.defaultWarehouses)
+  const { findRouteById, upsertRoute, removeRoute, selectRoute, selectOrder } = useHomeStore.getState()
 
   const createRouteService = useMemo(() => new CreateRouteService(), [])
   const updateRouteService = useMemo(() => new UpdateRouteService(), [])
@@ -67,8 +67,7 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
   const startLocationWarning = useInputWarning('Please choose an address from the dropdown.')
   const endLocationWarning = useInputWarning('Please choose an address from the dropdown.')
 
-  const drivers = optionDataManager.getValue('drivers') ?? []
-  const warehouses = optionDataManager.getValue('default_warehouses') ?? []
+  const warehouses = defaultWarehouses ?? []
 
   const headerContent = useMemo(() => <FillRouteHeader mode={mode} />, [mode])
 
@@ -94,8 +93,8 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     if (mode !== 'edit' || targetRouteId == null) {
       return null
     }
-    return routesDataManager.find<RoutePayload>(targetRouteId, { collectionKey: 'routes' }) ?? null
-  }, [mode, routesDataManager, targetRouteId, routesSnapshot.dataset])
+    return findRouteById(targetRouteId)
+  }, [findRouteById, mode, targetRouteId, routes])
 
   const derivedRouteFormState = useMemo(() => {
     if (mode !== 'edit' || !routeFromDataset) {
@@ -108,15 +107,18 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     if (mode !== 'edit' || !derivedRouteFormState) {
       return null
     }
-    const diff = routesDataManager.extractChangedFields<RouteFormState>(derivedRouteFormState, formState, {
-      fields: ROUTE_MUTABLE_FIELDS,
+    const changed: Partial<RouteCreatePayload> = {}
+    ROUTE_MUTABLE_FIELDS.forEach((field) => {
+      const previous = derivedRouteFormState[field]
+      const current = formState[field]
+      const isAddressField = field === 'start_location' || field === 'end_location'
+      const hasChanged = isAddressField ? !areAddressesEqual(previous as AddressPayload | null, current as AddressPayload | null) : previous !== current
+      if (hasChanged) {
+        ;(changed as Record<string, unknown>)[field] = current ?? null
+      }
     })
-    const { id: _ignored, ...rest } = diff
-    const sanitized = Object.fromEntries(
-      Object.entries(rest).filter(([, value]) => value !== undefined),
-    ) as Partial<RouteCreatePayload>
-    return sanitized
-  }, [derivedRouteFormState, formState, mode, routesDataManager])
+    return Object.keys(changed).length ? changed : null
+  }, [derivedRouteFormState, formState, mode])
 
   const updateField =
     (field: EditableField) =>
@@ -143,17 +145,9 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     setIsSubmitting(true)
     try {
       const response = await deleteRouteService.deleteRoute({ id: targetRouteId })
-      routesDataManager.updateDataset((dataset) => {
-        if (!dataset) {
-          return dataset
-        }
-        return {
-          ...dataset,
-          routes: (dataset.routes ?? []).filter((route) => route.id !== targetRouteId),
-        }
-      })
-      routesDataManager.removeActiveSelection?.('SelectedOrder')
-      routesDataManager.removeActiveSelection?.('SelectedRoute')
+      removeRoute(targetRouteId)
+      selectOrder(null)
+      selectRoute(null)
       showMessage({
         status: response.status ?? 200,
         message: response.message ?? 'Route deleted successfully.',
@@ -167,7 +161,7 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     } finally {
       setIsSubmitting(false)
     }
-  }, [deleteRouteService, onClose, routesDataManager, showMessage, targetRouteId])
+  }, [deleteRouteService, onClose, removeRoute, selectOrder, selectRoute, showMessage, targetRouteId])
 
   const handleDeleteRoute = useCallback(() => {
     if (!openConfirm) {
@@ -216,24 +210,51 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
             fields: normalizedChangedFields,
           })
           const resolvedRoute = responseManager.resolveEntityFromResponse<RoutePayload>(response.data)
-          const fallbackRoute = buildRoutePayloadFromFormState(
-            {
-              ...formState,
-              id: (resolvedRoute?.id as number | undefined) ?? targetRouteId,
-            },
-            routeFromDataset,
-          )
-          const mergedRoute = responseManager.mergeWithFallback(resolvedRoute, fallbackRoute)
-          responseManager.upsertEntity(routesDataManager, {
-            collectionKey: 'routes',
-            entity: mergedRoute,
-            matcher: (candidate: RoutePayload) => candidate.id === mergedRoute.id,
-            appendIfMissing: false,
-          })
-          routesDataManager.setActiveSelection('SelectedRoute', {
-            id: mergedRoute.id,
-            data: mergedRoute,
-          })
+          const baseRoute = routeFromDataset ?? resolvedRoute ?? null
+          if (!baseRoute) {
+            throw new Error('Unable to resolve route to update.')
+          }
+          const mergedRoute: RoutePayload = {
+            ...baseRoute,
+            ...(resolvedRoute ?? {}),
+            ...normalizedChangedFields,
+            start_location: (
+              (normalizedChangedFields.start_location as AddressPayload | null | undefined) ?? baseRoute.start_location
+            ) as AddressPayload,
+            end_location: (
+              (normalizedChangedFields.end_location as AddressPayload | null | undefined) ?? baseRoute.end_location
+            ) as AddressPayload,
+            id: (resolvedRoute?.id as number | undefined) ?? targetRouteId,
+            route_label:
+              (resolvedRoute as RoutePayload | undefined)?.route_label ??
+              baseRoute.route_label ??
+              (normalizedChangedFields.route_label as string | undefined) ??
+              '',
+            delivery_date:
+              (resolvedRoute as RoutePayload | undefined)?.delivery_date ??
+              baseRoute.delivery_date ??
+              (normalizedChangedFields.delivery_date as string | undefined) ??
+              '',
+            saved_optimizations: (
+              (resolvedRoute as RoutePayload | undefined)?.saved_optimizations ?? baseRoute.saved_optimizations
+            ) as RoutePayload['saved_optimizations'],
+            state_id: (
+              (resolvedRoute as RoutePayload | undefined)?.state_id ??
+              (normalizedChangedFields.state_id as number | undefined) ??
+              baseRoute.state_id
+            ) as number,
+            route_state: (
+              (resolvedRoute as RoutePayload | undefined)?.route_state ?? baseRoute.route_state
+            ) as RoutePayload['route_state'],
+            is_optimized:
+              (resolvedRoute as RoutePayload | undefined)?.is_optimized ??
+              baseRoute.is_optimized ??
+              false,
+            delivery_orders:
+              (resolvedRoute as RoutePayload | undefined)?.delivery_orders ?? baseRoute.delivery_orders ?? [],
+          }
+          upsertRoute(mergedRoute)
+          selectRoute(mergedRoute.id, { routeId: mergedRoute.id }, mergedRoute)
           payload?.onComplete?.(mergedRoute)
           showMessage({
             status: response.status ?? 200,
@@ -252,18 +273,14 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
           const fallbackRoute = buildRoutePayloadFromFormState(
             {
               ...formState,
-              id: (resolvedRoute?.id as number | undefined) ?? undefined,
-            },
-            null,
-          )
+            id: (resolvedRoute?.id as number | undefined) ?? undefined,
+          },
+          null,
+        )
           const mergedRoute = responseManager.mergeWithFallback(resolvedRoute, fallbackRoute)
-          responseManager.upsertEntity(routesDataManager, {
-            collectionKey: 'routes',
-            entity: mergedRoute,
-            matcher: (candidate: RoutePayload) => candidate.id === mergedRoute.id,
-            appendIfMissing: true,
-            ensureDataset: () => ({ routes: [] } as RoutesPack),
-          })
+          upsertRoute(mergedRoute)
+          selectRoute(mergedRoute.id, { routeId: mergedRoute.id }, mergedRoute)
+          selectOrder(null)
           payload?.onComplete?.(mergedRoute)
           showMessage({
             status: response.status ?? 200,
@@ -289,21 +306,22 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
       mode,
       normalizedChangedFields,
       onClose,
-      routesDataManager,
       routeFromDataset,
       responseManager,
+      selectOrder,
+      selectRoute,
       showMessage,
       targetRouteId,
+      upsertRoute,
       updateRouteService,
     ],
   )
 
-  const hasValidStart = Boolean(formState.start_location)
-  const hasValidEnd = Boolean(formState.end_location)
-  const hasValidRange =
-    typeof formState.arrival_time_range === 'number' && !Number.isNaN(formState.arrival_time_range) && formState.arrival_time_range >= 0
-  const isFormValid =
-    formState.route_label.trim() !== '' && Boolean(formState.delivery_date) && hasValidStart && hasValidEnd && hasValidRange
+  // const _hasValidStart = Boolean(formState.start_location)
+  // const _hasValidEnd = Boolean(formState.end_location)
+  // const _hasValidRange =
+  //   typeof formState.arrival_time_range === 'number' && !Number.isNaN(formState.arrival_time_range) && formState.arrival_time_range >= 0
+  const isFormValid = formState.route_label.trim() !== '' && Boolean(formState.delivery_date)
   const hasChanges = mode === 'create' || Boolean(normalizedChangedFields && Object.keys(normalizedChangedFields).length)
   const isSubmitDisabled = isSubmitting || !isFormValid || !hasChanges
 
@@ -417,7 +435,7 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
           />
         </Field>
 
-        <Field label="Start Location" required warning={startLocationWarning.warning}>
+        <Field label="Start Location"  warning={startLocationWarning.warning}>
           <AddressPicker
             field="start_location"
             selection={formState.start_location}
@@ -428,7 +446,7 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
           />
         </Field>
 
-        <Field label="End Location" required warning={endLocationWarning.warning}>
+        <Field label="End Location"  warning={endLocationWarning.warning}>
           <AddressPicker
             field="end_location"
             selection={formState.end_location}

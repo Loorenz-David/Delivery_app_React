@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode, Dispatch, SetStateAction } from 'react'
 
 import { cn } from '../../lib/utils/cn'
@@ -45,28 +45,47 @@ export function DropDown({
   const [isOpen, setIsOpen] = useState(false)
 
   const selectedValue = state ? state[0] : valueRef ? valueRef.current : internalValue
-
-  // useEffect(() => {
-  //   if (state) {
-  //     setInternalValue(state[0])
-  //   }
-  // }, [state?.[0]])
+  const closeMenu = useCallback(() => {
+    setIsOpen(false)
+    requestAnimationFrame(() => setIsOpen(false))
+  }, [])
 
   useEffect(() => {
-    setIsOpen(false)
-  }, [selectedValue])
+    closeMenu()
+  }, [closeMenu, selectedValue])
 
-  // const closeOnOutsideClick = useCallback((event: MouseEvent) => {
-  //   if (!containerRef.current) return
-  //   if (!containerRef.current.contains(event.target as Node)) {
-  //     setIsOpen(false)
-  //   }
-  // }, [])
+  const closeOnOutsideClick = useCallback((event: MouseEvent) => {
+    if (!containerRef.current) return
+    if (!containerRef.current.contains(event.target as Node)) {
+      closeMenu()
+    }
+  }, [closeMenu])
 
-  // useEffect(() => {
-  //   document.addEventListener('mousedown', closeOnOutsideClick)
-  //   return () => document.removeEventListener('mousedown', closeOnOutsideClick)
-  // }, [closeOnOutsideClick])
+  const closeOnEscape = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      closeMenu()
+    }
+  }, [closeMenu])
+
+  useEffect(() => {
+    document.addEventListener('mousedown', closeOnOutsideClick)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [closeOnEscape, closeOnOutsideClick])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleFocus = (event: FocusEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        closeMenu()
+      }
+    }
+    document.addEventListener('focusin', handleFocus)
+    return () => document.removeEventListener('focusin', handleFocus)
+  }, [closeMenu, isOpen])
 
 
   const handleSelect = (value: string) => {
@@ -77,7 +96,7 @@ export function DropDown({
     } else {
       setInternalValue(value)
     }
-    setIsOpen(false)
+    closeMenu()
     onChange?.(value,setIsOpen)
     
     
@@ -93,9 +112,8 @@ export function DropDown({
       <button
         type="button"
         onClick={(e) => {
-          e.stopPropagation();
-          (e.currentTarget as HTMLButtonElement).blur()
-          setIsOpen( prev=>!prev )
+          e.stopPropagation()
+          setIsOpen((prev) => !prev)
         }}
         className={cn(`flex h-full w-full `, buttonClassName)}
         aria-haspopup="listbox"

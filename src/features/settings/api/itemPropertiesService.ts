@@ -231,4 +231,12 @@ export class ItemPropertiesService {
       data: payload,
     })
   }
+
+  async deleteAllByModel(model: 'ItemType' | 'ItemState' | 'ItemProperty' | 'ItemCategory' | 'ItemPosition') {
+    return apiClient.request<{ deleted: number }>({
+      path: this.buildPath('delete_all_by_model'),
+      method: 'DELETE',
+      data: { model },
+    })
+  }
 }

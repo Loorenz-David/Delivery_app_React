@@ -6,6 +6,7 @@ import type { SessionSnapshot, SessionUser } from '../../../lib/storage/sessionS
 import { sessionStorage } from '../../../lib/storage/sessionStorage'
 import { authService } from '../api/authService'
 import type { LoginPayload } from '../types'
+import { realtimeSocketManager } from '../../../webrtc'
 
 interface AuthContextValue {
   session: SessionSnapshot | null
@@ -39,6 +40,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  useEffect(() => {
+    // Keep the socket connection aligned with auth state (handles refresh/page reload).
+    if (session?.accessToken) {
+      realtimeSocketManager.connect()
+    } else {
+      realtimeSocketManager.disconnect()
+    }
+  }, [session?.accessToken])
+
   const login = useCallback(async (payload: LoginPayload) => {
     setIsLoading(true)
     try {
@@ -54,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.setSession({
         accessToken: data.access_token,
         refreshToken: data.refresh_token,
+        socketToken: data.socket_token,
         user,
       })
     } finally {
@@ -62,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    realtimeSocketManager.disconnect()
     sessionStorage.clear()
   }, [])
 

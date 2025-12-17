@@ -1,22 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { BasicButton } from '../../../../components/buttons/BasicButton'
 import { DropDown } from '../../../../components/buttons/DropDown'
 import { Field } from '../../../../components/forms/FieldContainer'
 import { ProfilePicture } from '../../../../components/forms/ProfilePicture'
 import { useSectionPanel } from '../../contexts/SectionPanelContext'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import { useDataManager } from '../../../../resources_manager/managers/DataManager'
 import type { ActionPayload } from '../../../../resources_manager/managers/ActionManager'
-import type { ActiveSelection } from '../../../../resources_manager/managers/DataManager'
 import type { RoutePayload, SavedOptimizations } from '../../types/backend'
-import {
-  applyOrderSequenceToOrders,
-  normalizeSavedOptimizations,
-  patchRouteInDataManager,
-} from '../../utils/routeDataHelpers'
+import { applyOrderSequenceToOrders, normalizeSavedOptimizations } from '../../utils/routeDataHelpers'
 import { ChangeOptimizationService } from '../../api/deliveryService'
 import type { DriverOption } from '../../api/optionServices'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
+import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
+import { useMobileSectionHeader } from '../../contexts/MobileSectionHeaderContext'
+import { CloseIcon } from '../../../../assets/icons'
+
 
 interface RouteStatsSectionProps {
   payload?: ActionPayload
@@ -27,16 +25,18 @@ const DEFAULT_STATS_PLACEHOLDER = '—'
 
 export default function RouteStatsSection({ onClose }: RouteStatsSectionProps) {
   const { setHeaderActions } = useSectionPanel()
-  const routesDataManager = useResourceManager('routesDataManager')
-  const optionDataManager = useResourceManager('optionDataManager')
-  const optionSnapshot = useDataManager(optionDataManager)
-  const routesSnapshot = useDataManager(routesDataManager)
-  const driversMap = optionSnapshot.dataset?.drivers_map ?? null
+  const isMobile = useResourceManager('isMobileObject')
+  const mobileHeader = useMobileSectionHeader()
+  const registerHeader = mobileHeader?.registerHeader
+  const updateHeader = mobileHeader?.updateHeader
+  const removeHeader = mobileHeader?.removeHeader
+  const mobileHeaderIdRef = useRef<string | null>(null)
+  const lastHeaderStateRef = useRef<{ title: string; key: string; optimizationCount: number } | null>(null)
+  const selectedRouteId = useHomeStore((state) => state.selectedRouteId)
+  const driversMap = useHomeStore((state) => state.driversMap)
+  const { findRouteById, updateRoute } = useHomeStore.getState()
   const changeOptimizationService = useMemo(() => new ChangeOptimizationService(), [])
-  const routeSelection =
-    (routesSnapshot.activeSelections?.['SelectedRoute'] as ActiveSelection<RoutePayload> | undefined) ??
-    routesDataManager.getActiveSelection<RoutePayload>('SelectedRoute')
-  const route = routeSelection?.data ?? null
+  const route = selectedRouteId != null ? findRouteById(selectedRouteId) : null
 
   const savedOptimizations = useMemo(
     () => normalizeSavedOptimizations(route?.saved_optimizations ?? null),
@@ -54,7 +54,14 @@ export default function RouteStatsSection({ onClose }: RouteStatsSectionProps) {
   }, [initialIndex])
 
   useEffect(() => {
-    setHeaderActions?.([
+    if (!setHeaderActions) {
+      return
+    }
+    if (isMobile?.isMobile) {
+      setHeaderActions([])
+      return
+    }
+    setHeaderActions([
       <BasicButton
         key="close-route-stats"
         params={{
@@ -66,9 +73,93 @@ export default function RouteStatsSection({ onClose }: RouteStatsSectionProps) {
       </BasicButton>,
     ])
     return () => {
-      setHeaderActions?.([])
+      setHeaderActions([])
     }
-  }, [onClose, setHeaderActions])
+  }, [isMobile?.isMobile, onClose, setHeaderActions])
+
+  useEffect(() => {
+    if (!removeHeader) {
+      return
+    }
+    return () => {
+      if (mobileHeaderIdRef.current) {
+        removeHeader(mobileHeaderIdRef.current)
+        mobileHeaderIdRef.current = null
+        lastHeaderStateRef.current = null
+      }
+    }
+  }, [removeHeader])
+
+  useEffect(() => {
+    if (!registerHeader || !updateHeader || !removeHeader) {
+      return
+    }
+    if (!isMobile?.isMobile) {
+      if (mobileHeaderIdRef.current) {
+        removeHeader(mobileHeaderIdRef.current)
+        mobileHeaderIdRef.current = null
+        lastHeaderStateRef.current = null
+      }
+      return
+    }
+
+    const menuActions = [
+      {
+        label: 'Close',
+        icon: <CloseIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+        onClick: onClose,
+      },
+    ]
+
+    const title = route ? `Route Stats` : 'Route Stats'
+    const secondaryContent = route ? (
+      <div className="flex w-full items-center justify-between gap-2">
+        <span className="truncate text-sm font-semibold text-[var(--color-text)]">
+          {route.route_label ?? `Route #${route.id}`}
+        </span>
+        <span className="text-xs text-[var(--color-muted)]">Optimizations: {savedOptimizations.length}</span>
+      </div>
+    ) : (
+      <span className="text-sm text-[var(--color-muted)]">Select a route to view statistics.</span>
+    )
+
+    const nextState = { title, key: route ? `route-${route.id}` : 'no-route', optimizationCount: savedOptimizations.length }
+    const prevState = lastHeaderStateRef.current
+
+    if (!mobileHeaderIdRef.current) {
+      mobileHeaderIdRef.current = registerHeader({
+        title,
+        onBack: onClose,
+        menuActions,
+        secondaryContent,
+      })
+      lastHeaderStateRef.current = nextState
+    } else {
+      const changed =
+        !prevState ||
+        prevState.title !== nextState.title ||
+        prevState.key !== nextState.key ||
+        prevState.optimizationCount !== nextState.optimizationCount
+
+      if (changed) {
+        updateHeader(mobileHeaderIdRef.current, {
+          title,
+          onBack: onClose,
+          menuActions,
+          secondaryContent,
+        })
+        lastHeaderStateRef.current = nextState
+      }
+    }
+  }, [
+    isMobile?.isMobile,
+    onClose,
+    registerHeader,
+    removeHeader,
+    route,
+    savedOptimizations.length,
+    updateHeader,
+  ])
 
   const submit_save_optimization = useCallback(
     async (routeId: number, index: number) => {
@@ -105,41 +196,35 @@ export default function RouteStatsSection({ onClose }: RouteStatsSectionProps) {
       setSelectedIndex(index)
       setSelectedOptionValue(String(index))
       const targetOptimization = savedOptimizations[index]
-      patchRouteInDataManager({
-        routesDataManager,
-        routeId: route.id,
-        updater: (currentRoute) => {
-          let nextRoute: RoutePayload = {
-            ...currentRoute,
-            using_optimization_indx: index,
-            expected_start_time: targetOptimization.expected_start_time ?? currentRoute.expected_start_time,
-            expected_end_time: targetOptimization.expected_end_time ?? currentRoute.expected_end_time,
-            set_start_time: targetOptimization.set_start_time ?? currentRoute.set_start_time,
-            set_end_time: targetOptimization.set_end_time ?? currentRoute.set_end_time,
-            start_location: targetOptimization.start_location ?? currentRoute.start_location,
-            end_location: targetOptimization.end_location ?? currentRoute.end_location,
-            total_distance_meters:
-              targetOptimization.total_distance_meters ?? currentRoute.total_distance_meters,
-            total_duration_seconds:
-              targetOptimization.total_duration_seconds ?? currentRoute.total_duration_seconds,
-          }
+      updateRoute(route.id, (currentRoute) => {
+        let nextRoute: RoutePayload = {
+          ...currentRoute,
+          using_optimization_indx: index,
+          expected_start_time: targetOptimization.expected_start_time ?? currentRoute.expected_start_time,
+          expected_end_time: targetOptimization.expected_end_time ?? currentRoute.expected_end_time,
+          set_start_time: targetOptimization.set_start_time ?? currentRoute.set_start_time,
+          set_end_time: targetOptimization.set_end_time ?? currentRoute.set_end_time,
+          start_location: targetOptimization.start_location ?? currentRoute.start_location,
+          end_location: targetOptimization.end_location ?? currentRoute.end_location,
+          total_distance_meters: targetOptimization.total_distance_meters ?? currentRoute.total_distance_meters,
+          total_duration_seconds: targetOptimization.total_duration_seconds ?? currentRoute.total_duration_seconds,
+        }
 
-          if (targetOptimization.order_sequence) {
-            nextRoute = {
-              ...nextRoute,
-              delivery_orders: applyOrderSequenceToOrders(
-                currentRoute.delivery_orders ?? [],
-                targetOptimization.order_sequence,
-              ),
-            }
+        if (targetOptimization.order_sequence) {
+          nextRoute = {
+            ...nextRoute,
+            delivery_orders: applyOrderSequenceToOrders(
+              currentRoute.delivery_orders ?? [],
+              targetOptimization.order_sequence,
+            ),
           }
+        }
 
-          return nextRoute
-        },
+        return nextRoute
       })
       submit_save_optimization(route.id, index)
     },
-    [route, routesDataManager, savedOptimizations, submit_save_optimization],
+    [route, savedOptimizations, submit_save_optimization, updateRoute],
   )
 
   if (!route) {

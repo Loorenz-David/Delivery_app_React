@@ -2,16 +2,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useSectionPanel } from '../../contexts/SectionPanelContext'
 import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
 
 import { BasicButton } from '../../../../components/buttons/BasicButton'
-import { ItemIcon } from '../../../../assets/icons'
+import { ItemIcon, MessageIcon, SettingIcon,  LocationIcon } from '../../../../assets/icons'
 
-import type { OrderPayload, RoutePayload } from '../../types/backend'
+import type { OrderPayload } from '../../types/backend'
 import type { ActionManager, ActionPayload } from '../../../../resources_manager/managers/ActionManager'
 import { getStoredNavigationService, openNavigationForOrder, storeNavigationService, type NavigationService } from './utils/navigationHelpers'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import { computeArrivalRange } from '../../utils/arrivalRange'
 import { formatTimeLabel } from '../../utils/timeFormat'
+import { useMobileSectionHeader, type MobileHeaderAction } from '../../contexts/MobileSectionHeaderContext'
 
 interface BuildersHeaderActionsProps{
     popupManager?: ActionManager
@@ -29,6 +31,7 @@ interface BuildersInteractionActionProps{
     orderId?: number
     routeId?: number
     chatCount?: number
+    isMobile?: boolean
 }
 
 const buildHeaderActions = ({ onClose }:BuildersHeaderActionsProps)=>{
@@ -49,7 +52,7 @@ const buildHeaderActions = ({ onClose }:BuildersHeaderActionsProps)=>{
     ]
 }
 
-const buildInteractionActions = ({ sectionManager, popupManager, onOpenItems, onNavigate, onOpenMessages, orderId, routeId, chatCount }:BuildersInteractionActionProps & { chatCount?: number })=>{
+const buildInteractionActions = ({ sectionManager, popupManager, onOpenItems, onNavigate, onOpenMessages, orderId, routeId, chatCount, isMobile }:BuildersInteractionActionProps & { chatCount?: number })=>{
     return[
         <BasicButton children={'Items'} params={
             {
@@ -81,7 +84,7 @@ const buildInteractionActions = ({ sectionManager, popupManager, onOpenItems, on
                     sectionManager?.open({
                         key:'ChatSection',
                         parentParams:{
-                            className:'w-[400px] absolute right-full top-0 z-[70] shadow-2xl',
+                            className: isMobile ? 'w-full h-full z-[5] absolute' : 'w-[400px] absolute right-full top-0 z-[70] shadow-2xl',
                             label:"Chat", 
                             icon:<ItemIcon className="app-icon h-4 w-4" />,
                             animation:'expand',
@@ -135,29 +138,36 @@ const SingleOrder = ({
     // Use Contexts
     const {setHeaderActions, setInteractionActions} = useSectionPanel()
     const sectionManager  = useResourceManager('sectionManager')
-    const routesDataManager = useResourceManager('routesDataManager')
     const popupManager = useResourceManager('popupManager')
+    const isMobile = useResourceManager('isMobileObject')
+    const mobileHeader = useMobileSectionHeader()
+    const registerHeader = mobileHeader?.registerHeader
+    const updateHeader = mobileHeader?.updateHeader
+    const removeHeader = mobileHeader?.removeHeader
+    const mobileHeaderIdRef = useRef<string | null>(null)
+    const lastHeaderStateRef = useRef<{ title: string; routeKey: string | null; orderKey: string | null } | null>(null)
     const { showMessage } = useMessageManager()
+    const selectedRouteId = useHomeStore((state) => state.selectedRouteId)
+    const selectedOrderId = useHomeStore((state) => state.selectedOrderId)
+    const { findRouteById, findOrderById, selectOrder } = useHomeStore.getState()
     const payloadRecord = payload as Record<string, unknown> | undefined
     const requestedRouteId = typeof payloadRecord?.['routeId'] === 'number' ? (payloadRecord['routeId'] as number) : undefined
     const requestedOrderId = typeof payloadRecord?.['orderId'] === 'number' ? (payloadRecord['orderId'] as number) : undefined
-    const selectedRoute = routesDataManager.getActiveSelection<RoutePayload>('SelectedRoute')
-    const selectedOrder = routesDataManager.getActiveSelection<OrderPayload>('SelectedOrder')
     const resolvedRouteId =
-        (typeof selectedOrder?.meta?.['routeId'] === 'number' ? (selectedOrder.meta?.['routeId'] as number) : undefined) ??
-        (typeof selectedRoute?.id === 'number' ? (selectedRoute.id as number) : undefined) ??
-        requestedRouteId
+        selectedRouteId ??
+        requestedRouteId ??
+        null
     const route =
-        selectedRoute?.data ??
-        (resolvedRouteId != null
-            ? routesDataManager.find<RoutePayload>(resolvedRouteId, { collectionKey: 'routes', targetKey: 'id' }) ?? null
-            : null)
-    const resolvedOrderId = (typeof selectedOrder?.id === 'number' ? (selectedOrder.id as number) : undefined) ?? requestedOrderId
+        resolvedRouteId != null
+            ? findRouteById(resolvedRouteId) ?? null
+            : null
+    const resolvedOrderId = selectedOrderId ?? requestedOrderId ?? null
     const order =
-        selectedOrder?.data ??
-        (resolvedOrderId != null
-            ? route?.delivery_orders?.find((entry: OrderPayload) => entry.id === resolvedOrderId) ?? null
-            : null)
+        resolvedOrderId != null
+            ? findOrderById(resolvedOrderId, resolvedRouteId) ??
+              route?.delivery_orders?.find((entry: OrderPayload) => entry.id === resolvedOrderId) ??
+              null
+            : null
     const arrivalRange = useMemo(
         () => computeArrivalRange(order?.expected_arrival_time, route?.delivery_time_range ?? 30),
         [order?.expected_arrival_time, route?.delivery_time_range],
@@ -287,89 +297,91 @@ const SingleOrder = ({
         if (!order) {
             return
         }
-        routesDataManager.setActiveSelection('SelectedOrder', {
-            id: order.id,
-            data: order,
-            meta: { routeId: route?.id ?? order.route_id ?? null }
-        })
+        selectOrder(order.id, { routeId: route?.id ?? order.route_id ?? null })
         sectionManager.open({
             key:'ItemSection',
             parentParams:{
-                className:'w-[400px] absolute z-3 right-[100%]',
+                className:isMobile.isMobile ? 'w-full h-screen z-[5] absolute' : 'w-[400px] absolute z-3 right-[100%]',
                 label:"Items", 
                 icon:<ItemIcon className="app-icon h-4 w-4" />,
                 animation:'expand'
             }
         })
-    }, [order, route?.id, routesDataManager, sectionManager])
+    }, [order, route?.id, sectionManager, selectOrder])
 
     useEffect(()=>{
 
-        if(setHeaderActions){
-            setHeaderActions( buildHeaderActions( { onClose } ) )
+        if(!setHeaderActions || !setInteractionActions){
+            return
         }
-        if( setInteractionActions ){
-            const callButton = (
-                <div
-                    ref={callButtonRef}
-                    className="relative"
-                    onMouseEnter={() => {
-                        if (hasMultiplePhones) {
-                            clearHideCallMenuTimeout()
-                            openCallMenu()
-                        }
-                    }}
-                    onMouseLeave={() => {
-                        if (hasMultiplePhones) {
-                            scheduleCloseCallMenu()
-                        }
-                    }}
-                >
-                    <BasicButton
-                        children={'Call'}
-                        params={{
-                            className: 'w-[110px]',
-                            variant: 'secondary',
-                            onClick: handleCallClick,
-                        }}
-                    />
-                </div>
-            )
-            setInteractionActions([
-                ...buildInteractionActions({
-                    sectionManager,
-                    popupManager,
-                    onClose,
-                    onOpenItems: openItemsSection,
-                    onNavigate: handleNavigate,
-                    onOpenMessages: openMessagesPopup,
-                    orderId: order?.id,
-                    routeId: route?.id ?? order?.route_id,
-                    chatCount: order?.notes_chat?.length
-                }),
-                callButton,
-            ])
+        if(isMobile?.isMobile){
+            setHeaderActions([])
+            setInteractionActions([])
+            return
         }
-        
-        
-        },[
-            clearHideCallMenuTimeout,
-            handleCallClick,
-            handleNavigate,
-            hasMultiplePhones,
-            onClose,
-            openCallMenu,
-            openItemsSection,
-            openMessagesPopup,
-            order?.id,
-            order?.route_id,
-            popupManager,
-            route?.id,
-            scheduleCloseCallMenu,
-            sectionManager,
-            setHeaderActions,
-            setInteractionActions,
+        setHeaderActions( buildHeaderActions( { onClose } ) )
+        const callButton = (
+            <div
+                ref={callButtonRef}
+                className="relative"
+                onMouseEnter={() => {
+                    if (hasMultiplePhones) {
+                        clearHideCallMenuTimeout()
+                        openCallMenu()
+                    }
+                }}
+                onMouseLeave={() => {
+                    if (hasMultiplePhones) {
+                        scheduleCloseCallMenu()
+                    }
+                }}
+            >
+                <BasicButton
+                    children={'Call'}
+                    params={{
+                        className: 'w-[110px]',
+                        variant: 'secondary',
+                        onClick: handleCallClick,
+                    }}
+                />
+            </div>
+        )
+        setInteractionActions([
+            ...buildInteractionActions({
+                sectionManager,
+                popupManager,
+                onClose,
+                onOpenItems: openItemsSection,
+                onNavigate: handleNavigate,
+                onOpenMessages: openMessagesPopup,
+                orderId: order?.id,
+                routeId: route?.id ?? order?.route_id,
+                chatCount: order?.notes_chat?.length,
+                isMobile: isMobile.isMobile,
+            }),
+            callButton,
         ])
+        
+        
+    },[
+        clearHideCallMenuTimeout,
+        handleCallClick,
+        handleNavigate,
+        hasMultiplePhones,
+        onClose,
+        openCallMenu,
+        openItemsSection,
+        openMessagesPopup,
+        order?.id,
+        order?.route_id,
+        popupManager,
+        route?.id,
+        scheduleCloseCallMenu,
+        sectionManager,
+        setHeaderActions,
+        setInteractionActions,
+        isMobile?.isMobile,
+    ])
 
     useEffect(() => () => clearHideCallMenuTimeout(), [clearHideCallMenuTimeout])
 
@@ -395,13 +407,138 @@ const SingleOrder = ({
             setCallMenu(null)
         }
     }, [callMenu, hasMultiplePhones])
+
+    useEffect(() => {
+        if (!removeHeader) {
+            return
+        }
+        return () => {
+            if (mobileHeaderIdRef.current) {
+                removeHeader(mobileHeaderIdRef.current)
+                mobileHeaderIdRef.current = null
+                lastHeaderStateRef.current = null
+            }
+        }
+    }, [removeHeader])
+
+    useEffect(() => {
+        if (!registerHeader || !updateHeader || !removeHeader) {
+            return
+        }
+        if (!isMobile?.isMobile) {
+            if (mobileHeaderIdRef.current) {
+                removeHeader(mobileHeaderIdRef.current)
+                mobileHeaderIdRef.current = null
+                lastHeaderStateRef.current = null
+            }
+            return
+        }
+
+        const title = order ? `${order.client_first_name ?? 'Order'} ${order.client_last_name ?? ''}`.trim() || 'Order details' : 'Order details'
+        const secondaryContent = order ? (
+            <div className="flex w-full items-center justify-between gap-2">
+                <span className="truncate text-sm font-semibold text-[var(--color-text)]">Order #{order.id}</span>
+                <span className="text-xs text-[var(--color-muted)]">
+                    {route?.route_label ?? `Route ${route?.id ?? ''}`}
+                </span>
+            </div>
+        ) : (
+            <span className="text-sm text-[var(--color-muted)]">Select an order to view details.</span>
+        )
+
+        const menuActions: MobileHeaderAction[] = [
+            {
+                label: 'Items',
+                icon: <ItemIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: openItemsSection,
+            },
+            {
+                label: 'Chat',
+                icon: <MessageIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: () => {
+                    sectionManager?.open({
+                        key:'ChatSection',
+                        parentParams:{
+                            className: isMobile?.isMobile ? 'w-full h-screen z-[5] absolute' : 'w-[400px] absolute right-full top-0 z-[70] shadow-2xl',
+                            label:"Chat", 
+                            icon:<ItemIcon className="app-icon h-4 w-4" />,
+                            animation:'expand',
+                        }
+                    })
+                },
+            },
+            {
+                label: 'Edit Order',
+                icon: <SettingIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: () => {
+                    if(order?.id){
+                        popupManager?.open({ key:'FillOrder', payload:{ mode:'edit', orderId: order.id, routeId: route?.id ?? order.route_id } })
+                    }
+                },
+            },
+            {
+                label: 'Message',
+                icon: <MessageIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: openMessagesPopup,
+            },
+            {
+                label: 'Navigate',
+                icon: <LocationIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: handleNavigate,
+            },
+        ]
+
+        const nextState = {
+            title,
+            routeKey: route ? `${route.id}` : 'no-route',
+            orderKey: order ? `${order.id}` : 'no-order',
+        }
+        const prevState = lastHeaderStateRef.current
+
+        if (!mobileHeaderIdRef.current) {
+            mobileHeaderIdRef.current = registerHeader({
+                title,
+                onBack: onClose,
+                menuActions,
+                secondaryContent,
+            })
+            lastHeaderStateRef.current = nextState
+        } else {
+            const changed =
+                !prevState ||
+                prevState.title !== nextState.title ||
+                prevState.routeKey !== nextState.routeKey ||
+                prevState.orderKey !== nextState.orderKey
+
+            if (changed) {
+                updateHeader(mobileHeaderIdRef.current, {
+                    title,
+                    onBack: onClose,
+                    menuActions,
+                    secondaryContent,
+                })
+                lastHeaderStateRef.current = nextState
+            }
+        }
+    }, [
+        handleNavigate,
+        isMobile?.isMobile,
+        onClose,
+        openItemsSection,
+        openMessagesPopup,
+        order,
+        popupManager,
+        registerHeader,
+        removeHeader,
+        route,
+        sectionManager,
+        updateHeader,
+    ])
     // ____________________________________________________________________________________________________________
 
     if (!route || !order) {
         return <p className="text-sm text-gray-500">Order not found.</p>
     }
-    console.log(order)
-
     return ( 
         <>
             <div className="space-y-6 text-[0.9em] py-4">

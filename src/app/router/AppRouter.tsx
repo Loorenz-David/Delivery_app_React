@@ -4,6 +4,7 @@ import type { ReactElement } from 'react'
 import { AuthPage } from '../../features/auth/pages/AuthPage'
 import { HomePage } from '../../features/home/pages/HomePage'
 import { SettingsPage } from '../../features/settings/pages/SettingsPage'
+import { DeliveryRequestPage } from '../../features/external_form/pages/DeliveryRequestPage'
 import { useAuth } from '../../features/auth/context/AuthContext'
 
 function ProtectedRoute({ children }: { children: ReactElement }) {
@@ -26,6 +27,7 @@ export function AppRouter() {
         }
       />
       <Route path="/auth/*" element={<AuthPage />} />
+      <Route path="/delivery-request" element={<DeliveryRequestPage />} />
       <Route
         path="/settings"
         element={

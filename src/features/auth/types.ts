@@ -17,6 +17,7 @@ export interface RegisterPayload extends LoginPayload {
 export interface LoginResponse {
   access_token: string
   refresh_token: string
+  socket_token?: string
   user: {
     id: string | number
     email: string

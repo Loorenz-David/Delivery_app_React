@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { InfoIcon, ThunderIcon, TruckIcon } from '../../../../assets/icons'
+import { CloseIcon, InfoIcon, ThunderIcon, TruckIcon } from '../../../../assets/icons'
 
 import { BasicButton } from '../../../../components/buttons/BasicButton'
 import { DropDown } from '../../../../components/buttons/DropDown'
@@ -11,10 +11,13 @@ import { useSectionPanel } from '../../contexts/SectionPanelContext'
 import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import type { ActionPayload } from '../../../../resources_manager/managers/ActionManager'
-import type { OrderPayload, RoutePayload } from '../../types/backend'
+import type { RoutePayload } from '../../types/backend'
 import { OptimizeRouteService, type OptimizeRoutePayload } from '../../api/deliveryService'
 import { ApiError } from '../../../../lib/api/ApiClient'
-import { mergeRouteWithOptimizedData, patchRouteInDataManager } from '../../utils/routeDataHelpers'
+import { mergeRouteWithOptimizedData } from '../../utils/routeDataHelpers'
+import { useHomeStore } from '../../../../store/home/useHomeStore'
+import { useMobileSectionHeader } from '../../contexts/MobileSectionHeaderContext'
+
 
 interface RouteOptimizationSectionProps {
     payload?: ActionPayload
@@ -56,15 +59,22 @@ const tipMessage =
 
 const RouteOptimizationSection = ({ payload, onClose }: RouteOptimizationSectionProps) => {
     const { setHeaderActions } = useSectionPanel()
-    const routesDataManager = useResourceManager('routesDataManager')
     const { showMessage } = useMessageManager()
+    const isMobile = useResourceManager('isMobileObject')
+    const mobileHeader = useMobileSectionHeader()
+    const registerHeader = mobileHeader?.registerHeader
+    const updateHeader = mobileHeader?.updateHeader
+    const removeHeader = mobileHeader?.removeHeader
+    const mobileHeaderIdRef = useRef<string | null>(null)
+    const lastHeaderStateRef = useRef<{ title: string; key: string } | null>(null)
+
     const optimizeRouteService = useMemo(() => new OptimizeRouteService(), [])
     const payloadRecord = payload as Record<string, unknown> | undefined
     const payloadRouteId =
         typeof payloadRecord?.['routeId'] === 'number' ? (payloadRecord['routeId'] as number) : undefined
-    const activeRouteSelection = routesDataManager.getActiveSelection<RoutePayload>('SelectedRoute')
-    const selectedRouteId =
-        typeof activeRouteSelection?.id === 'number' ? (activeRouteSelection.id as number) : undefined
+    const selectedRouteId = useHomeStore((state) => state.selectedRouteId)
+    const selectedOrderId = useHomeStore((state) => state.selectedOrderId)
+    const { findRouteById, selectRoute, selectOrder, updateRoute } = useHomeStore.getState()
     const routeId = payloadRouteId ?? selectedRouteId ?? null
 
     const [considerTraffic, setConsiderTraffic] = useState(true)
@@ -76,7 +86,14 @@ const RouteOptimizationSection = ({ payload, onClose }: RouteOptimizationSection
     const [objective, setObjective] = useState<ObjectiveValue>('MIN_TRAVEL_TIME')
 
     useEffect(() => {
-        setHeaderActions?.([
+        if (!setHeaderActions) {
+            return
+        }
+        if (isMobile?.isMobile) {
+            setHeaderActions([])
+            return
+        }
+        setHeaderActions([
             <BasicButton
                 key="close-route-optimization"
                 params={{
@@ -90,9 +107,76 @@ const RouteOptimizationSection = ({ payload, onClose }: RouteOptimizationSection
             </BasicButton>,
         ])
         return () => {
-            setHeaderActions?.([])
+            setHeaderActions([])
         }
-    }, [onClose, setHeaderActions])
+    }, [isMobile?.isMobile, onClose, setHeaderActions])
+
+    useEffect(() => {
+        if (!removeHeader) {
+            return
+        }
+        return () => {
+            if (mobileHeaderIdRef.current) {
+                removeHeader(mobileHeaderIdRef.current)
+                mobileHeaderIdRef.current = null
+                lastHeaderStateRef.current = null
+            }
+        }
+    }, [removeHeader])
+
+    useEffect(() => {
+        if (!registerHeader || !updateHeader || !removeHeader) {
+            return
+        }
+        if (!isMobile?.isMobile) {
+            if (mobileHeaderIdRef.current) {
+                removeHeader(mobileHeaderIdRef.current)
+                mobileHeaderIdRef.current = null
+                lastHeaderStateRef.current = null
+            }
+            return
+        }
+
+        const menuActions = [
+            {
+                label: 'Close',
+                icon: <CloseIcon className="app-icon h-5 w-5 text-[var(--color-text)]" />,
+                onClick: onClose,
+            },
+        ]
+
+        const nextState = { title: 'Route Optimization', key: 'route-optimization' }
+        const prevState = lastHeaderStateRef.current
+
+        if (!mobileHeaderIdRef.current) {
+            mobileHeaderIdRef.current = registerHeader({
+                title: 'Route Optimization',
+                onBack: onClose,
+                menuActions,
+                secondaryContent: (
+                    <span className="text-sm text-[var(--color-muted)]">
+                        Adjust preferences and optimize this route.
+                    </span>
+                ),
+            })
+            lastHeaderStateRef.current = nextState
+        } else {
+            const changed = !prevState || prevState.title !== nextState.title || prevState.key !== nextState.key
+            if (changed) {
+                updateHeader(mobileHeaderIdRef.current, {
+                    title: 'Route Optimization',
+                    onBack: onClose,
+                    menuActions,
+                    secondaryContent: (
+                        <span className="text-sm text-[var(--color-muted)]">
+                            Adjust preferences and optimize this route.
+                        </span>
+                    ),
+                })
+                lastHeaderStateRef.current = nextState
+            }
+        }
+    }, [isMobile?.isMobile, onClose, registerHeader, removeHeader, updateHeader])
 
     const optimizationPayload = useMemo(() => {
         if (routeId == null) {
@@ -109,32 +193,20 @@ const RouteOptimizationSection = ({ payload, onClose }: RouteOptimizationSection
 
     const applyOptimizedRoute = useCallback(
         (optimizedRoute: RoutePayload) => {
-            const resolvedRoute = patchRouteInDataManager({
-                routesDataManager,
-                routeId: optimizedRoute.id,
-                updater: (route) => mergeRouteWithOptimizedData(route, optimizedRoute),
-            })
-            if (resolvedRoute) {
-                const activeOrderSelection = routesDataManager.getActiveSelection<OrderPayload>('SelectedOrder')
-                if (activeOrderSelection?.id && resolvedRoute.delivery_orders) {
-                    const updatedOrder = resolvedRoute.delivery_orders.find(
-                        (entry) => entry.id === activeOrderSelection.id,
-                    )
-                    if (updatedOrder) {
-                        routesDataManager.setActiveSelection('SelectedOrder', {
-                            id: activeOrderSelection.id,
-                            data: updatedOrder,
-                            meta: {
-                                ...(activeOrderSelection.meta ?? {}),
-                                routeId: resolvedRoute.id,
-                            },
-                        })
-                    }
+        updateRoute(optimizedRoute.id, (route) => mergeRouteWithOptimizedData(route, optimizedRoute))
+        const resolvedRoute = findRouteById(optimizedRoute.id)
+        if (resolvedRoute) {
+            selectRoute(resolvedRoute.id, { routeId: resolvedRoute.id }, resolvedRoute)
+            if (selectedOrderId && resolvedRoute.delivery_orders) {
+                const updatedOrder = resolvedRoute.delivery_orders.find((entry) => entry.id === selectedOrderId)
+                if (updatedOrder) {
+                    selectOrder(selectedOrderId, { routeId: resolvedRoute.id })
                 }
             }
-        },
-        [routesDataManager],
-    )
+        }
+    },
+    [findRouteById, selectOrder, selectRoute, selectedOrderId, updateRoute],
+)
 
     const handleOptimizationRequest = useCallback(
         async (action: 'optimize' | 'update') => {

@@ -5,10 +5,7 @@ import { InputField } from '../../../../components/forms/InputField'
 import { useInputWarning } from '../../../../components/forms/useInputWarning'
 import { BasicButton } from '../../../../components/buttons/BasicButton'
 import type { ActionComponentProps } from '../../../../resources_manager/managers/ActionManager'
-import type { DataManager } from '../../../../resources_manager/managers/DataManager'
 import { ResponseManager } from '../../../../resources_manager/managers/ResponseManager'
-import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
-import type { SettingsDataset } from '../../types'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import {
   ItemPropertiesService,
@@ -16,6 +13,7 @@ import {
   type ItemTypeDetails,
 } from '../../api/itemPropertiesService'
 import { SelectItemPropertiesRelationships } from '../ui/SelectItemPropertiesRelationships'
+import { useSettingsStore } from '../../../../store/settings/useSettingsStore'
 
 type FillItemCategoryMode = 'create' | 'update'
 
@@ -44,7 +42,7 @@ export function FillItemCategory({
   const itemService = useMemo(() => new ItemPropertiesService(), [])
   const responseManager = useMemo(() => new ResponseManager(), [])
   const { showMessage } = useMessageManager()
-  const settingsDataManager = useResourceManager<DataManager<SettingsDataset>>('settingsDataManager')
+  const upsertIntoCollection = useSettingsStore((state) => state.upsertIntoCollection)
 
   const [formState, setFormState] = useState<ItemCategoryFormState>(() => createInitialFormState(targetCategory))
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -136,7 +134,7 @@ export function FillItemCategory({
             .filter((type) => formState.item_types.includes(type.id))
             .map((type) => ({ id: type.id, name: type.name })),
         }
-        upsertCollection(settingsDataManager, 'ItemCategories', entity)
+        upsertIntoCollection('ItemCategories', entity)
         showMessage({ status: 200, message: 'Item category created.' })
       } else if (targetCategory) {
         const response = await itemService.updateItemCategory({
@@ -153,7 +151,7 @@ export function FillItemCategory({
               .map((type) => ({ id: type.id, name: type.name })),
           },
         )
-        upsertCollection(settingsDataManager, 'ItemCategories', updated)
+        upsertIntoCollection('ItemCategories', updated)
         showMessage({ status: 200, message: 'Item category updated.' })
       }
       initialSnapshotRef.current = createSnapshot(formState)
@@ -171,10 +169,10 @@ export function FillItemCategory({
     mode,
     onClose,
     responseManager,
-    settingsDataManager,
     showMessage,
     targetCategory,
     typeOptions,
+    upsertIntoCollection,
     validateForm,
   ])
 
@@ -255,23 +253,4 @@ function areArraysEqual(a: number[], b: number[]) {
   if (a.length !== b.length) return false
   const setA = new Set(a)
   return b.every((val) => setA.has(val))
-}
-
-function upsertCollection<T extends { id: number }>(
-  manager: DataManager<SettingsDataset>,
-  key: keyof SettingsDataset | string,
-  entity: T,
-) {
-  manager.updateDataset((dataset) => {
-    const next = { ...(dataset ?? {}) } as Record<string, unknown>
-    const collection = Array.isArray(next[key as string]) ? ([...(next[key as string] as unknown[])] as T[]) : []
-    const index = collection.findIndex((item) => item.id === entity.id)
-    if (index >= 0) {
-      collection[index] = entity
-    } else {
-      collection.push(entity)
-    }
-    next[key as string] = collection
-    return next as SettingsDataset
-  })
 }
