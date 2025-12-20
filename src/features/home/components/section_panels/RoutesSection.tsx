@@ -15,6 +15,8 @@ import { DeliveryService, UpdateOrderService } from '../../api/deliveryService'
 import type { ActionManager } from '../../../../resources_manager/managers/ActionManager'
 import { useHomeStore } from '../../../../store/home/useHomeStore'
 
+import LoadingSpinner from '../../../../components/spiner_loaders/PageLoader'
+import { normalizeWeekKey, normalizeDateKey } from '../../utils/timeFormat'
 
 interface RoutesSectionProps {
     isCompact?: boolean
@@ -401,56 +403,25 @@ function RouteDateGroup({ dateKey, label, children }: { dateKey: string; label?:
     )
 }
 
-function normalizeDateKey(value: string | null | undefined) {
-    if (!value) {
-        return 'Unknown'
-    }
-    return value.split('T')[0] ?? value
-}
 
-const dateFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-export function formatDateLabel(dateKey: string) {
-    if (dateKey === 'Unknown') {
-        return 'Unknown Delivery Date'
+    const dateFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+    export function formatDateLabel(dateKey: string) {
+        if (dateKey === 'Unknown') {
+            return 'Unknown Delivery Date'
+        }
+        const parsed = new Date(dateKey)
+        if (Number.isNaN(parsed.getTime())) {
+            return dateKey
+        }
+        return dateFormatter.format(parsed)
     }
-    const parsed = new Date(dateKey)
-    if (Number.isNaN(parsed.getTime())) {
-        return dateKey
-    }
-    return dateFormatter.format(parsed)
-}
 
-function resolveGroupingKey(value: string | null | undefined, mode: GroupingMode) {
-    if (mode === 'week') {
-        const { key, weekNumber, year } = normalizeWeekKey(value)
-        const label = weekNumber != null ? `Week ${weekNumber} · ${year}` : 'Week (unknown)'
-        return { key, label }
+    function resolveGroupingKey(value: string | null | undefined, mode: GroupingMode) {
+        if (mode === 'week') {
+            const { key, weekNumber, year } = normalizeWeekKey(value)
+            const label = weekNumber != null ? `Week ${weekNumber} · ${year}` : 'Week (unknown)'
+            return { key, label }
+        }
+        const key = normalizeDateKey(value)
+        return { key, label: formatDateLabel(key) }
     }
-    const key = normalizeDateKey(value)
-    return { key, label: formatDateLabel(key) }
-}
-
-function normalizeWeekKey(value: string | null | undefined) {
-    const date = value ? new Date(value) : null
-    if (!date || Number.isNaN(date.getTime())) {
-        return { key: 'week-unknown', weekNumber: null as number | null, year: null as number | null }
-    }
-    const { weekNumber, year } = getISOWeek(date)
-    return {
-        key: `week-${year}-${weekNumber}`,
-        weekNumber,
-        year,
-    }
-}
-
-function getISOWeek(date: Date) {
-    const target = new Date(date.valueOf())
-    const dayNr = (date.getDay() + 6) % 7
-    target.setDate(target.getDate() - dayNr + 3)
-    const firstThursday = new Date(target.getFullYear(), 0, 4)
-    const diff =
-        (target.valueOf() - firstThursday.valueOf()) / 86400000
-    const weekNumber = 1 + Math.floor(diff / 7)
-    const year = target.getFullYear()
-    return { weekNumber, year }
-}

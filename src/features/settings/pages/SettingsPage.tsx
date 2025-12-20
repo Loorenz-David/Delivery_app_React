@@ -53,11 +53,14 @@ export function SettingsPage() {
     [],
   )
   const resetDataset = useSettingsStore((state) => state.resetDataset)
+  
   useActionEntries(popupManager)
   useActionEntries(popupConfirmationManager)
+
   useEffect(() => {
     resetDataset()
   }, [resetDataset])
+
   useEffect(() => {
     const handleResize = () => setIsMobileViewport(window.innerWidth < 1000)
     window.addEventListener('resize', handleResize)

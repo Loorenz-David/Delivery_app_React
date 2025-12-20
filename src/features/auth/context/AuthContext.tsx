@@ -42,12 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Keep the socket connection aligned with auth state (handles refresh/page reload).
-    if (session?.accessToken) {
+    const hasSocketAuth = Boolean(session?.accessToken || session?.socketToken)
+    if (hasSocketAuth) {
       realtimeSocketManager.connect()
     } else {
       realtimeSocketManager.disconnect()
     }
-  }, [session?.accessToken])
+  }, [session?.accessToken, session?.socketToken])
 
   const login = useCallback(async (payload: LoginPayload) => {
     setIsLoading(true)

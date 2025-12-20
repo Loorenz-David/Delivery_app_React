@@ -13,6 +13,7 @@ import { Field } from '../../../../components/forms/FieldContainer'
 import { PhoneField, type PhoneValue } from '../../../../components/forms/PhoneField'
 import { TextAreaField } from '../../../../components/forms/TextAreaField'
 import { BasicButton } from '../../../../components/buttons/BasicButton'
+import InfoCard from '../../../../components/forms/InfoCard'
 import { DropDown } from '../../../../components/buttons/DropDown'
 import { AddressAutocomplete } from '../../../../google_maps/components/AddressAutocomplete'
 import { fieldContainer, fieldInput } from '../../../../constants/classes'
@@ -42,6 +43,8 @@ import {
   resolveDefaultStateIds,
 } from './utils/orderFormHelpers'
 import { formBridge, type FormHandoffPayload } from '../../../../webrtc/formBridge'
+import { PrintLabelButton } from './utils/PrintLabelButton'
+import { normalizeDateKey } from '../../utils/timeFormat'
 import type {
   CreatedItemResponse,
   DraftItem,
@@ -68,7 +71,14 @@ const TAB_CONFIG: Array<{ key: TabKey; label: string }> = [
   { key: 'items', label: 'Items' },
 ]
 
-const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, openConfirm }: ActionComponentProps<FillOrderPayload>) => {
+const FillOrder = ({
+  payload,
+  onClose,
+  setPopupHeader,
+  registerBeforeClose,
+  openConfirm,
+  setIsLoading,
+}: ActionComponentProps<FillOrderPayload>) => {
   const mode: FillOrderMode = payload?.mode ?? 'create'
   const optionService = useMemo(() => new OptionService(), [])
   const responseManager = useMemo(() => new ResponseManager(), [])
@@ -154,6 +164,20 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     () => orderState.delivery_items.filter((item) => item.action !== 'delete').length,
     [orderState.delivery_items],
   )
+  const printableOrders = useMemo(() => {
+    const fallbackOrderId = locatedOrder?.id ?? Date.now()
+    const deliveryArrangement = computeNextDeliveryArrangement(targetRoute)
+    const deliveryDate = normalizeDateKey(targetRoute?.delivery_date)
+    return [
+      buildOrderPayloadFromState(orderState, {
+        routeId: targetRouteId ?? undefined,
+        fallbackOrderId,
+        deliveryArrangement,
+        senderId: apiClient.getSessionUserId(),
+        deliveryDate,
+      }),
+    ]
+  }, [locatedOrder?.id, orderState, targetRoute?.delivery_date, targetRouteId])
 
   const tabs = useMemo<Array<{ key: TabKey; label: string }>>(() => {
     const itemsLabel = visibleItemCount > 0 ? `Items (${visibleItemCount})` : 'Items'
@@ -418,6 +442,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
         showMessage({ status: 'info', message: 'No changes detected.' })
         return
       }
+      setIsLoading(true)
       setIsSubmitting(true)
 
       try {
@@ -462,6 +487,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
         showMessage({ status, message })
       } finally {
         setIsSubmitting(false)
+        setIsLoading(false)
       }
       return
     }
@@ -497,6 +523,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
         sendConfirmation && Object.keys(templateSelection).length > 0 ? templateSelection : undefined,
     }) as OrderCreatePayload
 
+    setIsLoading(true)
     setIsSubmitting(true)
     try {
 
@@ -554,6 +581,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
       showMessage({ status, message })
     } finally {
       setIsSubmitting(false)
+      setIsLoading(false)
     }
   }, [
     createOrderService,
@@ -569,6 +597,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     responseManager,
     setActiveTab,
     setDraftItem,
+    setIsLoading,
     selectOrder,
     selectRoute,
     showMessage,
@@ -588,6 +617,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
       return
     }
     setIsDeletingOrder(true)
+    setIsLoading(true)
     try {
       const response = await deleteOrderService.deleteOrder({ id: payload.orderId })
       if (targetRouteId != null) {
@@ -606,6 +636,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
       showMessage({ status, message })
     } finally {
       setIsDeletingOrder(false)
+      setIsLoading(false)
     }
   }, [
     deleteOrderService,
@@ -615,6 +646,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
     payload?.orderId,
     removeOrderFromRoute,
     selectOrder,
+    setIsLoading,
     showMessage,
     targetRouteId,
   ])
@@ -649,6 +681,7 @@ const FillOrder = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
             onToggleSendConfirmation={handleToggleSendConfirmation}
             onOpenTemplateSelector={openTemplateSelector}
             templateSelection={templateSelection}
+            printableOrders={printableOrders}
           />
         )
       case 'addItem':
@@ -877,6 +910,7 @@ interface CustomerInfoTabProps {
   onToggleSendConfirmation: () => void
   onOpenTemplateSelector: () => void
   templateSelection: Partial<Record<'email' | 'sms', number>>
+  printableOrders: OrderPayload[]
 }
 
 const buildHandoffPayloadFromOrder = (state: OrderFormState): FormHandoffPayload => ({
@@ -906,6 +940,7 @@ const applyFormResponseToOrderState = (prev: OrderFormState, payload: FormHandof
     primary_phone: mergePhone(prev.primary_phone, payload.client_primary_phone),
     secondary_phone: mergePhone(prev.secondary_phone, payload.client_secondary_phone),
     client_address: payload.client_address ?? prev.client_address,
+    note: payload.note ?? prev.note
   }
 }
 
@@ -922,6 +957,7 @@ function CustomerInfoTab({
   onToggleSendConfirmation,
   onOpenTemplateSelector,
   templateSelection,
+  printableOrders,
 }: CustomerInfoTabProps) {
   const { showMessage } = useMessageManager()
   const [bridgeStatus, setBridgeStatus] = useState(formBridge.getStatus())
@@ -995,17 +1031,13 @@ function CustomerInfoTab({
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-page)] px-4 py-3">
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-[var(--color-text)]">Share form to another device</p>
-          <p className="text-xs text-[var(--color-muted)]">
-            Send this customer form to your linked device for them to fill and send back.
-          </p>
-          <p className="text-xs font-semibold text-[var(--color-text)]">
-            Status: {bridgeStatus}{' '}
-            {bridgeError ? <span className="text-red-600">({bridgeError})</span> : null}
-          </p>
-        </div>
+      <InfoCard
+        title="Share form to another device"
+        description="Send this customer form to your linked device for them to fill and send back."
+      >
+        <p className="text-xs font-semibold text-[var(--color-text)]">
+          Status: {bridgeStatus} {bridgeError ? <span className="text-red-600">({bridgeError})</span> : null}
+        </p>
         <BasicButton
           params={{
             variant: 'primary',
@@ -1015,7 +1047,7 @@ function CustomerInfoTab({
         >
           Send form
         </BasicButton>
-      </div>
+      </InfoCard>
 
       <Field label="Client Language" required>
         <DropDown
@@ -1129,6 +1161,13 @@ function CustomerInfoTab({
         </div>
       ) : null}
 
+      <InfoCard
+        title="Create labels."
+        description="Select a template for creating a label with the order's information"
+      >
+        <PrintLabelButton orders={printableOrders} />
+      </InfoCard>
+
       <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-4 gap-3">
         {showDelete ? (
           <BasicButton
@@ -1144,15 +1183,18 @@ function CustomerInfoTab({
         ) : (
           <span />
         )}
-        <BasicButton
-          params={{
-            variant: 'primary',
-            disabled: isSubmitting,
-            onClick: onSubmit,
-          }}
-        >
-          {isSubmitting ? 'Saving...' : mode === 'edit' ? 'Update Order' : 'Create Order'}
-        </BasicButton>
+        <div className="flex items-center gap-3">
+          
+          <BasicButton
+            params={{
+              variant: 'primary',
+              disabled: isSubmitting,
+              onClick: onSubmit,
+            }}
+          >
+            {isSubmitting ? 'Saving...' : mode === 'edit' ? 'Update Order' : 'Create Order'}
+          </BasicButton>
+        </div>
       </div>
     </div>
   )

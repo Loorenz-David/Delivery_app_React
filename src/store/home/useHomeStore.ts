@@ -131,6 +131,7 @@ export const useHomeStore = create<HomeState>((set, get) => ({
       const routes = state.routes.map((route) => {
         if (route.id !== routeId) return route
         updated = updater(route)
+
         return updated
       })
       return updated ? { routes } : {}

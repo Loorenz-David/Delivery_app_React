@@ -46,7 +46,7 @@ const fieldInput = 'custom-input'
 type EditableField = Exclude<keyof RouteFormState, 'start_location' | 'end_location' | 'client_address' | 'id'>
 type LocationField = 'start_location' | 'end_location'
 
-const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, openConfirm }: ActionComponentProps<FillRoutePayload>) => {
+const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, openConfirm, setIsLoading }: ActionComponentProps<FillRoutePayload>) => {
   const mode: FillRouteMode = payload?.mode ?? (payload?.routeId ? 'edit' : 'create')
   const targetRouteId = payload?.routeId ?? null
 
@@ -143,6 +143,7 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
       return
     }
     setIsSubmitting(true)
+    setIsLoading(true)
     try {
       const response = await deleteRouteService.deleteRoute({ id: targetRouteId })
       removeRoute(targetRouteId)
@@ -160,6 +161,7 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
       showMessage({ status, message })
     } finally {
       setIsSubmitting(false)
+      setIsLoading(false)
     }
   }, [deleteRouteService, onClose, removeRoute, selectOrder, selectRoute, showMessage, targetRouteId])
 
@@ -200,6 +202,7 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
       }
 
       setIsSubmitting(true)
+      setIsLoading(true)
       try {
         if (mode === 'edit') {
           if (targetRouteId == null || !normalizedChangedFields) {
@@ -299,6 +302,7 @@ const FillRoute = ({ payload, onClose, setPopupHeader, registerBeforeClose, open
         showMessage({ status, message })
       } finally {
         setIsSubmitting(false)
+        setIsLoading(false)
       }
     },
     [

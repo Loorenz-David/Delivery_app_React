@@ -126,11 +126,14 @@ const OrdersSection = ({
     
     const selectedRouteId = useHomeStore((s) => s.selectedRouteId)
     const selectedOrderId = useHomeStore((s) => s.selectedOrderId)
+    const route = useHomeStore(
+      (state) => (selectedRouteId != null ? state.routes.find((r) => r.id === selectedRouteId) ?? null : null),
+      (a, b) => a?.id === b?.id && a?.delivery_orders === b?.delivery_orders && a?.saved_optimizations === b?.saved_optimizations,
+    )
 
-    const { findRouteById, selectRoute, selectOrder, updateRoute } = useHomeStore.getState()
+    const { selectRoute, selectOrder, updateRoute } = useHomeStore.getState()
     const itemStatesMap = useHomeStore((state) => state.itemStatesMap)
-    const route:RoutePayload | undefined = selectedRouteId != null ? findRouteById(selectedRouteId) ?? undefined : undefined
-    const routeId = route?.id
+    const routeId = route?.id ?? selectedRouteId ?? undefined
     const rawOrders = route?.delivery_orders ?? []
     const optimization = useMemo(() => (route ? resolveOptimization(route) : null), [route])
     const skippedShipmentIds = useMemo(

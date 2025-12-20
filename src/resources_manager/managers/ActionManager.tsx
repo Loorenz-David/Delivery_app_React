@@ -25,6 +25,7 @@ export interface ActionComponentProps<TPayload = ActionPayload> {
   setPopupHeader?: (content: ReactNode | null) => void
   registerBeforeClose?: (config?: BeforeCloseConfig) => void
   openConfirm?: (config: ConfirmConfig) => void
+  setIsLoading:(isLoading: boolean) => void
 }
 
 export interface ActionManagerOptions {

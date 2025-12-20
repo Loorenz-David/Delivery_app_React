@@ -23,14 +23,7 @@ export function DeliveryRequestSectionPanel() {
         </div>
       </div>
 
-      <DeliveryRequestFormPanel
-        isActive
-        onOpen={() => {}}
-        onClose={() => {}}
-        connectionStatus={'idle' as BridgeStatus}
-        connectionError={null}
-        onSubmitResponse={(_payload: FormHandoffPayload) => {}}
-      />
+      
     </div>
   )
 }

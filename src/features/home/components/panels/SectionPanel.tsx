@@ -5,6 +5,7 @@ import { cn } from '../../../../lib/utils/cn'
 import { SectionPanelContext } from '../../contexts/SectionPanelContext'
 import { useMobileSectionHeader } from '../../contexts/MobileSectionHeaderContext'
 import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
+import LoadingSpinner from '../../../../components/spiner_loaders/PageLoader'
 
 export interface SectionPanelParams {
   icon?: ReactNode
@@ -18,6 +19,7 @@ export interface SectionPanelParams {
   borderLeft?: string
   compact?: boolean
   zIndex?: number
+  isLoadingSectionInfo?: boolean
 }
 interface SectionPanelProps {
   params: SectionPanelParams
@@ -27,7 +29,8 @@ interface SectionPanelProps {
 
 export function SectionPanel({ params, children, position = -1 }: SectionPanelProps) {
   position++
-  const { icon, label, className, borderLeft, compact = false, zIndex } = params
+  const { icon, label, className, borderLeft, compact = false, zIndex, isLoadingSectionInfo } = params
+
   const isMobile = useResourceManager('isMobileObject')
   const [headerActions, setHeaderActions] = useState<React.ReactNode[]>([])
   const [interactionActions, setInteractionActions] = useState<React.ReactNode[]>([])
@@ -98,7 +101,11 @@ export function SectionPanel({ params, children, position = -1 }: SectionPanelPr
             className={"flex-1 overflow-y-auto px-4 pb-3"}
             style={contentMaxHeight ? { maxHeight: contentMaxHeight} : undefined}
           >
-            {children}
+            {!isLoadingSectionInfo  ? children : 
+              <div className="flex items-center justify-center pt-10">
+                <LoadingSpinner loadingText={`Loading ${label}`}/>
+              </div>
+            }
           </div>
         </div>
       </section>

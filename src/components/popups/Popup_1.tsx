@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { useResourceManager } from '../../resources_manager/resourcesManagerContext'
 import type { BeforeCloseConfig, ConfirmConfig } from '../../resources_manager/managers/ActionManager'
 import { motion } from 'framer-motion'
+import PageLoader from '../spiner_loaders/PageLoader'
 
 
 function HeaderRow({
@@ -65,6 +66,7 @@ interface ConfirmationState {
 
 const Popup_1 = ({ params, children, onRequestClose }:PopupType ) => {
   const [headerContent, setHeaderContent] = useState<ReactNode | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const popupManager = useResourceManager('popupManager')
   const beforeCloseConfigRef = useRef<BeforeCloseConfig | null>(null)
   const isMountedRef = useRef(true)
@@ -100,7 +102,7 @@ const Popup_1 = ({ params, children, onRequestClose }:PopupType ) => {
   const { title = 'Popup', description = '' } = params ?? {}
   const renderedChild =
     isValidElement(children) && typeof children.type !== 'string'
-      ? cloneElement(children as any, { setPopupHeader, registerBeforeClose, openConfirm } as any)
+      ? cloneElement(children as any, { setPopupHeader, registerBeforeClose, openConfirm, setIsLoading } as any)
       : children
   const [confirmState, setConfirmState] = useState<ConfirmationState>({ visible: false })
   const [isConfirmSaving, setIsConfirmSaving] = useState(false)
@@ -161,7 +163,7 @@ const Popup_1 = ({ params, children, onRequestClose }:PopupType ) => {
       {/* Popup element */}
       <motion.div
         className={isMobile.isMobile ?`relative z-10 pointer-events-auto flex h-full w-full  flex-col  bg-white text-[var(--color-text)]`:
-        `relative z-10 pointer-events-auto flex h-full w-full max-h-[800px] max-w-[600px] flex-col rounded-none border border-[var(--color-border)] bg-white text-[var(--color-text)] md:rounded-3xl`
+        `relative z-10 pointer-events-auto flex h-full w-full max-h-[800px] max-w-[600px] flex-col rounded-none  bg-white text-[var(--color-text)] md:rounded-3xl`
         }
         initial={{ opacity: 0, x: 100 }}
         animate={{ opacity: 1, x: 0 }}
@@ -170,6 +172,13 @@ const Popup_1 = ({ params, children, onRequestClose }:PopupType ) => {
       >
         <HeaderRow title={title} description={description} headerContent={headerContent} onClose={handleCloseAttempt} />
         <Body>{renderedChild}</Body>
+        {isLoading && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 rounded-none md:rounded-3xl">
+            <PageLoader loadingText="Processing..." 
+              containerStyle={{backgroundColor:'var(--color-page)', padding:'30px 20px'}}
+            />
+          </div>
+        )}
         {confirmState.visible && (
           <div className="absolute inset-0 z-20 flex items-center justify-center  rounded-none bg-black/40 px-6 md:rounded-3xl">
             <div className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow-2xl">

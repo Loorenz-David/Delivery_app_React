@@ -32,6 +32,7 @@ export function FillItemState({
   onClose,
   setPopupHeader,
   registerBeforeClose,
+  setIsLoading,
 }: ActionComponentProps<FillItemStatePayload>) {
   const mode: FillItemStateMode = payload?.mode ?? (payload?.itemState ? 'update' : 'create')
   const targetState = payload?.itemState ?? null
@@ -123,6 +124,7 @@ export function FillItemState({
       return
     }
 
+    setIsLoading(true)
     setIsSubmitting(true)
     try {
       if (mode === 'create') {
@@ -166,6 +168,7 @@ export function FillItemState({
       showMessage({ status: 500, message: 'Failed to save item state.' })
     } finally {
       setIsSubmitting(false)
+      setIsLoading(false)
     }
   }, [
     formState,
@@ -174,6 +177,7 @@ export function FillItemState({
     mode,
     onClose,
     responseManager,
+    setIsLoading,
     showMessage,
     targetState,
     upsertIntoCollection,

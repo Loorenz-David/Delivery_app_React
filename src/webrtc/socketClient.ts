@@ -1,7 +1,7 @@
 import { io, type Socket } from 'socket.io-client'
 
 import { apiClient } from '../lib/api/ApiClient'
-
+import { sessionStorage } from '../lib/storage/sessionStorage'
 type SocketFactoryOptions = {
   /**
    * Optional override for the socket server URL. If not provided, it derives
@@ -30,16 +30,21 @@ const deriveSocketUrl = (): string => {
 
 export const createAuthorizedSocket = (options?: SocketFactoryOptions): Socket => {
   const url = options?.url ?? deriveSocketUrl()
-  const token = apiClient.getSocketToken() || apiClient.getAccessToken()
-
+  const token = apiClient.getSocketToken() 
+  console.log('------------')
+  console.log("socket token from apiClient:", apiClient.getSocketToken() ? true : false)
+  console.log("socket token from sessionStorage:", sessionStorage.getSession()?.socketToken ? true : false)
+  console.log('------------')
   // socket.io server expects the token either in the Authorization header or query param.
   const extraHeaders = token ? { Authorization: `Bearer ${token}` } : undefined
   return io(url, {
     // Allow polling fallback so we can still connect when WebSocket is unavailable
-    transports: ['polling','websocket'],
+    transports: ['polling', 'websocket'],
     autoConnect: false, // the caller decides when to connect (after tokens are present)
     withCredentials: true,
-    extraHeaders,
+    extraHeaders, // used in node/electron; browsers will fall back to auth/query
+    auth: token ? { token } : undefined, // carried in the Socket.IO handshake payload
+    query: token ? { token } : undefined, // also append as query for Flask-SocketIO
     path: '/socket.io',
   })
 }

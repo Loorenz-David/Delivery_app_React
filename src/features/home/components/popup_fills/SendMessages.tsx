@@ -129,6 +129,7 @@ const SendMessages = ({
   onTemplatesSelected,
   onCloseSelection,
   initialTemplateSelection,
+  setIsLoading,
 }: SendMessagesProps) => {
   const templateService = useMemo(() => new MessageTemplateService(), [])
   const notificationService = useMemo(() => new NotificationService(), [])
@@ -198,6 +199,7 @@ const SendMessages = ({
   }, [setPopupHeader, targetClients.length])
 
   const loadTemplates = useCallback(async () => {
+    setIsLoading(true)
     setIsLoadingTemplates(true)
     try {
       const response = await templateService.fetchTemplates({ query: {} })
@@ -209,8 +211,9 @@ const SendMessages = ({
       showMessage({ status: 500, message: 'Unable to load message templates.' })
     } finally {
       setIsLoadingTemplates(false)
+      setIsLoading(false)
     }
-  }, [showMessage, templateService])
+  }, [setIsLoading, showMessage, templateService])
 
   useEffect(() => {
     loadTemplates()
@@ -357,6 +360,7 @@ const SendMessages = ({
       templates_id,
       target_clients: targetPayload,
     }
+    setIsLoading(true)
     setIsSending(true)
     try {
       const response = await notificationService.sendNotifications(payloadToSend)
@@ -391,6 +395,7 @@ const SendMessages = ({
       showMessage({ status: 500, message: 'Failed to send messages. Please try again.' })
     } finally {
       setIsSending(false)
+      setIsLoading(false)
     }
   }, [
     deliveryTimeRange,
@@ -400,6 +405,7 @@ const SendMessages = ({
     onTemplatesSelected,
     selectedTemplates,
     selectionMode,
+    setIsLoading,
     showMessage,
     targetClients,
   ])

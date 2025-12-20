@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { useSectionPanel } from '../../contexts/SectionPanelContext'
 import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
@@ -52,7 +52,17 @@ const buildHeaderActions = ({ onClose }:BuildersHeaderActionsProps)=>{
     ]
 }
 
-const buildInteractionActions = ({ sectionManager, popupManager, onOpenItems, onNavigate, onOpenMessages, orderId, routeId, chatCount, isMobile }:BuildersInteractionActionProps & { chatCount?: number })=>{
+const buildInteractionActions = ({
+    sectionManager,
+    popupManager,
+    onOpenItems,
+    onNavigate,
+    onOpenMessages,
+    orderId,
+    routeId,
+    chatCount,
+    isMobile,
+}: BuildersInteractionActionProps & { chatCount?: number })=>{
     return[
         <BasicButton children={'Items'} params={
             {
@@ -76,6 +86,25 @@ const buildInteractionActions = ({ sectionManager, popupManager, onOpenItems, on
             }
         }
         />,
+        
+        <BasicButton children={'Message'} params={{
+            variant:'secondary',
+            className:"w-[110px]",
+            onClick:()=>{ 
+                if(onOpenMessages){
+                    onOpenMessages()
+                }
+            }
+        }} />,
+        <BasicButton children={'Edit Order'} params={{
+            variant:'primary',
+            className:"w-[110px]",
+            onClick:()=>{ 
+                if(orderId){
+                    popupManager?.open({ key:'FillOrder', payload:{ mode:'edit', orderId, routeId } })
+                }
+            }
+        }} />,
         <BasicButton children={<div className="flex items-center gap-2">Chat {chatCount ? <span className="rounded-full bg-[var(--color-dark-blue)]/80 px-2 py-[2px] text-[10px] font-semibold text-[var(--color-page)]">{chatCount}</span> : null}</div>} params={
             {
                 variant:'secondary',
@@ -94,25 +123,6 @@ const buildInteractionActions = ({ sectionManager, popupManager, onOpenItems, on
             }
         }
         />,
-        
-        <BasicButton children={'Edit Order'} params={{
-            variant:'primary',
-            className:"w-[110px]",
-            onClick:()=>{ 
-                if(orderId){
-                    popupManager?.open({ key:'FillOrder', payload:{ mode:'edit', orderId, routeId } })
-                }
-            }
-        }} />,
-        <BasicButton children={'Message'} params={{
-            variant:'secondary',
-            className:"w-[110px]",
-            onClick:()=>{ 
-                if(onOpenMessages){
-                    onOpenMessages()
-                }
-            }
-        }} />,
         <BasicButton
           children={'Navigate'}
           params={{
@@ -149,18 +159,14 @@ const SingleOrder = ({
     const { showMessage } = useMessageManager()
     const selectedRouteId = useHomeStore((state) => state.selectedRouteId)
     const selectedOrderId = useHomeStore((state) => state.selectedOrderId)
-    const { findRouteById, findOrderById, selectOrder } = useHomeStore.getState()
+    const route = useHomeStore((state) =>
+      selectedRouteId != null ? state.routes.find((r) => r.id === selectedRouteId) ?? null : null,
+    )
+    const { findOrderById, selectOrder } = useHomeStore.getState()
     const payloadRecord = payload as Record<string, unknown> | undefined
     const requestedRouteId = typeof payloadRecord?.['routeId'] === 'number' ? (payloadRecord['routeId'] as number) : undefined
     const requestedOrderId = typeof payloadRecord?.['orderId'] === 'number' ? (payloadRecord['orderId'] as number) : undefined
-    const resolvedRouteId =
-        selectedRouteId ??
-        requestedRouteId ??
-        null
-    const route =
-        resolvedRouteId != null
-            ? findRouteById(resolvedRouteId) ?? null
-            : null
+    const resolvedRouteId = selectedRouteId ?? requestedRouteId ?? route?.id ?? null
     const resolvedOrderId = selectedOrderId ?? requestedOrderId ?? null
     const order =
         resolvedOrderId != null
@@ -176,25 +182,6 @@ const SingleOrder = ({
         () => formatTimeLabel(order?.expected_arrival_time),
         [order?.expected_arrival_time],
     )
-    const callButtonRef = useRef<HTMLDivElement | null>(null)
-    const callPopoverRef = useRef<HTMLDivElement | null>(null)
-    const hideCallMenuTimeout = useRef<number | null>(null)
-    const [callMenu, setCallMenu] = useState<{ top: number; left: number; width: number } | null>(null)
-    const phoneOptions = useMemo(
-        () =>
-            [
-                order?.client_primary_phone
-                    ? { key: 'primary' as const, label: 'Primary', phone: order.client_primary_phone }
-                    : null,
-                order?.client_secondary_phone
-                    ? { key: 'secondary' as const, label: 'Secondary', phone: order.client_secondary_phone }
-                    : null,
-            ].filter(Boolean) as Array<{ key: 'primary' | 'secondary'; label: string; phone: NonNullable<OrderPayload['client_primary_phone']> }>,
-        [order?.client_primary_phone, order?.client_secondary_phone],
-    )
-    const hasMultiplePhones = phoneOptions.length > 1
-    const singlePhone = !hasMultiplePhones ? phoneOptions[0]?.phone ?? null : null
-
     const handleNavigate = useCallback(() => {
         if (!order) {
             return
@@ -235,59 +222,16 @@ const SingleOrder = ({
         })
     }, [order, popupManager, route?.arrival_time_range, showMessage])
 
-    const clearHideCallMenuTimeout = useCallback(() => {
-        if (hideCallMenuTimeout.current != null) {
-            window.clearTimeout(hideCallMenuTimeout.current)
-            hideCallMenuTimeout.current = null
-        }
-    }, [])
-
-    const computeCallMenuPosition = useCallback(() => {
-        if (!callButtonRef.current) return null
-        const rect = callButtonRef.current.getBoundingClientRect()
-        const width = 220
-        const estimatedHeight = 120
-        let left = rect.left + rect.width / 2 - width / 2
-        left = Math.max(8, Math.min(left, window.innerWidth - width - 8))
-        let top = rect.bottom + 8
-        if (top + estimatedHeight > window.innerHeight - 8) {
-            top = rect.top - estimatedHeight - 8
-        }
-        return { top, left, width }
-    }, [])
-
-    const openCallMenu = useCallback(() => {
-        if (!hasMultiplePhones) return
-        const pos = computeCallMenuPosition()
-        if (pos) {
-            setCallMenu(pos)
-        }
-    }, [computeCallMenuPosition, hasMultiplePhones])
-
-    const scheduleCloseCallMenu = useCallback(() => {
-        clearHideCallMenuTimeout()
-        hideCallMenuTimeout.current = window.setTimeout(() => setCallMenu(null), 140)
-    }, [clearHideCallMenuTimeout])
-
-    const handleCallNumber = useCallback((phone?: OrderPayload['client_primary_phone'] | null) => {
-        if (!phone) return
-        clearHideCallMenuTimeout()
-        setCallMenu(null)
-        const tel = buildTelHref(phone)
-        window.location.href = tel
-    }, [])
-
-    const handleCallClick = useCallback(() => {
-        if (!order) return
-        if (hasMultiplePhones) {
-            openCallMenu()
-            return
-        }
-        if (singlePhone) {
-            handleCallNumber(singlePhone)
-        }
-    }, [handleCallNumber, hasMultiplePhones, openCallMenu, order, singlePhone])
-    
+    const handleCall = useCallback(
+        (phone?: OrderPayload['client_primary_phone'] | null) => {
+            if (!phone) {
+                showMessage({ status: 'warning', message: 'No phone number available.' })
+                return
+            }
+            window.location.href = buildTelHref(phone)
+        },
+        [showMessage],
+    )
 
     // ____________________________________________________________________________________________________________
 
@@ -320,32 +264,6 @@ const SingleOrder = ({
             return
         }
         setHeaderActions( buildHeaderActions( { onClose } ) )
-        const callButton = (
-            <div
-                ref={callButtonRef}
-                className="relative"
-                onMouseEnter={() => {
-                    if (hasMultiplePhones) {
-                        clearHideCallMenuTimeout()
-                        openCallMenu()
-                    }
-                }}
-                onMouseLeave={() => {
-                    if (hasMultiplePhones) {
-                        scheduleCloseCallMenu()
-                    }
-                }}
-            >
-                <BasicButton
-                    children={'Call'}
-                    params={{
-                        className: 'w-[110px]',
-                        variant: 'secondary',
-                        onClick: handleCallClick,
-                    }}
-                />
-            </div>
-        )
         setInteractionActions([
             ...buildInteractionActions({
                 sectionManager,
@@ -359,54 +277,21 @@ const SingleOrder = ({
                 chatCount: order?.notes_chat?.length,
                 isMobile: isMobile.isMobile,
             }),
-            callButton,
         ])
-        
-        
     },[
-        clearHideCallMenuTimeout,
-        handleCallClick,
         handleNavigate,
-        hasMultiplePhones,
         onClose,
-        openCallMenu,
         openItemsSection,
         openMessagesPopup,
         order?.id,
         order?.route_id,
         popupManager,
         route?.id,
-        scheduleCloseCallMenu,
         sectionManager,
         setHeaderActions,
         setInteractionActions,
         isMobile?.isMobile,
     ])
-
-    useEffect(() => () => clearHideCallMenuTimeout(), [clearHideCallMenuTimeout])
-
-    useEffect(() => {
-        if (!callMenu) return
-        const handlePointerDown = (event: MouseEvent | TouchEvent) => {
-            const target = event.target as Node | null
-            if (!target) return
-            if (callPopoverRef.current?.contains(target)) return
-            if (callButtonRef.current?.contains(target)) return
-            setCallMenu(null)
-        }
-        document.addEventListener('mousedown', handlePointerDown)
-        document.addEventListener('touchstart', handlePointerDown)
-        return () => {
-            document.removeEventListener('mousedown', handlePointerDown)
-            document.removeEventListener('touchstart', handlePointerDown)
-        }
-    }, [callMenu])
-
-    useEffect(() => {
-        if (!hasMultiplePhones && callMenu) {
-            setCallMenu(null)
-        }
-    }, [callMenu, hasMultiplePhones])
 
     useEffect(() => {
         if (!removeHeader) {
@@ -564,18 +449,30 @@ const SingleOrder = ({
                                 <div className="grid grid-cols-2 gap-8">
                                     <div>
                                         <p className="font-semibold text-gray-600 text-[11px]">Primary Phone</p>
-                                         <p className="font-[550]">
-                                            {order.client_primary_phone?.prefix ?? ''} {order.client_primary_phone?.number ?? ''}
-                                        </p>
+                                        <BasicButton
+                                          params={{
+                                            variant: 'ghost',
+                                            className: 'p-0 h-auto text-[var(--color-primary)] font-[550] hover:underline',
+                                            onClick: () => handleCall(order.client_primary_phone),
+                                          }}
+                                        >
+                                          {formatPhoneDisplay(order.client_primary_phone) || '-'}
+                                        </BasicButton>
                                     </div>
                                     
                                    
                                     {order.client_secondary_phone?.number ? (
                                         <div>
                                             <p className="font-semibold text-gray-600 text-[11px]">Secondary Phone</p>
-                                            <p className="font-[550]">
-                                                {order.client_secondary_phone?.prefix ?? ''} {order.client_secondary_phone?.number ?? ''}
-                                            </p>
+                                            <BasicButton
+                                              params={{
+                                                variant: 'ghost',
+                                                className: 'p-0 h-auto text-[var(--color-primary)] font-[550] hover:underline',
+                                                onClick: () => handleCall(order.client_secondary_phone),
+                                              }}
+                                            >
+                                              {formatPhoneDisplay(order.client_secondary_phone)}
+                                            </BasicButton>
                                         </div>
                                     ) : null}
 
@@ -627,32 +524,6 @@ const SingleOrder = ({
 
                 
             </div>
-            {callMenu && hasMultiplePhones ? (
-                <div
-                    ref={callPopoverRef}
-                    className="fixed z-[120] rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-2xl"
-                    style={{ top: callMenu.top, left: callMenu.left, width: callMenu.width }}
-                    onMouseEnter={clearHideCallMenuTimeout}
-                    onMouseLeave={scheduleCloseCallMenu}
-                >
-                    {/* <p className="text-[11px]  font-semibold uppercase tracking-[0.05em] text-[var(--color-muted)] mb-2">Call with</p> */}
-                    <div className="space-y-1">
-                        {phoneOptions.map((option) => (
-                            <button
-                                key={option.key}
-                                type="button"
-                                className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-[var(--color-page)]"
-                                onClick={() => handleCallNumber(option.phone)}
-                            >
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">
-                                    {option.label}
-                                </p>
-                                <p className="text-sm font-semibold text-[var(--color-text)]">{formatPhoneDisplay(option.phone)}</p>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            ) : null}
         </>
      )
 }

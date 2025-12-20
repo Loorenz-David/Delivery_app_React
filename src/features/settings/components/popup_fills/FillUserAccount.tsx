@@ -23,6 +23,7 @@ type FillUserAccountMode = 'create' | 'manage' | 'self'
 export interface FillUserAccountPayload {
   mode?: FillUserAccountMode
   user?: SettingsUserProfile | null
+
 }
 
 interface UserFormState {
@@ -42,6 +43,7 @@ export function FillUserAccount({
   onClose,
   setPopupHeader,
   registerBeforeClose,
+  setIsLoading,
 }: ActionComponentProps<FillUserAccountPayload>) {
   const mode = payload?.mode ?? (payload?.user ? 'manage' : 'create')
   const isCreateMode = mode === 'create'
@@ -242,6 +244,7 @@ export function FillUserAccount({
       return
     }
 
+    setIsLoading(true)
     setIsSubmitting(true)
     try {
       if (isCreateMode) {
@@ -276,6 +279,7 @@ export function FillUserAccount({
       handleRequestError(error, showMessage)
     } finally {
       setIsSubmitting(false)
+      setIsLoading(false)
     }
   }, [
     accountService,
@@ -285,6 +289,7 @@ export function FillUserAccount({
     isSubmitting,
     onClose,
     responseManager,
+    setIsLoading,
     showMessage,
     targetUser,
     validateForm,

@@ -33,6 +33,7 @@ type SignalHandler = (payload: { from: number | string; payload: unknown }) => v
  */
 export class RealtimeSocketManager {
   private socket: Socket | null = null
+  private lastToken: string | null = null
 
   private signalHandlers = new Set<SignalHandler>()
   private driverHandlers = new Set<DriverPositionHandler>()
@@ -40,6 +41,7 @@ export class RealtimeSocketManager {
 
   constructor(socket?: Socket) {
     // defer socket creation until connect() so we can inject the latest token
+
     this.socket = socket ?? null
   }
 
@@ -49,8 +51,8 @@ export class RealtimeSocketManager {
     if (!this.socket) return
 
     this.socket.on('connect', () => {
+      console.log('Realtime socket connected', this.socket?.id)
     })
-    console.log('Realtime socket connected', this.socket.id)
     this.socket.on('connect_error', (err) => {
       // helpful for debugging connection issues
       console.warn('Realtime socket connect_error', err?.message || err)
@@ -77,12 +79,28 @@ export class RealtimeSocketManager {
   }
 
   connect() {
+    console.log('RealtimeSocketManager connecting...')
+    const nextSocket = createAuthorizedSocket()
+    const token =
+      (nextSocket.io.opts.auth as Record<string, unknown> | undefined)?.token ??
+      (nextSocket.io.opts.query as Record<string, unknown> | undefined)?.token ??
+      null
+
+    if (!token) {
+      console.warn('RealtimeSocketManager connect skipped: missing socket token')
+      return
+    }
+    if (this.socket?.connected && this.lastToken === token) {
+      return
+    }
     // Always rebuild the socket with the freshest token before connecting.
     if (this.socket) {
       this.socket.off() // clear old listeners before rebuilding
       this.socket.disconnect()
     }
-    this.socket = createAuthorizedSocket()
+    this.socket = nextSocket
+    this.lastToken = token as string
+    console.log(this.socket, "the socket created")
     this.registerCoreListeners()
     this.socket.connect()
   }
@@ -90,6 +108,7 @@ export class RealtimeSocketManager {
   disconnect() {
     this.socket?.off()
     this.socket?.disconnect()
+    this.lastToken = null
   }
 
   refreshAuthToken() {
@@ -101,11 +120,12 @@ export class RealtimeSocketManager {
   sendSignal(payload: SignalPayload) {
 
     if (!this.socket) return
+
     this.socket.emit('webrtc:signal', {
       target_user_id: payload.target_user_id,
       payload: payload.payload,
     })
-    console.log('RealtimeSocketManager sent signal', payload)
+
   }
 
   onSignal(handler: SignalHandler) {

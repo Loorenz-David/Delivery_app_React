@@ -60,6 +60,7 @@ const tipMessage =
 const RouteOptimizationSection = ({ payload, onClose }: RouteOptimizationSectionProps) => {
     const { setHeaderActions } = useSectionPanel()
     const { showMessage } = useMessageManager()
+
     const isMobile = useResourceManager('isMobileObject')
     const mobileHeader = useMobileSectionHeader()
     const registerHeader = mobileHeader?.registerHeader
@@ -74,7 +75,7 @@ const RouteOptimizationSection = ({ payload, onClose }: RouteOptimizationSection
         typeof payloadRecord?.['routeId'] === 'number' ? (payloadRecord['routeId'] as number) : undefined
     const selectedRouteId = useHomeStore((state) => state.selectedRouteId)
     const selectedOrderId = useHomeStore((state) => state.selectedOrderId)
-    const { findRouteById, selectRoute, selectOrder, updateRoute } = useHomeStore.getState()
+    const { findRouteById, selectRoute, selectOrder, updateRoute, upsertRoute } = useHomeStore.getState()
     const routeId = payloadRouteId ?? selectedRouteId ?? null
 
     const [considerTraffic, setConsiderTraffic] = useState(true)
@@ -193,19 +194,22 @@ const RouteOptimizationSection = ({ payload, onClose }: RouteOptimizationSection
 
     const applyOptimizedRoute = useCallback(
         (optimizedRoute: RoutePayload) => {
-        updateRoute(optimizedRoute.id, (route) => mergeRouteWithOptimizedData(route, optimizedRoute))
-        const resolvedRoute = findRouteById(optimizedRoute.id)
-        if (resolvedRoute) {
-            selectRoute(resolvedRoute.id, { routeId: resolvedRoute.id }, resolvedRoute)
-            if (selectedOrderId && resolvedRoute.delivery_orders) {
-                const updatedOrder = resolvedRoute.delivery_orders.find((entry) => entry.id === selectedOrderId)
-                if (updatedOrder) {
-                    selectOrder(selectedOrderId, { routeId: resolvedRoute.id })
-                }
+        const current = findRouteById(optimizedRoute.id)
+        const mergedRoute = current ? mergeRouteWithOptimizedData(current, optimizedRoute) : optimizedRoute
+        if (current) {
+            updateRoute(mergedRoute.id, () => mergedRoute)
+        } else {
+            upsertRoute(mergedRoute)
+        }
+        selectRoute(mergedRoute.id, { routeId: mergedRoute.id }, mergedRoute)
+        if (selectedOrderId && mergedRoute.delivery_orders) {
+            const updatedOrder = mergedRoute.delivery_orders.find((entry) => entry.id === selectedOrderId)
+            if (updatedOrder) {
+                selectOrder(selectedOrderId, { routeId: mergedRoute.id })
             }
         }
     },
-    [findRouteById, selectOrder, selectRoute, selectedOrderId, updateRoute],
+    [findRouteById, selectOrder, selectRoute, selectedOrderId, updateRoute, upsertRoute],
 )
 
     const handleOptimizationRequest = useCallback(
@@ -222,10 +226,12 @@ const RouteOptimizationSection = ({ payload, onClose }: RouteOptimizationSection
             } else {
                 setIsUpdating(true)
             }
+
             try {
                 
                 const response = await optimizeRouteService.optimizeRoute(optimizationPayload)
                 const optimizedRoute = response.data?.route
+                
                 if (!optimizedRoute) {
                     throw new Error('Optimizer response did not include a route.')
                 }
@@ -257,6 +263,7 @@ const RouteOptimizationSection = ({ payload, onClose }: RouteOptimizationSection
                 } else {
                     setIsUpdating(false)
                 }
+
             }
         },
         [applyOptimizedRoute, optimizeRouteService, optimizationPayload, showMessage],
@@ -268,7 +275,6 @@ const RouteOptimizationSection = ({ payload, onClose }: RouteOptimizationSection
     return (
         <div className="space-y-6 py-4">
             
-
             <CollapsibleSection title="Optimization Settings" defaultOpen>
                 <div className="space-y-4">
                     <Field label="Objective">

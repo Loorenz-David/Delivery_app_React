@@ -116,6 +116,7 @@ export interface OrderPayload {
   delivery_items: ItemPayload[]
   client_name?: string
   client_phones?: string[]
+  delivery_date?:string | null
 }
 
 export interface RouteStatePayload {

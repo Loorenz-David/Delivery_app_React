@@ -30,6 +30,7 @@ export function FillItemPosition({
   onClose,
   setPopupHeader,
   registerBeforeClose,
+  setIsLoading,
 }: ActionComponentProps<FillItemPositionPayload>) {
   const mode: FillItemPositionMode = payload?.mode ?? (payload?.itemPosition ? 'update' : 'create')
   const targetPosition = payload?.itemPosition ?? null
@@ -102,6 +103,7 @@ export function FillItemPosition({
       showMessage({ status: 400, message: 'No changes detected.' })
       return
     }
+    setIsLoading(true)
     setIsSubmitting(true)
     try {
       if (mode === 'create') {
@@ -138,6 +140,7 @@ export function FillItemPosition({
       showMessage({ status: 500, message: 'Failed to save item position.' })
     } finally {
       setIsSubmitting(false)
+      setIsLoading(false)
     }
   }, [
     formState,
@@ -147,6 +150,7 @@ export function FillItemPosition({
     onClose,
     responseManager,
     showMessage,
+    setIsLoading,
     targetPosition,
     upsertIntoCollection,
     validateForm,

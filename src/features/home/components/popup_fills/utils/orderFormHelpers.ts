@@ -235,6 +235,7 @@ interface BuildOrderPayloadOptions {
   fallbackOrderId?: number
   deliveryArrangement: number
   senderId?: number | string | null
+  deliveryDate?: string | null
 }
 
 export function buildOrderPayloadFromState(state: OrderFormState, options: BuildOrderPayloadOptions): OrderPayload {
@@ -271,6 +272,7 @@ export function buildOrderPayloadFromState(state: OrderFormState, options: Build
     expected_arrival_time: '',
     actual_arrival_time: null,
     marketing_messages: false,
+    delivery_date: options.deliveryDate ?? null,
     delivery_after: state.delivery_after || undefined,
     delivery_before: state.delivery_before || undefined,
     stop_time: undefined,

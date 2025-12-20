@@ -44,6 +44,7 @@ export function FillItemProperty({
   onClose,
   setPopupHeader,
   registerBeforeClose,
+  setIsLoading,
 }: ActionComponentProps<FillItemPropertyPayload>) {
   const mode: FillItemPropertyMode = payload?.mode ?? (payload?.itemProperty ? 'update' : 'create')
   const targetProperty = payload?.itemProperty ?? null
@@ -61,10 +62,24 @@ export function FillItemProperty({
   const nameWarning = useInputWarning('Property name is required.')
   const fieldTypeWarning = useInputWarning('Field type is required.')
 
+  const categoryFilters = useMemo(() => {
+    const labels = new Set<string>()
+    typeOptions.forEach((type) => {
+      const categoryName = (type as any)?.item_category?.name ?? ''
+      if (categoryName) labels.add(categoryName)
+    })
+    return Array.from(labels).map((label) => ({ value: label, label }))
+  }, [typeOptions])
+  
   const fetchTypes = useCallback(async () => {
-    const response = await itemService.queryItemTypes()
-    setTypeOptions(response.data?.items ?? [])
-  }, [itemService])
+    setIsLoading(true)
+    try {
+      const response = await itemService.queryItemTypes()
+      setTypeOptions(response.data?.items ?? [])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [itemService, setIsLoading])
 
   useEffect(() => {
     fetchTypes()
@@ -128,6 +143,37 @@ export function FillItemProperty({
     }
   }, [])
 
+  const handleTypesChange = useCallback(
+    (ids: number[]) => setFormState((prev) => ({ ...prev, item_types: ids })),
+    [],
+  )
+
+  const loadTypeOptions = useCallback(
+    async (query?: Record<string, unknown>) => {
+      const response = await itemService.queryItemTypes(query)
+      return response.data?.items ?? []
+    },
+    [itemService],
+  )
+
+  const typeFilterOptions = useMemo(
+    () => [{ value: 'name', label: 'Type name' }, ...categoryFilters],
+    [categoryFilters],
+  )
+
+  const buildItemTypeQuery = useCallback(
+    (value: string, filter: string) => {
+      if (filter === 'name') return buildTypeQuery(value)
+      return {
+        name: {
+          operation: 'ilike',
+          value: `%${value}%`,
+        },
+      }
+    },
+    [buildTypeQuery],
+  )
+
   const handleSubmit = useCallback(async () => {
     if (isSubmitting) return
     if (!validateForm()) return
@@ -137,6 +183,7 @@ export function FillItemProperty({
       return
     }
 
+    setIsLoading(true)
     setIsSubmitting(true)
     try {
       const normalizedOptions = formState.field_type === 'dropdown' ? formState.options : undefined
@@ -191,6 +238,7 @@ export function FillItemProperty({
       showMessage({ status: 500, message: 'Failed to save item property.' })
     } finally {
       setIsSubmitting(false)
+      setIsLoading(false)
     }
   }, [
     formState,
@@ -203,6 +251,7 @@ export function FillItemProperty({
     targetProperty,
     upsertIntoCollection,
     typeOptions,
+    setIsLoading,
     validateForm,
   ])
 
@@ -223,14 +272,7 @@ export function FillItemProperty({
     return () => registerBeforeClose(undefined)
   }, [handleSubmit, hasPendingChanges, mode, registerBeforeClose])
 
-  const categoryFilters = useMemo(() => {
-    const labels = new Set<string>()
-    typeOptions.forEach((type) => {
-      const categoryName = (type as any)?.item_category?.name ?? ''
-      if (categoryName) labels.add(categoryName)
-    })
-    return Array.from(labels).map((label) => ({ value: label, label }))
-  }, [typeOptions])
+ 
 
   return (
     <div className="space-y-4">
@@ -269,21 +311,10 @@ export function FillItemProperty({
       <SelectItemPropertiesRelationships
         label="Types"
         selectedIds={formState.item_types}
-        onChange={(ids) => setFormState((prev) => ({ ...prev, item_types: ids }))}
-        loadOptions={async (query) => {
-          const response = await itemService.queryItemTypes(query)
-          return response.data?.items ?? []
-        }}
-        filterOptions={[{ value: 'name', label: 'Type name' }, ...categoryFilters]}
-        buildQuery={(value, filter) => {
-          if (filter === 'name') return buildTypeQuery(value)
-          return {
-            name: {
-              operation: 'ilike',
-              value: `%${value}%`,
-            },
-          }
-        }}
+        onChange={handleTypesChange}
+        loadOptions={loadTypeOptions}
+        filterOptions={typeFilterOptions}
+        buildQuery={buildItemTypeQuery}
       />
       <div className="pt-2">
         <BasicButton

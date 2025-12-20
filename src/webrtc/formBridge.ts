@@ -49,7 +49,9 @@ class FormBridge {
   constructor() {
     // Listen for signaling messages coming from the backend
     realtimeSocketManager.onSignal(({ from, payload }) => {
+
       const signal = payload as { channel?: string } | null
+
       if (!signal || signal.channel !== FORM_SIGNAL_CHANNEL) return
       if (from === realtimeSocketManager.getSocket()?.id) return
       void this.handleSignal(signal as BridgeSignalPayload)
@@ -161,9 +163,11 @@ class FormBridge {
 
     peer.onicecandidate = (event) => {
       if (event.candidate) {
+
         realtimeSocketManager.sendSignal({
           payload: { channel: FORM_SIGNAL_CHANNEL, candidate: event.candidate },
         })
+
       }
     }
 

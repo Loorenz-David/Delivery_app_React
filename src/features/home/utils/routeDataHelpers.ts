@@ -6,12 +6,24 @@ type OrderSequenceEntry = {
 }
 
 export function mergeRouteWithOptimizedData(route: RoutePayload, optimizedRoute: RoutePayload) {
-  const mergedOrders = mergeOrders(route.delivery_orders ?? [], optimizedRoute.delivery_orders ?? [])
+  const sourceOrders = optimizedRoute.delivery_orders?.length ? optimizedRoute.delivery_orders : route.delivery_orders ?? []
+  const mergedOrders = mergeOrders(route.delivery_orders ?? [], sourceOrders)
   const nextSavedOptimizations = mergeSavedOptimizations(route.saved_optimizations, optimizedRoute.saved_optimizations)
+  const latestOptimization = normalizeSavedOptimizations(nextSavedOptimizations).at(-1) ?? null
+  let ordersWithSequence = applyOrderSequenceToOrders(mergedOrders, latestOptimization?.order_sequence)
+  if (!latestOptimization?.order_sequence && optimizedRoute.delivery_orders?.length) {
+    const orderIndex: Record<number, number> = {}
+    optimizedRoute.delivery_orders.forEach((order, index) => {
+      orderIndex[order.id] = index
+    })
+    ordersWithSequence = mergedOrders
+      .slice()
+      .sort((a, b) => (orderIndex[a.id] ?? Number.MAX_SAFE_INTEGER) - (orderIndex[b.id] ?? Number.MAX_SAFE_INTEGER))
+  }
   return {
     ...route,
     ...optimizedRoute,
-    delivery_orders: mergedOrders,
+    delivery_orders: ordersWithSequence,
     saved_optimizations: nextSavedOptimizations ?? optimizedRoute.saved_optimizations ?? route.saved_optimizations,
   }
 }

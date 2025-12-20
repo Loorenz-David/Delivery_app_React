@@ -9,6 +9,7 @@ import type {
   ItemStateDetails,
   ItemTypeDetails,
 } from './api/itemPropertiesService'
+import type { PrintLabelTemplate } from './api/printTemplateService'
 
 export interface SettingsUserProfile extends AccountProfileData {
   id: number
@@ -62,4 +63,5 @@ export type SettingsDataset = {
   ItemTypes?: ItemTypeDetails[] | null
   ItemCategories?: ItemCategoryDetails[] | null
   ItemSubProperties?: ItemPropertyPayload[] | null
+  PrintTemplates?: PrintLabelTemplate[] | null
 } & Record<string, unknown>

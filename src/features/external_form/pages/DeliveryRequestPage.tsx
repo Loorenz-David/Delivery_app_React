@@ -9,12 +9,26 @@ import { popupMap } from '../components/popup_fills/popup_map'
 import { formBridge, type FormHandoffPayload, type BridgeStatus } from '../../../webrtc/formBridge'
 import { sessionStorage } from '../../../lib/storage/sessionStorage'
 import { apiClient } from '../../../lib/api/ApiClient'
+import {realtimeSocketManager} from '../../../webrtc/RealtimeSocketManager'
 
 export function DeliveryRequestPage() {
   const [isFormActive, setIsFormActive] = useState(false)
   const [incomingPayload, setIncomingPayload] = useState<FormHandoffPayload | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<BridgeStatus>(formBridge.getStatus())
   const [connectionError, setConnectionError] = useState<string | null>(formBridge.getLastError())
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 1000,
+  )
+
+  const isMobileObject = useMemo(
+    () => ({
+      isMobile: isMobileViewport,
+      isMenuOpen: false,
+      setIsMobileMenuOpen: () => {},
+      setIsMobileViewport,
+    }),
+    [isMobileViewport],
+  )
 
   const popupManager = useMemo(
     () =>
@@ -25,6 +39,8 @@ export function DeliveryRequestPage() {
     [],
   )
   useActionEntries(popupManager)
+
+  
 
   useEffect(() => {
     // Strip access/refresh tokens on this page so only the socket token remains.
@@ -42,9 +58,9 @@ export function DeliveryRequestPage() {
     } else {
       sessionStorage.clear()
     }
-  }, [])
-
-  useEffect(() => {
+    if (socketToken) {
+      realtimeSocketManager.connect()
+    }
     formBridge.ensureConnection({ initiate: true })
     const unsubStatus = formBridge.onStatusChange((status, error) => {
       setConnectionStatus(status)
@@ -62,8 +78,11 @@ export function DeliveryRequestPage() {
     }
   }, [])
 
+  
+
+
   return (
-    <ResourcesManagerProvider managers={{ popupManager }}>
+    <ResourcesManagerProvider managers={{ popupManager, isMobileObject}}>
       <div className="min-h-screen min-h-screen bg-[var(--color-page)] text-[var(--color-text)]">
         <div className="flex flex-col mx-auto h-full max-w-5xl px-4 py-10 md:px-8 gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-page)] px-4 py-3">

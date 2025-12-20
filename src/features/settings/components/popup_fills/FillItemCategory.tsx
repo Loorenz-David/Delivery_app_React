@@ -35,6 +35,7 @@ export function FillItemCategory({
   onClose,
   setPopupHeader,
   registerBeforeClose,
+  setIsLoading,
 }: ActionComponentProps<FillItemCategoryPayload>) {
   const mode: FillItemCategoryMode = payload?.mode ?? (payload?.itemCategory ? 'update' : 'create')
   const targetCategory = payload?.itemCategory ?? null
@@ -109,6 +110,19 @@ export function FillItemCategory({
     }
   }, [])
 
+  const handleTypesChange = useCallback(
+    (ids: number[]) => setFormState((prev) => ({ ...prev, item_types: ids })),
+    [],
+  )
+
+  const loadTypeOptions = useCallback(
+    async (query?: Record<string, unknown>) => {
+      const response = await itemService.queryItemTypes(query)
+      return response.data?.items ?? []
+    },
+    [itemService],
+  )
+
   const handleSubmit = useCallback(async () => {
     if (isSubmitting) return
     if (!validateForm()) return
@@ -118,6 +132,7 @@ export function FillItemCategory({
       return
     }
 
+    setIsLoading(true)
     setIsSubmitting(true)
     try {
       if (mode === 'create') {
@@ -161,6 +176,7 @@ export function FillItemCategory({
       showMessage({ status: 500, message: 'Failed to save item category.' })
     } finally {
       setIsSubmitting(false)
+      setIsLoading(false)
     }
   }, [
     formState,
@@ -169,6 +185,7 @@ export function FillItemCategory({
     mode,
     onClose,
     responseManager,
+    setIsLoading,
     showMessage,
     targetCategory,
     typeOptions,
@@ -207,12 +224,9 @@ export function FillItemCategory({
       <SelectItemPropertiesRelationships
         label="Types"
         selectedIds={formState.item_types}
-        onChange={(ids) => setFormState((prev) => ({ ...prev, item_types: ids }))}
-        loadOptions={async (query) => {
-          const response = await itemService.queryItemTypes(query)
-          return response.data?.items ?? []
-        }}
-        buildQuery={(value) => buildTypeQuery(value)}
+        onChange={handleTypesChange}
+        loadOptions={loadTypeOptions}
+        buildQuery={buildTypeQuery}
         filterOptions={[]}
       />
       <div className="pt-2">

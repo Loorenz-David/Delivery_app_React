@@ -6,6 +6,7 @@ import { SettingsSearchBar } from '../ui/SearchBar'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import type { SettingsDataset } from '../../types'
 import { useSettingsStore } from '../../../../store/settings/useSettingsStore'
+import LoadingSpinner  from '../../../../components/spiner_loaders/PageLoader'
 
 export type ResponseWithItems<TItem> = {
   data?: {
@@ -75,7 +76,6 @@ export function SectionPanel<
   searchBuildQuery,
   defaultSearchFilter,
   emptyStateMessage = 'No items found.',
-  loadingStateMessage = 'Loading items...',
   counterLabel,
   getItemKey,
   listClassName = 'flex flex-col gap-3',
@@ -83,8 +83,10 @@ export function SectionPanel<
   searchInjection,
   hideCreateButton = false,
   headerAction,
+
 }: SectionPanelProps<TItem, TQuery, TResponse>) {
   const { showMessage } = useMessageManager()
+
   const { queryAllService, queryByInputService } = services
   const datasetRecord = useSettingsStore((state) => state.dataset as Record<string, unknown> | null)
   const updateDataset = useSettingsStore((state) => state.updateDataset)
@@ -181,6 +183,9 @@ export function SectionPanel<
         defaultFilter={defaultSearchFilter}
         className={searchBarClassName}
         injectedSearch={searchInjection ?? undefined}
+        setIsLoading={setIsLoading}
+        isLoading={isLoading}
+
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-white px-5 py-4">
@@ -202,7 +207,7 @@ export function SectionPanel<
 
       {isLoading ? (
         <div className="rounded-3xl border border-dashed border-[var(--color-border)] bg-white/50 p-6 text-sm text-[var(--color-muted)]">
-          {loadingStateMessage}
+          <LoadingSpinner loadingText={`loading ${eyebrow}`}/>
         </div>
       ) : items.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-[var(--color-border)] bg-white/50 p-6 text-sm text-[var(--color-muted)]">

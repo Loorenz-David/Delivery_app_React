@@ -25,6 +25,7 @@ const OPTIONS: Array<{
 export function NavigationServicePopup({
   payload,
   onClose,
+  setIsLoading: _setIsLoading,
 }: ActionComponentProps<NavigationServicePopupPayload>) {
   const [selected, setSelected] = useState<NavigationService>(payload?.current ?? 'google')
   const [rememberChoice, setRememberChoice] = useState(false)

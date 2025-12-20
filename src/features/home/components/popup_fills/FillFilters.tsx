@@ -105,7 +105,7 @@ function buildOrderFiltersFromInitial(initialFilters: Record<string, any>) {
   }
 }
 
-export default function FillFilters({ payload, onClose }: ActionComponentProps<FillFiltersPayload>) {
+export default function FillFilters({ payload, onClose, setIsLoading: _setIsLoading }: ActionComponentProps<FillFiltersPayload>) {
   const {
     initialFilters = {},
     onApply = () => {},

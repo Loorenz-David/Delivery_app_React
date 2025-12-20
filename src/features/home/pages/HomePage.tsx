@@ -34,6 +34,7 @@ export function HomePage() {
   const [routePanelExpanded, setRoutePanelExpanded] = useState(true)
   const [preferredRouteWidth, setPreferredRouteWidth] = useState(400)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isLoadingSectionInfo,setIsLoadingSectionInfo] = useState(false)
   const [isMobileViewport, setIsMobileViewport] = useState(
     () => typeof window !== 'undefined' && window.innerWidth < 1000,
   )
@@ -160,6 +161,7 @@ export function HomePage() {
     let cancelled = false
     const fetchRoutes = async () => {
       try {
+        setIsLoadingSectionInfo(true)
         const routes = await deliveryServiceInstance.fetchRoutes(routeFilters)
         if (cancelled) {
           return
@@ -170,6 +172,8 @@ export function HomePage() {
         if (!cancelled) {
           console.error('Failed to fetch routes', error)
         }
+      }finally{
+        setIsLoadingSectionInfo(false)
       }
     }
     fetchRoutes()
@@ -313,7 +317,8 @@ export function HomePage() {
                         icon:<RouteIcon className="app-icon h-5 w-5" />,
                         label:"Routes",
                         className:`w-[${routePanelWidth}px] z-1`,
-                        compact:isRouteCompact
+                        compact:isRouteCompact,
+                        isLoadingSectionInfo:isLoadingSectionInfo
                     }}>
                       <RouteSection isCompact={isRouteCompact} onViewModeChange={handleViewModeChange}/>
                     </SectionPanel>

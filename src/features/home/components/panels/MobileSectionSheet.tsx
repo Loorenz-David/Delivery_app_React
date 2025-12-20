@@ -234,11 +234,12 @@ function MobileSectionSheetContent({
   return (
     <div
       ref={containerRef}
-      className="fixed h-screen inset-x-0 bottom-0 z-30 flex flex-col overflow-hidden rounded-t-2xl border border-[var(--color-border)] bg-white shadow-2xl"
-      style={{
+      className="fixed  inset-x-0 bottom-0 z-30 flex flex-col overflow-hidden rounded-t-2xl border border-[var(--color-border)] bg-white shadow-2xl"
+      style={{ 
         transform: `translateY(${translateY}px)`,
         transition: isDragging ? 'none' : 'transform 220ms ease-out',
         willChange: 'transform',
+        height:"calc(var(--vh)* 100) "
       }}
     >
       <header

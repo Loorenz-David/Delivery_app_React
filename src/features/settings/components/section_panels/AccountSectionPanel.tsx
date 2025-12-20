@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo,useState } from 'react'
 
 import { FillUserAccount, type FillUserAccountPayload } from '../popup_fills/FillUserAccount'
 import type { SettingsUserProfile } from '../../types'
@@ -7,6 +7,7 @@ import { normalizeUserPayload } from '../../utils/userTransformers'
 import { useMessageManager } from '../../../../message_manager/MessageManagerContext'
 import { apiClient } from '../../../../lib/api/ApiClient'
 import { useSettingsStore } from '../../../../store/settings/useSettingsStore'
+import LoadingSpinner  from '../../../../components/spiner_loaders/PageLoader'
 
 type AccountPanelMode = 'self' | 'manage' | 'create'
 
@@ -17,6 +18,7 @@ interface AccountSectionPanelProps {
 
 export function AccountSectionPanel({ mode = 'self', initialUser }: AccountSectionPanelProps) {
   const dataset = useSettingsStore((state) => state.dataset)
+  const [isLoadingInfo,setIsLoadingInfo] = useState(false)
   const updateDataset = useSettingsStore((state) => state.updateDataset)
   const cachedUser = dataset?.UserInfo ?? null
   const accountService = useMemo(() => new AccountSettingsService(), [])
@@ -49,6 +51,7 @@ export function AccountSectionPanel({ mode = 'self', initialUser }: AccountSecti
     }
     let isMounted = true
     const fetchUser = async () => {
+      setIsLoadingInfo(true)
       try {
         const response = await accountService.fetchUserById(sessionUserId)
         if (!isMounted) {
@@ -68,6 +71,8 @@ export function AccountSectionPanel({ mode = 'self', initialUser }: AccountSecti
           showMessage({ status: 500, message: 'Failed to load account information.' })
           console.error('Failed to fetch user info', error)
         }
+      }finally{
+        setIsLoadingInfo(false)
       }
     }
     fetchUser()
@@ -93,8 +98,11 @@ export function AccountSectionPanel({ mode = 'self', initialUser }: AccountSecti
             : 'Update user details and roles to keep your directory accurate.'}
         </p>
       </div>
-
-      <FillUserAccount payload={payload} onClose={handleClose} />
+      {!isLoadingInfo ? 
+        <FillUserAccount payload={payload} onClose={handleClose} setIsLoading={setIsLoadingInfo} />
+        :
+        <LoadingSpinner loadingText={"Loading User info"}/>
+      }
     </div>
   )
 }

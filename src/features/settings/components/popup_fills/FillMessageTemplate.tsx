@@ -51,6 +51,7 @@ export function FillMessageTemplate({
   onClose,
   setPopupHeader,
   registerBeforeClose,
+  setIsLoading,
 }: ActionComponentProps<FillMessageTemplatePayload>) {
   const mode: FillMessageTemplateMode = payload?.mode ?? (payload?.template ? 'edit' : 'create')
   const targetTemplate = payload?.template ?? null
@@ -124,6 +125,7 @@ export function FillMessageTemplate({
       return
     }
 
+    setIsLoading(true)
     setIsSubmitting(true)
     try {
       if (mode === 'create') {
@@ -150,6 +152,7 @@ export function FillMessageTemplate({
       handleRequestError(error, showMessage)
     } finally {
       setIsSubmitting(false)
+      setIsLoading(false)
     }
   }, [
     formState,
@@ -157,6 +160,7 @@ export function FillMessageTemplate({
     mode,
     onClose,
     responseManager,
+    setIsLoading,
     showMessage,
     targetTemplate,
     templateService,

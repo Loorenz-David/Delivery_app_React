@@ -38,7 +38,7 @@ const PROPERTY_FILTER_OPTIONS = [
   { value: 'field_type', label: 'Field type' },
 ]
 
-export function FillItemType({ payload, onClose, setPopupHeader, registerBeforeClose }: ActionComponentProps<FillItemTypePayload>) {
+export function FillItemType({ payload, onClose, setPopupHeader, registerBeforeClose, setIsLoading }: ActionComponentProps<FillItemTypePayload>) {
   const mode: FillItemTypeMode = payload?.mode ?? (payload?.itemType ? 'update' : 'create')
   const targetType = payload?.itemType ?? null
 
@@ -55,20 +55,23 @@ export function FillItemType({ payload, onClose, setPopupHeader, registerBeforeC
 
   const nameWarning = useInputWarning('Type name is required.')
 
-  const fetchCategories = useCallback(async () => {
-    const response = await itemService.queryItemCategories()
-    setCategoryOptions(response.data?.items ?? [])
-  }, [itemService])
-
-  const fetchProperties = useCallback(async () => {
-    const response = await itemService.queryItemProperties()
-    setPropertyOptions(response.data?.items ?? [])
-  }, [itemService])
+  const loadOptions = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const [categories, properties] = await Promise.all([
+        itemService.queryItemCategories(),
+        itemService.queryItemProperties(),
+      ])
+      setCategoryOptions(categories.data?.items ?? [])
+      setPropertyOptions(properties.data?.items ?? [])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [itemService, setIsLoading])
 
   useEffect(() => {
-    fetchCategories()
-    fetchProperties()
-  }, [fetchCategories, fetchProperties])
+    void loadOptions()
+  }, [loadOptions])
 
   useEffect(() => {
     const nextState = createInitialFormState(targetType)
@@ -129,6 +132,7 @@ export function FillItemType({ payload, onClose, setPopupHeader, registerBeforeC
       return
     }
 
+    setIsLoading(true)
     setIsSubmitting(true)
     try {
       if (mode === 'create') {
@@ -172,6 +176,7 @@ export function FillItemType({ payload, onClose, setPopupHeader, registerBeforeC
       showMessage({ status: 500, message: 'Failed to save item type.' })
     } finally {
       setIsSubmitting(false)
+      setIsLoading(false)
     }
   }, [
     categoryOptions,
@@ -183,6 +188,7 @@ export function FillItemType({ payload, onClose, setPopupHeader, registerBeforeC
     propertyOptions,
     responseManager,
     showMessage,
+    setIsLoading,
     targetType,
     upsertIntoCollection,
     validateForm,

@@ -25,6 +25,8 @@ interface SearchBarProps<TResponse, TQuery = Record<string, unknown>> {
   buildQuery?: (value: string, filter: string) => TQuery | null
   defaultFilter?: string
   injectedSearch?: InjectedSearchPayload | null
+  isLoading?:boolean
+  setIsLoading:(value:boolean) =>void
 }
 
 export function SettingsSearchBar<TResponse, TQuery = Record<string, unknown>>({
@@ -38,10 +40,11 @@ export function SettingsSearchBar<TResponse, TQuery = Record<string, unknown>>({
   buildQuery,
   defaultFilter,
   injectedSearch,
+  setIsLoading
 }: SearchBarProps<TResponse, TQuery>) {
   const [query, setQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState(defaultFilter ?? filterOptions[0]?.value ?? '')
-  const [isSearching, setIsSearching] = useState(false)
+
   const [appliedInjectionId, setAppliedInjectionId] = useState<string | number | null>(null)
 
   const canSearch = Boolean(selectedFilter) || Boolean(buildQuery)
@@ -67,11 +70,12 @@ export function SettingsSearchBar<TResponse, TQuery = Record<string, unknown>>({
   useEffect(() => {
     const trimmed = query.trim()
     if (!trimmed) {
+      setIsLoading(false)
       onReset?.()
       return
     }
     const handle = window.setTimeout(async () => {
-      setIsSearching(true)
+      setIsLoading(true)
       try {
         const payload = {
           [selectedFilter]: {
@@ -81,7 +85,7 @@ export function SettingsSearchBar<TResponse, TQuery = Record<string, unknown>>({
         } as TQuery
         const builtPayload = buildQuery ? buildQuery(trimmed, selectedFilter) : payload
         if (!builtPayload) {
-          setIsSearching(false)
+          setIsLoading(false)
           return
         }
         const response = await service(builtPayload)
@@ -89,14 +93,14 @@ export function SettingsSearchBar<TResponse, TQuery = Record<string, unknown>>({
       } catch (error) {
         console.error('Search failed', error)
       } finally {
-        setIsSearching(false)
+        setIsLoading(false)
       }
     }, debounceMs)
 
     return () => {
       window.clearTimeout(handle)
     }
-  }, [canSearch, debounceMs, onReset, onResults, query, selectedFilter, service])
+  }, [canSearch, debounceMs, onReset, onResults, query, selectedFilter, service, setIsLoading])
 
   const filterOptionsMemo = useMemo(() => filterOptions, [filterOptions])
 
@@ -126,7 +130,7 @@ export function SettingsSearchBar<TResponse, TQuery = Record<string, unknown>>({
           </div>
         }
       </div>
-      {isSearching ? <p className="text-xs text-[var(--color-muted)]">Searching…</p> : null}
+
     </div>
   )
 }
