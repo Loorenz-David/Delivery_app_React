@@ -34,12 +34,14 @@ export const createAuthorizedSocket = (options?: SocketFactoryOptions): Socket =
   console.log('------------')
   console.log("socket token from apiClient:", apiClient.getSocketToken() ? true : false)
   console.log("socket token from sessionStorage:", sessionStorage.getSession()?.socketToken ? true : false)
+  console.log(url)
   console.log('------------')
   // socket.io server expects the token either in the Authorization header or query param.
   const extraHeaders = token ? { Authorization: `Bearer ${token}` } : undefined
   return io(url, {
     // Allow polling fallback so we can still connect when WebSocket is unavailable
     transports: ['polling', 'websocket'],
+    upgrade:true,
     autoConnect: false, // the caller decides when to connect (after tokens are present)
     withCredentials: true,
     extraHeaders, // used in node/electron; browsers will fall back to auth/query
