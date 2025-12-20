@@ -15,7 +15,6 @@ import { DeliveryService, UpdateOrderService } from '../../api/deliveryService'
 import type { ActionManager } from '../../../../resources_manager/managers/ActionManager'
 import { useHomeStore } from '../../../../store/home/useHomeStore'
 
-import LoadingSpinner from '../../../../components/spiner_loaders/PageLoader'
 import { normalizeWeekKey, normalizeDateKey } from '../../utils/timeFormat'
 
 interface RoutesSectionProps {

@@ -81,10 +81,11 @@ export class RealtimeSocketManager {
   connect() {
     console.log('RealtimeSocketManager connecting...')
     const nextSocket = createAuthorizedSocket()
-    const token =
-      (nextSocket.io.opts.auth as Record<string, unknown> | undefined)?.token ??
-      (nextSocket.io.opts.query as Record<string, unknown> | undefined)?.token ??
-      null
+    const opts = nextSocket.io.opts as Record<string, unknown> & {
+      auth?: Record<string, unknown>
+      query?: Record<string, unknown>
+    }
+    const token = opts.auth?.token ?? opts.query?.token ?? null
 
     if (!token) {
       console.warn('RealtimeSocketManager connect skipped: missing socket token')

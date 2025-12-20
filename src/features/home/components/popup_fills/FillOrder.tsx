@@ -165,12 +165,15 @@ const FillOrder = ({
     [orderState.delivery_items],
   )
   const printableOrders = useMemo(() => {
+    if (targetRouteId == null) {
+      return []
+    }
     const fallbackOrderId = locatedOrder?.id ?? Date.now()
     const deliveryArrangement = computeNextDeliveryArrangement(targetRoute)
     const deliveryDate = normalizeDateKey(targetRoute?.delivery_date)
     return [
       buildOrderPayloadFromState(orderState, {
-        routeId: targetRouteId ?? undefined,
+        routeId: targetRouteId,
         fallbackOrderId,
         deliveryArrangement,
         senderId: apiClient.getSessionUserId(),
@@ -729,6 +732,7 @@ const FillOrder = ({
             onTemplatesSelected={handleTemplatesSelected}
             onCloseSelection={() => setActiveTab('customer')}
             initialTemplateSelection={templateSelection}
+            setIsLoading={() => {}}
           />
         )
       default:

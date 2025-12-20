@@ -1,8 +1,5 @@
 import { useMemo } from 'react'
 
-import { DeliveryRequestFormPanel } from '../../../external_form/components/section_panels/DeliveryRequestFormPanel'
-import type { BridgeStatus, FormHandoffPayload } from '../../../../webrtc/formBridge'
-
 export function DeliveryRequestSectionPanel() {
   const pageLink = useMemo(() => {
     if (typeof window === 'undefined') {

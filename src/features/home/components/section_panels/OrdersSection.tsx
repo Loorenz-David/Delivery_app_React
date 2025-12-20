@@ -126,9 +126,8 @@ const OrdersSection = ({
     
     const selectedRouteId = useHomeStore((s) => s.selectedRouteId)
     const selectedOrderId = useHomeStore((s) => s.selectedOrderId)
-    const route = useHomeStore(
-      (state) => (selectedRouteId != null ? state.routes.find((r) => r.id === selectedRouteId) ?? null : null),
-      (a, b) => a?.id === b?.id && a?.delivery_orders === b?.delivery_orders && a?.saved_optimizations === b?.saved_optimizations,
+    const route: RoutePayload | null = useHomeStore((state) =>
+      selectedRouteId != null ? state.routes.find((r) => r.id === selectedRouteId) ?? null : null,
     )
 
     const { selectRoute, selectOrder, updateRoute } = useHomeStore.getState()

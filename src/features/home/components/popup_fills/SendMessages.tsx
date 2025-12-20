@@ -417,6 +417,7 @@ const SendMessages = ({
         service={searchService}
         onResults={handleSearchResults}
         onReset={handleSearchReset}
+        setIsLoading={setIsLoadingTemplates}
         placeholder="Search by name or content"
         buildQuery={buildSearchQuery}
         defaultFilter="all"

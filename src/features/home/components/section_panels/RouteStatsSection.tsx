@@ -34,9 +34,8 @@ export default function RouteStatsSection({ onClose }: RouteStatsSectionProps) {
   const lastHeaderStateRef = useRef<{ title: string; key: string; optimizationCount: number } | null>(null)
   const selectedRouteId = useHomeStore((state) => state.selectedRouteId)
   const driversMap = useHomeStore((state) => state.driversMap)
-  const route = useHomeStore(
-    (state) => (selectedRouteId != null ? state.routes.find((r) => r.id === selectedRouteId) ?? null : null),
-    (a, b) => a?.id === b?.id && a?.delivery_orders === b?.delivery_orders && a?.saved_optimizations === b?.saved_optimizations,
+  const route: RoutePayload | null = useHomeStore((state) =>
+    selectedRouteId != null ? state.routes.find((r) => r.id === selectedRouteId) ?? null : null,
   )
   const { updateRoute } = useHomeStore.getState()
   const changeOptimizationService = useMemo(() => new ChangeOptimizationService(), [])
