@@ -64,7 +64,7 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
   const popoverTriggerRef = useRef<HTMLElement | null>(null)
   const dayLabels = useMemo(() => getDayLabels(), [])
   const [dropFeedbackKey,setDropFeedbackKey] = useState<string | null>(null)
-  const [routeDropFeedbackId,setRouteDropFeedbackId] = useState<number | null>(null)
+  const [routeDropFeedbackId] = useState<number | null>(null)
   const [isOverDate, setIsOverDate ] = useState <string | null>(null)
   const matrix = useMemo(() => buildCalendarMatrix(referenceDate, routes), [referenceDate, routes])
   const todayKey = useMemo(() => {

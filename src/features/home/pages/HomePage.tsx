@@ -317,13 +317,16 @@ export function HomePage() {
                     animate={{width:routePanelWidth}}
                     transition={{type:'spring', stiffness:260,damping:30}}
                   >
-                    <SectionPanel params={{
+                    <SectionPanel
+                      params={{
                         icon:<RouteIcon className="app-icon h-5 w-5" />,
                         label:"Routes",
                         className:`w-[${routePanelWidth}px] z-1`,
                         compact:isRouteCompact,
                         isLoadingSectionInfo:isLoadingSectionInfo
-                    }}>
+                      }}
+                      onRequestClose={() => {}}
+                    >
                       <RouteSection isCompact={isRouteCompact} onViewModeChange={handleViewModeChange}/>
                     </SectionPanel>
                   </motion.div>

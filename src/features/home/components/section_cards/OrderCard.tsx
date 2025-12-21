@@ -10,7 +10,7 @@ import type { ItemStateOption } from '../../api/optionServices'
 import { deriveOrderStateFromItems } from '../../utils/orderState'
 import { ItemCard } from "./ItemCard";
 import { useHomeStore } from '../../../../store/home/useHomeStore'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 
 
@@ -182,7 +182,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
         {/* Body */}
         <div className="mt-3 border-t border-gray-100" >
-          <div
+          <motion.div
             layout
             className="flex cursor-pointer items-center gap-3 px-3 py-2 transition hover:bg-gray-100"
             onClick={(event) => {
@@ -224,7 +224,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 isExpanded && "rotate-180"
               )}
             />
-          </div>
+          </motion.div>
         
               {isExpanded && (
                   <motion.div 
