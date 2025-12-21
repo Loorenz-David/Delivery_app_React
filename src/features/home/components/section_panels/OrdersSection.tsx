@@ -20,7 +20,7 @@ import type { MessagePayload } from '../../../../message_manager/MessageManagerC
 import { useHomeStore } from '../../../../store/home/useHomeStore'
 import { useMobileSectionHeader, type MobileHeaderAction } from '../../contexts/MobileSectionHeaderContext'
 import { deriveOrderStateFromItems } from '../../utils/orderState'
-
+import { motion } from 'framer-motion'
 
 interface BuildersProps{
     popupManager: ActionManager
@@ -271,7 +271,7 @@ const OrdersSection = ({
     useEffect(() => {
         setExpandedOrders((previous) => {
             if (!rawOrders.length) {
-                return {}
+                return Object.keys(previous).length === 0 ? previous : {}
             }
             const allowedIds = new Set(rawOrders.map((order) => order.id))
             const nextState: Record<number, boolean> = {}
@@ -606,10 +606,13 @@ const OrdersSection = ({
     return ( 
         <div className="space-y-4">
 
-                <div
-                    className="space-y-3 py-4"
+                <motion.div
+                    layout
+                    
+                    className="space-y-3 py-4 flex flex-col gap-3"
                     onDragOver={handleListDragOver}
                     onDrop={handleListDrop}
+                    
                 >
                     {orders.map((order) => (
                         
@@ -645,7 +648,7 @@ const OrdersSection = ({
                         }}
                         onDrop={handleDropAtEnd}
                     />
-                </div>
+                </motion.div>
 
         </div>
      );

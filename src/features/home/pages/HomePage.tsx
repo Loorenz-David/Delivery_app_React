@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createElement, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { AnimatePresence, motion } from 'framer-motion'
@@ -58,7 +58,7 @@ export function HomePage() {
   )
   const sectionManager = useMemo(()=> new ActionManager({
       blueprint: SectionPanel,
-      registry: sectionMap
+      registry: sectionMap,
 
       }),
     []
@@ -113,11 +113,13 @@ export function HomePage() {
       if(entries.length > 0){
         if(!firstOpenSection.current){
           firstOpenSection.current = entries[0].id
-        }else{
+        }
+        else{
           if(entries[0].id !== firstOpenSection.current){
             closingAllSections.current = true
             firstOpenSection.current = null
             entries.forEach((entry, i) => {
+              
               setTimeout(() => sectionManager.close(entry.id), i * 100) // staggered close
             })
             closingAllSections.current = false
@@ -309,9 +311,11 @@ export function HomePage() {
                 </>
               ) : (
                 <div className="z-4 flex h-full overflow-x-visible">
-                  <div
+                  <motion.div
+                    layout
                     className="h-full"
-                    style={{ width: `${routePanelWidth}px` }}
+                    animate={{width:routePanelWidth}}
+                    transition={{type:'spring', stiffness:260,damping:30}}
                   >
                     <SectionPanel params={{
                         icon:<RouteIcon className="app-icon h-5 w-5" />,
@@ -322,7 +326,7 @@ export function HomePage() {
                     }}>
                       <RouteSection isCompact={isRouteCompact} onViewModeChange={handleViewModeChange}/>
                     </SectionPanel>
-                  </div>
+                  </motion.div>
 
                   <div className="relative z-2 flex h-full overflow-visible">
                       {entries.length === 1 &&
@@ -344,8 +348,41 @@ export function HomePage() {
                       }
                       
 
+                      <AnimatePresence mode="popLayout" >
+                        { sectionManager.getSnapshot().map((entry,index)=>{
+                          const component = sectionMap[entry.key]
+                          const isOrders = entry.key == "OrdersSection"
+                          
+                          const instant = index > 1
+                          return(
+                            <motion.div key={entry.id }
+                              initial={{ x: 320, opacity: 0 }}
+                              layout={isOrders ?  'position' : false}
+                              animate={{ x: 0, opacity: 1 }}
+                              exit={{ x: 320, opacity: 0 }}
+                              transition={
+                                instant
+                                ? {duration:0}
+                                : {
+                                    type: 'spring',
+                                    stiffness: 300,
+                                    damping: 30,
+                                }
+                              }
+                              className={isOrders ?  '' : 'absolute right-0 top-0 h-full w-full'}
+                            >
+                                <SectionPanel   position={index} params={entry.parentParams ?? {}} onRequestClose={()=>sectionManager.close(entry.id)}>
+                                    {createElement(component, {
+                                        payload: entry.payload,
+                                        onClose: ()=>sectionManager.close(entry.id),
+                                      })}
+                                </SectionPanel>
+                            </motion.div>
+                            
+                          )
 
-                      {sectionStack}
+                        }) }
+                      </AnimatePresence>
                   </div>
                 </div>
               )}

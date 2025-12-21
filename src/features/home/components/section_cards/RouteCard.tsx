@@ -1,4 +1,6 @@
 import React from "react";
+import {useState} from "react"
+import { motion, AnimatePresence } from 'framer-motion'
 
 import {
   CheckMarkIcon,
@@ -9,6 +11,7 @@ import {
   TimeIcon,
   TruckIcon,
   WeightIcon,
+  PlusIcon,
 } from "../../../../assets/icons";
 import type { RoutePayload } from '../../types/backend'
 import { useHomeStore } from '../../../../store/home/useHomeStore'
@@ -52,20 +55,84 @@ export const RouteCard: React.FC<RouteCardProps> = ({ route, onSelect, compact =
   const totalVolume = formatVolume(route.total_volume)
   const totalItems = route.total_items ?? route.delivery_orders?.reduce((sum, order) => sum + (order.delivery_items?.length ?? 0), 0) ?? 0
   const totalOrders = route.total_orders ?? route.delivery_orders?.length ?? 0
+  const [routeDropFeedback, setRouteDropFeedback] = useState<boolean>(false)
+  const [draggingOverRoute, setDraggingOverRoute ] = useState(false)
 
   if (compact) {
     return (
-      <div
+      <motion.div
         className="w-full rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:shadow-md cursor-pointer"
         onClick={() => onSelect?.(route)}
         role={onSelect ? 'button' : undefined}
         tabIndex={onSelect ? 0 : undefined}
-        onDragOver={onRouteDragOver ? (event) => onRouteDragOver(event, route) : undefined}
-        onDrop={onRouteDrop ? (event) => onRouteDrop(event, route) : undefined}
+        onDragOver={onRouteDragOver ? (event) => {
+          setDraggingOverRoute(true)
+          onRouteDragOver(event, route)
+
+        } : undefined}
+        onDragLeave={()=> setDraggingOverRoute(false)}
+        onDrop={onRouteDrop ? (event) => {
+          setRouteDropFeedback(true)
+          window.setTimeout(()=>{
+            setRouteDropFeedback(false)
+            setDraggingOverRoute(false)
+          },500)
+          onRouteDrop(event, route) 
+        }: undefined}
+        animate={
+          routeDropFeedback 
+            ? { 
+              scale: [1, 1.6, 1] ,
+              
+            }
+            : { 
+              scale: 1 ,
+            }
+        }
+        transition={{
+          duration: 0.2,
+          ease: 'easeOut',
+        }}
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-500">
-            <TruckIcon className="stroke-current h-4 w-4 text-blue-400" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full  "
+            style={{
+              backgroundColor: draggingOverRoute ?   "#1aff0053" : "#7a9dfe31"
+            }}
+          >
+            <AnimatePresence mode="wait">
+              {draggingOverRoute ? (
+                <motion.div
+                  key="plus"
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ 
+                    opacity: 1, 
+                    scale: routeDropFeedback ? [1,1.3,1] : 1
+                  }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={{ 
+                    scale:{
+                        duration: 0.4, 
+                        ease: 'easeOut' 
+
+                    },
+                    opacity:{duration:0.15}
+                  }}
+                >
+                  <PlusIcon className="h-6 w-6" style={{ stroke: "#009d22ff" }} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="truck"
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                >
+                  <TruckIcon className="stroke-current h-4 w-4 text-blue-400" />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-800 truncate">{route.route_label}</p>
@@ -84,7 +151,7 @@ export const RouteCard: React.FC<RouteCardProps> = ({ route, onSelect, compact =
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     )
   }
 

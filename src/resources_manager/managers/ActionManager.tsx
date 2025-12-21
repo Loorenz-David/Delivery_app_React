@@ -34,7 +34,7 @@ export interface ActionManagerOptions {
   closeDelayMs?: number
 }
 
-interface ActionEntry {
+export interface ActionEntry {
   id: string
   key: string
   payload?: ActionPayload
@@ -138,7 +138,7 @@ export class ActionManager {
     }
   }
 
-  getSnapshot() {
+  getSnapshot(): Array<ActionEntry> {
     return this.entries
   }
 

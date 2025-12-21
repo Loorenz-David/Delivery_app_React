@@ -6,14 +6,15 @@ import { SectionPanelContext } from '../../contexts/SectionPanelContext'
 import { useMobileSectionHeader } from '../../contexts/MobileSectionHeaderContext'
 import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
 import LoadingSpinner from '../../../../components/spiner_loaders/PageLoader'
+import { motion } from 'framer-motion'
 
 export interface SectionPanelParams {
   icon?: ReactNode
-  label: string
+  label?: string
   className?: string
   headerActions?: ReactNode[]
   interactionActions?: ReactNode[]
-  id?: 0
+  id?: 0 
   position?: 0
   animation?: 'slideRight' | 'fade' | 'expand' | null
   borderLeft?: string
@@ -25,6 +26,7 @@ interface SectionPanelProps {
   params: SectionPanelParams
   children?: ReactNode
   position?: number
+  onRequestClose:()=>void
 }
 
 export function SectionPanel({ params, children, position = -1 }: SectionPanelProps) {
@@ -60,13 +62,14 @@ export function SectionPanel({ params, children, position = -1 }: SectionPanelPr
 
   return (
     <SectionPanelContext.Provider value={{ setHeaderActions, setInteractionActions }}>
-      <section
+      <motion.section
         className={cn(' pb-4 flex flex-col h-full min-h-0 border border-[var(--color-border)] bg-white', className)}
         style={{
           borderLeft: borderLeft ? borderLeft : '',
           zIndex: zIndex ?? undefined,
         }}
-       
+        
+
       >
         <div className="flex h-full min-h-0 flex-col">
           {!isMobile.isMobile &&
@@ -108,7 +111,7 @@ export function SectionPanel({ params, children, position = -1 }: SectionPanelPr
             }
           </div>
         </div>
-      </section>
+      </motion.section>
     </SectionPanelContext.Provider>
   )
 }

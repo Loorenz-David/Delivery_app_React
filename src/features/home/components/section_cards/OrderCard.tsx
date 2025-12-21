@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef,useEffect } from "react";
 import type { HTMLAttributes, DragEventHandler } from "react";
 
 import { ChevronDownIcon, DragHandleIcon, ItemIcon, TimeIcon } from "../../../../assets/icons";
@@ -10,7 +10,7 @@ import type { ItemStateOption } from '../../api/optionServices'
 import { deriveOrderStateFromItems } from '../../utils/orderState'
 import { ItemCard } from "./ItemCard";
 import { useHomeStore } from '../../../../store/home/useHomeStore'
-
+import { motion, AnimatePresence } from 'framer-motion'
 
 
 
@@ -46,6 +46,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 }) => {
   const { className: dragHandleClassName, onDragStart, onDragEnd, ...restDragHandle } = dragHandleProps ?? {}
   const cardRef = useRef<HTMLDivElement>(null)
+  const cardHeight = useRef(0)
   const dragPreviewRef = useRef<HTMLElement | null>(null)
   const itemStatesMap = useHomeStore((state) => state.itemStatesMap)
   const formattedArrivalTime = useMemo(() => formatExpectedTime(order.expected_arrival_time), [order.expected_arrival_time])
@@ -90,8 +91,28 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     onDragEnd?.(event)
   }
 
+  useEffect(()=>{
+    if(!cardRef.current) return
+    cardHeight.current = cardRef.current.getBoundingClientRect().height
+    console.log(cardHeight)
+  },[isExpanded])
+
   return (
-    <div
+    <motion.div
+      layout
+      layoutId={`order-${order.id}`}
+     
+       animate={{
+          marginTop: dropIndicator === 'before' ? cardHeight.current : 0,
+          marginBottom: dropIndicator === 'after' ? cardHeight.current : 0,
+        }}
+        transition={{
+          type: 'spring',
+          stiffness: 500,
+          damping: 35,
+          duration:0,
+        }}
+      
       className={cn(
         "relative flex w-full rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-200",
         "hover:shadow-md",
@@ -109,7 +130,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         <div className="absolute left-3 right-3 bottom-0 h-0.5 translate-y-1/2 rounded bg-blue-500" />
       )}
 
-      <div className="flex w-full flex-col">
+      <div className="flex w-full flex-col"
+       
+      >
         {/* Header */}
         <div
           className="flex items-start  pr-3 pt-3 cursor-pointer"
@@ -158,8 +181,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         </div>
 
         {/* Body */}
-        <div className="mt-3 border-t border-gray-100">
+        <div className="mt-3 border-t border-gray-100" >
           <div
+            layout
             className="flex cursor-pointer items-center gap-3 px-3 py-2 transition hover:bg-gray-100"
             onClick={(event) => {
               event.stopPropagation()
@@ -201,32 +225,43 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               )}
             />
           </div>
-
-          {isExpanded && (
-            <div className="px-3 pb-3" onClick={(event) => event.stopPropagation()}>
-              <div className="mt-2 flex flex-col gap-1.5">
-                {items.length ? (
-                  items.map((item,i) => (
-                    <div
-                      key={`Item_${item.id}_${i}`}
-                      className="origin-top-left"
-                      style={{ transform: 'scale(0.9)', transformOrigin: 'top left', zIndex: items.length - i }}
-                    >
-                      <ItemCard
-                        item={{ ...item }}
-                        onAction={(action, itemId, data) => onItemAction?.(action, itemId, data)}
-                      />
+        
+              {isExpanded && (
+                  <motion.div 
+                  layout
+                    initial={{opacity:0}}
+                    animate={{opacity:1}}
+                    exit={{opacity:0}}
+                    transition={{
+                      duration:0.3
+                    }}
+                    className="px-3 pb-3" onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className="mt-2 flex flex-col gap-1.5">
+                      {items.length ? (
+                        items.map((item,i) => (
+                          <div
+                            key={`Item_${item.id}_${i}`}
+                            className="origin-top-left scale-[0.97]"
+                            style={{ transformOrigin: 'top left', zIndex: items.length - i }}
+                          >
+                            <ItemCard
+                              item={{ ...item }}
+                              onAction={(action, itemId, data) => onItemAction?.(action, itemId, data)}
+                            />
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-500">No items added.</p>
+                      )}
                     </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-500">No items added.</p>
-                )}
-              </div>
-            </div>
-          )}
+                  </motion.div>
+              )}
+
+
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

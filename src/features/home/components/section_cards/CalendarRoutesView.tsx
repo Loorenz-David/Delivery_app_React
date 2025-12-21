@@ -6,6 +6,8 @@ import { RouteCard } from './RouteCard'
 import type { RoutePayload } from '../../types/backend'
 import { useResourceManager } from '../../../../resources_manager/resourcesManagerContext'
 import { getDayLabels, buildCalendarMatrix, formatMonthLabel } from './utils/calendarHelpers'
+import { motion, AnimatePresence } from 'framer-motion'
+import { PlusIcon } from '../../../../assets/icons'
 
 interface CalendarRoutesViewProps {
   routes: RoutePayload[]
@@ -61,6 +63,9 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
   const hoverPopoverTimeout = useRef<number | null>(null)
   const popoverTriggerRef = useRef<HTMLElement | null>(null)
   const dayLabels = useMemo(() => getDayLabels(), [])
+  const [dropFeedbackKey,setDropFeedbackKey] = useState<string | null>(null)
+  const [routeDropFeedbackId,setRouteDropFeedbackId] = useState<number | null>(null)
+  const [isOverDate, setIsOverDate ] = useState <string | null>(null)
   const matrix = useMemo(() => buildCalendarMatrix(referenceDate, routes), [referenceDate, routes])
   const todayKey = useMemo(() => {
     const today = new Date()
@@ -114,6 +119,7 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
   const openPopover = (cell: { dateKey: string; routes: RoutePayload[] }, target: HTMLElement) => {
     if (!containerRef.current) return
     popoverTriggerRef.current = target
+    
     const bounds = containerRef.current.getBoundingClientRect()
     const targetBounds = target.getBoundingClientRect()
     const maxWidth = Math.min(360, bounds.width - 16)
@@ -155,6 +161,12 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
 
   const handleCellDragOver = (cell: { dateKey: string; routes: RoutePayload[] }, event: React.DragEvent) => {
     if (!isOrderDrag(event)) return
+    setIsOverDate(prev=>{
+      if(prev == cell.dateKey){
+        return prev
+      }
+      return cell.dateKey
+    })
     event.preventDefault()
     if (cell.routes.length > 1) {
       schedulePopoverOpen(cell, event.currentTarget as HTMLElement)
@@ -164,10 +176,19 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
   const handleCellDrop = (cell: { dateKey: string; routes: RoutePayload[] }, event: React.DragEvent) => {
     clearHoverPopoverTimeout()
     if (!isOrderDrag(event)) return
+
+    setDropFeedbackKey(cell.dateKey)
+    
+    window.setTimeout(()=>{
+      setDropFeedbackKey(null)
+      setIsOverDate(null)
+    },400)
+
     if (cell.routes.length <= 1) {
       onDateDrop(cell.dateKey, cell.routes, event)
       return
     }
+
     // when multiple routes, rely on dropping on individual route cards
   }
 
@@ -254,7 +275,10 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
     }
   }, [popover])
 
-  useEffect(() => () => clearHoverPopoverTimeout(), [])
+  useEffect(() => () => {
+    clearHoverPopoverTimeout()
+  
+  }, [])
 
   const handleClosePopover = () => {
     setPopover(null)
@@ -326,72 +350,110 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
               const totalItems = showItems ? cell.routes.reduce((sum, route) => sum + getRouteItemsCount(route), 0) : 0
               const isToday = cell.dateKey === todayKey
               return (
-                <button
+                <motion.button
+                  animate={
+                    dropFeedbackKey === cell.dateKey
+                      ? { 
+                        scale: [1, 1.4, 1] 
+                        
+                      }
+                      : { 
+                        scale: 1 ,
+                      }
+                  }
+                  transition={{
+                    duration: 0.3,
+                    ease: 'easeOut',
+                  }}
                   key={cell.dateKey}
                   type="button"
-                  className={`relative flex min-h-[96px] flex-col rounded-xl border p-2 text-left transition hover:border-[var(--color-primary)] ${
-                    cell.inCurrentMonth ? 'bg-white border-[var(--color-border)]' : 'bg-[var(--color-surface)] border-[var(--color-border)]/60'
+                  className={`relative flex min-h-[96px] flex-col rounded-xl border p-2 text-left transition  ${
+                    cell.inCurrentMonth ? 'bg-white border-[var(--color-border)] ' : 'bg-[var(--color-surface)] border-[var(--color-border)]/60'
                   } 
-                  ${cell.dateKey == selectedDateRef.current ? 'border-[var(--color-light-blue)] shadow-[0_0_10px_var(--color-light-blue)]/50' : ''}
+                  ${cell.dateKey == selectedDateRef.current ? 'border-[var(--color-light-blue)] shadow-[0_0_10px_var(--color-light-blue)]/50' : 'hover:border-[var(--color-primary)]'}
                   `}
+                  style={{
+                    backgroundColor:isOverDate && isOverDate == cell.dateKey ? "#1aff0053" : "var(--color-page)"
+                  }}
                   onClick={(event) => handleDateClick(cell, event)}
                   onDragOver={(event) => handleCellDragOver(cell, event)}
                   onDrop={(event) => handleCellDrop(cell, event)}
-                  onDragLeave={clearHoverPopoverTimeout}
+                  onDragLeave={()=>{
+                    setIsOverDate(null)
+                    clearHoverPopoverTimeout()
+                  }}
                 >
-                  <span
-                    className={`flex items-center justify-center ${
-                      isToday
-                        ? 'bg-[var(--color-dark-blue)]/80 text-[var(--color-page)] ring-1s ring-[var(--color-primary)]/20'
-                        : cell.inCurrentMonth
-                          ? 'text-[var(--color-text)]'
-                          : 'text-[var(--color-muted)]'
-                    } ${isMobile.isMobile ? 
-                      ` rounded-full text-[10px] font-semibold`
-                      :`flex h-8 w-8  rounded-full text-sm font-semibold `}`}
-                  >
-                    {cell.label ?? ''}
-                  </span>
-                  {cell.routes.length ? (
-                    <div className="mt-auto flex flex-wrap items-center gap-1">
-                      <span className="inline-flex flex-1 min-h-[20px] items-center justify-center rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                        {isNarrow ? (
-                          cell.routes.length
-                        ) : (
-                          <span className="text-[8px]">{`${cell.routes.length} route${cell.routes.length > 1 ? 's' : ''}`}</span>
-                        )}
-                      </span>
-                      {showOrders ? (
-                        <span className="inline-flex flex-1 min-h-[20px] items-center justify-center rounded-full bg-neutral-400 px-2 py-0.5 text-[10px] font-semibold text-white">
-                          {isNarrow ? (
-                            totalOrders
-                          ) : (
-                            <span className="text-[8px]">{`${totalOrders} order${totalOrders === 1 ? '' : 's'}`}</span>
-                          )}
-                        </span>
-                      ) : null}
-                      {showItems ? (
-                        <span className="inline-flex flex-1 min-h-[20px] items-center justify-center rounded-full bg-neutral-200 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text)]">
-                          {isNarrow ? (
-                            totalItems
-                          ) : (
-                            <span className="text-[8px]">{`${totalItems} item${totalItems === 1 ? '' : 's'}`}</span>
-                          )}
-                        </span>
-                      ) : null}
+                  <AnimatePresence mode="wait">
+                    {isOverDate && isOverDate == cell.dateKey ? 
+                      <motion.div
+                        initial={{opacity:0, scale:0.6}}
+                        animate={{
+                          opacity:1,
+                          scale: dropFeedbackKey == cell.dateKey ? 1.2 : 1
+                        }}
+                        exit={{ opacity: 0, scale:0.6 }}
+                        transition={{
+                          scale:{ duration:0.3, ease:'easeOut' },
+                          opacity:{ duration:0.15 }
+                        }}
+                      >
+                          <PlusIcon className="h-6 w-6" style={{ stroke: "#009d22ff" }} />
+                      </motion.div>
+                    :
+                      <motion.span
+                        initial={{ opacity:0, scale:0.6 }}
+                        animate={{ opacity:1, scale:1 }}
+                        exit={{ opacity:0, scale:0.6 }}
+                        transition={{ duration:0.15, ease:"easeOut"}}
+                        className={`flex items-center justify-center ${
+                          isToday
+                            ? 'bg-[var(--color-dark-blue)]/80 text-[var(--color-page)] ring-1s ring-[var(--color-primary)]/20'
+                            : cell.inCurrentMonth
+                              ? 'text-[var(--color-text)]'
+                              : 'text-[var(--color-muted)]'
+                        } ${isMobile.isMobile ? 
+                          ` rounded-full text-[10px] font-semibold`
+                          :`flex h-8 w-8  rounded-full text-sm font-semibold `}`}
+                      >
+                        {cell.label ?? ''}
+                      </motion.span>
+                    }
+                  </AnimatePresence>
+                    <div>
+                        {cell.routes.length ? (
+                          <div className="mt-auto flex flex-wrap items-center gap-1">
+                            <span className="inline-flex flex-1 min-h-[20px] items-center justify-center rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                              {isNarrow ? (
+                                cell.routes.length
+                              ) : (
+                                <span className="text-[8px]">{`${cell.routes.length} route${cell.routes.length > 1 ? 's' : ''}`}</span>
+                              )}
+                            </span>
+                            {showOrders ? (
+                              <span className="inline-flex flex-1 min-h-[20px] items-center justify-center rounded-full bg-neutral-400 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                {isNarrow ? (
+                                  totalOrders
+                                ) : (
+                                  <span className="text-[8px]">{`${totalOrders} order${totalOrders === 1 ? '' : 's'}`}</span>
+                                )}
+                              </span>
+                            ) : null}
+                            {showItems ? (
+                              <span className="inline-flex flex-1 min-h-[20px] items-center justify-center rounded-full bg-neutral-200 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text)]">
+                                {isNarrow ? (
+                                  totalItems
+                                ) : (
+                                  <span className="text-[8px]">{`${totalItems} item${totalItems === 1 ? '' : 's'}`}</span>
+                                )}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null
+                        }
                     </div>
-                  ) : null}
-                  {/* {cell.routes.length && !isNarrow ? (
-                    <div className="mt-2 hidden space-y-1 text-[11px] text-[var(--color-muted)] md:block">
-                      {cell.routes.slice(0, 2).map((route) => (
-                        <div key={route.id} className="truncate">
-                          {route.route_label}
-                        </div>
-                      ))}
-                      {cell.routes.length > 2 ? <div className="text-[10px] text-[var(--color-muted)]">+{cell.routes.length - 2} more</div> : null}
-                    </div>
-                  ) : null} */}
-                </button>
+                  
+                
+                </motion.button>
               )
             })}
           </div>
@@ -399,7 +461,7 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
       </div>
 
       {popover ? (
-        <div
+        <motion.div
           className="absolute z-10 max-w-[90vw] rounded-2xl border border-[var(--color-border)] bg-white p-3 shadow-xl"
           style={{
             top: popover.position.top,
@@ -407,6 +469,22 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
             width: popover.position.width,
           }}
           ref={popoverRef}
+          initial={{
+            opacity: 0,
+            scale: 0.96,
+          }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+          }}
+          exit={{
+            opacity: 0,
+            scale: 0.96,
+          }}
+          transition={{
+            duration: 0.2,
+            ease: 'easeOut',
+          }}
         >
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-[var(--color-text)]">{formatDateLabel(popover.dateKey)}</p>
@@ -422,31 +500,55 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
             </div>
           </div>
           <div
-          className="relative mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1"
+          className="relative py-4 max-h-[320px] space-y-2 overflow-y-auto pr-1"
           ref={scrollRef}
           onMouseLeave={stopScroll}
         >
             {popover.routes.map((route) => (
-              <div
+              <motion.div
                 key={route.id}
-                className="transform scale-[0.95] cursor-pointer"
+                className="transform scale-[0.95] cursor-pointer rounded-xl"
+                animate={
+                    routeDropFeedbackId === route.id
+                      ? { 
+                        scale: [1, 1.05, 1] ,
+                        boxShadow: [
+                        '0 0 0 0 rgba(34,197,94,0)',
+                        '0 0 5px 1px rgba(34,197,94,0.4)',
+                        '0 0 0 0 rgba(34,197,94,0)',
+                      ],
+                      borderColor: 'rgb(34,197,94)',
+                      }
+                      : { 
+                        scale: 1 ,
+                        boxShadow: '0 0 0 0 rgba(0,0,0,0)',
+                        borderColor: 'var(--color-border)',
+                      }
+                  }
+                transition={{
+                  duration: 0.3,
+                  ease: 'easeOut',
+                }}
                 onClick={() => {
                   setPopover(null)
                   onSelectRoute(route)
                 }}
-                onDragOver={(event) => {
-                  if (isOrderDrag(event)) {
-                    event.preventDefault()
-                  }
-                }}
-                onDrop={(event) => {
-                  if (!isOrderDrag(event)) return
-                  onRouteDrop(route, event)
-                  setPopover(null)
-                }}
               >
-                <RouteCard route={route} compact />
-              </div>
+                <RouteCard route={route} compact 
+                  onRouteDragOver={(event)=>{
+                    if(isOrderDrag(event)){
+                      event.preventDefault()
+                    }
+                  }}
+                  onRouteDrop={(event)=>{
+                    if (!isOrderDrag(event)) return
+                    window.setTimeout(()=>{
+                      setPopover(null)
+                    }, 600)
+                    onRouteDrop(route, event)
+                  }}
+                />
+              </motion.div>
             ))}
             {popover.routes.length > 3 ? (
               <>
@@ -488,7 +590,7 @@ export function CalendarRoutesView({ routes, onSelectRoute, onRouteDrop, onDateD
           >
             + Route
           </div>
-        </div>
+        </motion.div>
       ) : null}
     </div>
   )
