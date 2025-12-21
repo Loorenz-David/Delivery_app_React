@@ -14,6 +14,7 @@ const deriveSocketUrl = (): string => {
   // Prefer an explicit socket URL if provided via env.
   const explicit = import.meta.env.VITE_SOCKET_URL as string | undefined
   if (explicit) {
+    console.log(explicit)
     return explicit
   }
 
