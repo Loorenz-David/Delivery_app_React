@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { ActionComponentProps } from '../../resources_manager/managers/ActionManager'
+import type { ActionComponentProps } from '../../shared/stack-manager/StackActionManager'
 import type { AddressPayload } from '../../features/home/types/backend'
 import { MapManager } from '../MapManager'
-import { BasicButton } from '../../components/buttons/BasicButton'
+import { BasicButton } from '../../shared/buttons/BasicButton'
 
 export interface MapLocationPickerPayload {
   initialAddress?: AddressPayload | null

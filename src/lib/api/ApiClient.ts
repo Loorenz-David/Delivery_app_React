@@ -1,18 +1,18 @@
-import { compressPayload, maybeDecompress } from './compression'
-import type { ApiClientOptions, ApiEnvelope, ApiResult, RequestOptions } from './types'
+import { gzipPayload, serializePayload, MAX_COMPRESSED_BYTES, MAX_DECOMPRESSED_BYTES } from './compression'
+import type { ApiClientOptions, ApiEnvelope, ApiErrorPayload, ApiResult, RequestOptions } from './types'
 
-import type { SessionSnapshot } from '../storage/sessionStorage'
-import { sessionStorage } from '../storage/sessionStorage'
+import type { SessionSnapshot, SessionUser } from '@/featuresV2/auth/login/store/sessionStorage'
+import { sessionStorage } from '@/featuresV2/auth/login/store/sessionStorage'
 
 export class ApiError extends Error {
   public readonly status: number
-  public readonly envelope?: ApiEnvelope<unknown>
+  public readonly payload?: ApiErrorPayload
 
-  constructor(message: string, status: number, envelope?: ApiEnvelope<unknown>) {
+  constructor(message: string, status: number, payload?: ApiErrorPayload) {
     super(message)
     this.name = 'ApiError'
     this.status = status
-    this.envelope = envelope
+    this.payload = payload
   }
 }
 
@@ -51,13 +51,17 @@ export class ApiClient {
     return session?.user?.id ?? null
   }
 
- 
+  getSessionUser(): SessionUser | null {
+    const session = this.options.sessionStorage.getSession()
+    return session?.user ?? null
+  }
+
   async request<T>(options: RequestOptions, attempt = 0): Promise<ApiResult<T>> {
     const {
       path,
       method = 'GET',
       data,
-      compress = false, 
+      compress = false,
       headers = {},
       signal,
       requiresAuth = true,
@@ -68,7 +72,6 @@ export class ApiClient {
     const session = this.options.sessionStorage.getSession()
     
     const finalHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
       ...headers,
     }
 
@@ -76,52 +79,134 @@ export class ApiClient {
       finalHeaders.Authorization = `Bearer ${session.accessToken}`
     }
 
-    const body =
-      data === undefined
-        ? undefined
-        : JSON.stringify({
-            data: compress ? compressPayload(data) : data,
-            is_compress: compress,
-          })
+    let body: BodyInit | undefined
+    if (data !== undefined) {
+      const built = this.buildRequestBody(data, compress)
+      body = built.body
+      Object.assign(finalHeaders, built.headers)
+    }
 
     const response = await this.fetchImpl(url, {
       method,
       headers: finalHeaders,
       body,
       signal,
+      cache: requiresAuth ? 'no-store' : 'default'
     })
-
+   
     const rawText = await response.text()
-    const envelope = rawText ? (JSON.parse(rawText) as ApiEnvelope<unknown>) : undefined
-    if ((response.status === 403 || response.status == 422) && requiresAuth) {
+    const envelope = rawText ? this.parseEnvelope<ApiEnvelope<unknown>>(rawText) : undefined
+    if (rawText && !envelope) {
+      throw new ApiError('Invalid response from server', response.status)
+    }
+    if (requiresAuth && this.isAuthError(response.status, envelope)) {
       if (attempt === 0 && (await this.tryRefresh())) {
-
         return this.request(options, attempt + 1)
       }
 
       this.handleUnauthenticated()
-      throw new ApiError(envelope?.message || 'Unauthorized', response.status, envelope)
+      const errorPayload = this.asErrorPayload(envelope)
+      throw new ApiError(errorPayload?.error || 'Unauthorized', response.status, errorPayload)
     }
 
     if (!response.ok) {
-      throw new ApiError(envelope?.error || envelope?.message || 'Request failed', response.status, envelope)
+      const errorPayload = this.asErrorPayload(envelope)
+      throw new ApiError(
+        errorPayload?.error || response.statusText || 'Request failed',
+        response.status,
+        errorPayload,
+      )
     }
 
     if (!envelope) {
-      throw new ApiError('Empty response from server', response.status)
+      return {
+        data: null as T,
+        warnings: [],
+        status: response.status,
+      }
     }
 
-    const dataPayload = maybeDecompress<T>(envelope.data, envelope.is_compress)
+    if (!('data' in envelope)) {
+      throw new ApiError('Invalid response from server', response.status)
+    }
 
-    const typedEnvelope = envelope as ApiEnvelope<T>
+    const success = envelope as { data: T; warnings?: string[] }
+    return {
+      data: success.data,
+      warnings: success.warnings ?? [],
+      status: response.status,
+    }
+  }
+
+  private buildRequestBody(
+    data: unknown,
+    compress: boolean,
+  ): { body: BodyInit; headers: Record<string, string> } {
+    const { json, bytes } = serializePayload(data)
+
+    if (bytes.byteLength > MAX_DECOMPRESSED_BYTES) {
+      throw new ApiError('Payload too large', 413)
+    }
+
+    if (!compress) {
+      return {
+        body: json,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    }
+
+    const compressed = gzipPayload(bytes)
+    if (compressed.byteLength > MAX_COMPRESSED_BYTES) {
+      throw new ApiError('Compressed payload too large', 413)
+    }
 
     return {
-      data: dataPayload,
-      status: typedEnvelope.status,
-      message: typedEnvelope.message,
-      error: typedEnvelope.error,
-      envelope: typedEnvelope,
+      body: new Uint8Array(compressed).buffer,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Encoding': 'gzip',
+      },
     }
+  }
+
+  private parseEnvelope<T>(rawText: string): T | undefined {
+    try {
+      return JSON.parse(rawText) as T
+    } catch (error) {
+      console.warn('Failed to parse API response', error)
+      return undefined
+    }
+  }
+
+  private isAuthError(status: number, envelope?: ApiEnvelope<unknown>): boolean {
+    if (status === 413) {
+      return true
+    }
+    
+
+    const errorPayload = this.asErrorPayload(envelope)
+    if (!errorPayload?.error) {
+      return false
+    }
+
+    const message = errorPayload.error.toLowerCase()
+    return message.includes('token') || message.includes('authorization')
+  }
+
+  private asErrorPayload(envelope?: ApiEnvelope<unknown>): ApiErrorPayload | undefined {
+    if (!envelope || typeof envelope !== 'object') {
+      return undefined
+    }
+
+    if ('error' in envelope) {
+      const error = (envelope as { error?: unknown }).error
+      if (typeof error === 'string') {
+        const code = 'code' in envelope ? (envelope as { code?: string }).code : undefined
+        return { error, code }
+      }
+    }
+
+    return undefined
   }
 
   private composeUrl(path: string, query?: RequestOptions['query']): string {
@@ -145,13 +230,11 @@ export class ApiClient {
     }
 
     const existing = this.options.sessionStorage.getSession()
-    console.log(existing)
     if (!existing?.refreshToken) {
       return false
     }
 
     const { refreshToken } = existing
-    console.log(refreshToken)
     this.refreshPromise = (async () => {
       const response = await this.fetchImpl(this.composeUrl(this.refreshPath), {
         method: 'POST',
@@ -159,7 +242,7 @@ export class ApiClient {
           Authorization: `Bearer ${refreshToken}`,
         },
       })
-
+      
       if (!response.ok) {
         throw new Error('Refresh token rejected')
       }
@@ -169,8 +252,12 @@ export class ApiClient {
         throw new Error('Empty refresh response')
       }
 
-      const envelope = JSON.parse(rawText) as ApiEnvelope<Record<string, string>>
-      const data = maybeDecompress<Record<string, string>>(envelope.data, envelope.is_compress)
+      const envelope = this.parseEnvelope<ApiEnvelope<Record<string, string>>>(rawText)
+      if (!envelope || !('data' in envelope)) {
+        throw new Error('Invalid refresh response')
+      }
+
+      const data = envelope.data
       const nextAccess = data?.access_token
       const nextSocket = data?.socket_token
 
@@ -197,20 +284,33 @@ export class ApiClient {
     return this.refreshPromise
   }
 
-  replaceTokens(nextAccessToken: string, nextRefreshToken: string, nextSocketToken?: string): void {
+  replaceTokens(
+    nextAccessToken: string,
+    nextRefreshToken: string,
+    nextSocketToken?: string,
+    nextUser?: SessionUser | null,
+  ): void {
     const existing = this.options.sessionStorage.getSession()
     const base: Partial<SessionSnapshot> = existing ?? {}
     this.options.sessionStorage.setSession({
       accessToken: nextAccessToken,
       refreshToken: nextRefreshToken,
       socketToken: nextSocketToken ?? base.socketToken,
-      user: base.user ?? null,
+      user: nextUser ?? base.user ?? null,
       identity: base.identity ?? null,
     })
   }
 
-  private handleUnauthenticated(): void {
+  setSession(session: Omit<SessionSnapshot, 'updatedAt'>): void {
+    this.options.sessionStorage.setSession(session)
+  }
+
+  clearSession(): void {
     this.options.sessionStorage.clear()
+  }
+
+  private handleUnauthenticated(): void {
+    // this.options.sessionStorage.clear()
     this.options.onUnauthenticated?.()
   }
 }
@@ -219,9 +319,10 @@ export class ApiClient {
 // check the back end api to understand the encription of token,
 // the refresh token is set to expired in 7 days the access token in 1 hour
 // one can pass as fetch for testing
+
 export const apiClient = new ApiClient({
-  baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
-  refreshPath: '/auth/refresh_token',
+  baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api_v2',
+  refreshPath: '/auths/refresh_token',
   sessionStorage,
 })
 

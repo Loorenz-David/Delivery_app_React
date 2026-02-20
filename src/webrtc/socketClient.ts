@@ -1,7 +1,7 @@
 import { io, type Socket } from 'socket.io-client'
 
 import { apiClient } from '../lib/api/ApiClient'
-import { sessionStorage } from '../lib/storage/sessionStorage'
+import { sessionStorage } from '@/featuresV2/auth/login/store/sessionStorage'
 type SocketFactoryOptions = {
   /**
    * Optional override for the socket server URL. If not provided, it derives

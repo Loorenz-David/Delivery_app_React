@@ -3,6 +3,11 @@ export {}
 declare global {
   namespace google {
     namespace maps {
+      namespace geometry {
+        namespace encoding {
+          function decodePath(encodedPath: string): google.maps.LatLng[]
+        }
+      }
       interface LatLngLiteral {
         lat: number
         lng: number
@@ -50,15 +55,27 @@ declare global {
       class MapsEventListener {
         remove(): void
       }
-
+      class LatLng {
+        constructor(lat: number, lng: number)
+        lat(): number
+        lng(): number
+      }
       class Map {
         constructor(container: HTMLElement, opts?: MapOptions)
         setOptions(options: Partial<MapOptions>): void
         addListener(eventName: string, handler: (...args: any[]) => void): MapsEventListener
         getZoom(): number | undefined
-        fitBounds(bounds: LatLngBounds, padding?: number): void
+        fitBounds(bounds: LatLngBounds, padding?: {
+          top: number,
+            right: number,
+            bottom: number,
+            left: number
+        } | number): void
         controls: Record<ControlPosition, MVCArray<HTMLElement>>
-        setZoom?(zoom: number): void
+        setZoom?:(zoom: number)=> void
+        getCenter(): google.maps.LatLng | null
+        setCenter(latLng: google.maps.LatLng | google.maps.LatLngLiteral): void
+        controls: Record<ControlPosition, MVCArray<HTMLElement>>
       }
 
       class Polyline {
@@ -94,7 +111,7 @@ declare global {
       namespace marker {
         class AdvancedMarkerElement {
           constructor(options: any)
-          position: LatLngLiteral
+          position: LatLngLiteral | LatLng
           map: Map | null
           content: HTMLElement
           addListener(eventName: string, handler: (...args: any[]) => void): MapsEventListener
@@ -104,7 +121,9 @@ declare global {
       namespace event {
         function addListenerOnce(instance: any, eventName: string, handler: (...args: any[]) => void): MapsEventListener
         function removeListener(listener: MapsEventListener): void
+        function trigger(instance: any, eventName: string, ...args: any[]): void
       }
     }
+    
   }
 }

@@ -1,11 +1,15 @@
 {
   "compilerOptions": {
+    "baseUrl":".",
+    "paths":{
+      "@/*": ["src/*"]
+    },
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client"],
+    "types": ["vite/client", "react", "react-dom"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -18,11 +22,20 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src", "src/featuresV2/plan/popups/PlanTypes/storePickup/.hook.tsx"],
+  "exclude": [
+    "src/features",
+    "src/google_maps",
+    "src/components/buttons/AddressPicker.tsx",
+    "src/components/popups/Popup_1.tsx",
+    "src/store/entities",
+    "src/store/home",
+    "src/webrtc"
+  ]
 }

@@ -9,13 +9,9 @@ interface MessageStackProps {
 }
 
 export function MessageStack({ messages, onDismiss }: MessageStackProps) {
-  if (!messages.length) {
-    return null
-  }
-
   return (
     <div className="pointer-events-none fixed left-1/2 top-4 z-[999] flex w-full max-w-xl -translate-x-1/2 flex-col gap-3 px-4">
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {messages.map((message) => (
           <motion.div
             key={message.id}
@@ -29,6 +25,8 @@ export function MessageStack({ messages, onDismiss }: MessageStackProps) {
               status={message.status}
               message={message.message}
               details={message.details}
+              createdAt={message.createdAt}
+              durationMs={message.durationMs}
               onDismiss={() => onDismiss(message.id)}
             />
           </motion.div>

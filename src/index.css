@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import './shared/map/map.css';
 
 :root {
   --color-page: #ffffff;
@@ -6,10 +7,16 @@
   --color-accent: #eef2ff;
   --color-border: #e2e8f0;
   --color-text: #0f172a;
-  --color-muted: #64748b;
+  --color-muted: rgb(100, 116, 139);
+  --color-muted-r:100, 116, 139;
+  --color-turques-r:6, 115, 130;
+  --color-turques:rgb(4, 129, 71);
   --color-primary: #0f172a;
+  --color-secondary: #ffffff;
   --color-primary-foreground: #f8fafc;
   --color-light-blue:rgb(165, 165, 255);
+  --color-blue-500: #3B82F6;
+  --color-light-blue-r: 165, 165, 255;
   --color-dark-blue:rgb(109, 133, 249);
   --radius-xl: 1.5rem;
   font-family: 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -26,19 +33,25 @@ body {
   margin: 0;
   min-height: 100vh;
   background-color: var(--color-page);
+
 }
+
 
 #root {
   min-height: 100vh;
 }
 
 .app-icon {
-  color: #cbd5e1;
+  color: #b5bbc5;
+}
+
+.app-icon-white {
+  color: #ffffff;
   fill: currentColor;
   stroke: currentColor;
 
   path{
-    color: #cbd5e1;
+    color: #ffffff;
     fill: currentColor;
     stroke: currentColor;
   }
@@ -74,6 +87,16 @@ body {
   color: var(--color-text);
 }
 
+/* Remove number input arrows */
+
+/* Chrome, Safari, Edge */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
 input {
   border: none;
   outline: none;
@@ -98,4 +121,86 @@ select {
 select:focus {
   outline: none;
   box-shadow: none;
+}
+
+
+.popup-overlay{
+  height: 100%;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.533);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Firefox */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(118, 118, 118, 0.35) transparent;
+}
+
+/* Chrome, Edge, Safari */
+.scroll-thin::-webkit-scrollbar {
+  width: 2px;               /* thickness */
+}
+
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 12px 0;           /* offsets top & bottom */
+}
+
+.scroll-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.35);
+  border-radius: 999px;
+}
+
+.local_delivery-color{
+  color:#006eff
+}
+.international_shipping-color{
+  color:#ffff
+}
+.store_pickup-color{
+  color:#ffff
+}
+
+textarea {
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;           /* removes bottom-right resize handle */
+  font: inherit;          /* inherit font from parent */
+}
+
+textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+
+.slate-editor p {
+  margin: 0;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+/* Fix Slate placeholder vertical alignment */
+.slate-editor [data-slate-placeholder="true"] {
+  top: 0.75rem !important; 
+}
+
+
+
+@keyframes fillProgress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-fill {
+  width: 0%;
+  animation: fillProgress 2.4s linear forwards;
 }

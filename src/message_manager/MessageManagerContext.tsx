@@ -17,6 +17,7 @@ export interface ManagedMessage extends Omit<MessagePayload, 'status'> {
   id: string
   createdAt: number
   status: MessageStatus
+  durationMs: number
 }
 
 interface MessageManagerContextValue {
@@ -26,7 +27,7 @@ interface MessageManagerContextValue {
 const MessageManagerContext = createContext<MessageManagerContextValue | undefined>(undefined)
 
 const MAX_MESSAGES = 3
-const MESSAGE_DURATION_MS = 5000
+const MESSAGE_DURATION_MS = 10000
 
 export function MessageManagerProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<ManagedMessage[]>([])
@@ -52,12 +53,14 @@ export function MessageManagerProvider({ children }: { children: ReactNode }) {
     ({ status, message, details, messageDuration }: MessagePayload) => {
       const normalizedStatus = resolveMessageStatus(status)
       const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
+      const durationMs = messageDuration ?? MESSAGE_DURATION_MS
       const entry: ManagedMessage = {
         id,
         status: normalizedStatus,
         message,
         details,
         createdAt: Date.now(),
+        durationMs,
       }
 
       setMessages((prev) => {
@@ -72,7 +75,7 @@ export function MessageManagerProvider({ children }: { children: ReactNode }) {
         return next.slice(overflowCount)
       })
 
-      const timeoutId = window.setTimeout(() => removeMessage(id), messageDuration ?? MESSAGE_DURATION_MS)
+      const timeoutId = window.setTimeout(() => removeMessage(id), durationMs)
       timeoutsRef.current.set(id, timeoutId)
     },
     [clearTimer, removeMessage],

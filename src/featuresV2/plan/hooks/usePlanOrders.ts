@@ -1,0 +1,34 @@
+import { useCallback } from 'react'
+import { useMessageManager } from '@/message_manager'
+import { ApiError } from '@/lib/api/ApiClient'
+import { upsertOrders } from '@/featuresV2/order/store/orderStore'
+import {
+  setOrderListError,
+} from '@/featuresV2/order/store/orderListStore'
+import { planApi } from '@/featuresV2/plan/api/plan.api'
+
+export function usePlanOrders() {
+  const { showMessage } = useMessageManager()
+
+  const fetchPlanOrders = useCallback(async (planId: number | string) => {
+    try {
+      const response = await planApi.getPlanOrders(planId)
+      const payload = response.data
+      upsertOrders(payload.order)
+
+      return payload
+
+    } catch (error) {
+        const message = error instanceof ApiError ? error.message : 'Unable to load orders.'
+        const status = error instanceof ApiError ? error.status : 500
+        console.error('Failed to fetch orders', error)
+        setOrderListError(message)
+        showMessage({ status, message })
+      return null
+    }
+  }, [])
+
+  
+
+  return { fetchPlanOrders }
+}

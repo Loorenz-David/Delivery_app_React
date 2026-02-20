@@ -1,0 +1,297 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode, RefObject } from 'react'
+
+import { PinLocationMapIcon, LoaderIcon, LocationIcon } from '../../assets/icons'
+import { BasicButton } from '../../shared/buttons/BasicButton'
+
+import type { InputWarningController } from '../../components/forms/useInputWarning'
+import { usePlacesAutocomplete } from '@/shared/google-maps/hooks/usePlacesAutocomplete'
+
+import type { PlaceSuggestion } from '@/shared/google-maps/hooks/usePlacesAutocomplete'
+import type { AddressPayload } from '../../features/home/types/backend'
+import { useResourceManager } from '../../resources_manager/resourcesManagerContext'
+import type { MapLocationPickerPayload } from './LocationPickerPopup'
+
+import { invalidStyles, fieldContainer } from '../../constants/classes'
+
+interface AddressAutocompleteProps {
+  placeholder?: string
+  onAddressSelected: (address: AddressPayload) => void
+  onAddressCleared?: () => void
+  existingAddress?: AddressPayload | null
+  warningController?: InputWarningController
+  leadingIcon?: ReactNode
+  rightAdornment?: ReactNode
+  externalValue?: string
+  onInputFocus?: () => void
+  onInputBlur?: () => void
+  inputRef?: RefObject<HTMLInputElement | null>
+  enableManualPicker?: boolean
+}
+
+const useAddressAutocompleteController = ({
+  existingAddress,
+  externalValue,
+  onAddressSelected,
+  onAddressCleared,
+  warningController,
+}: Pick<
+  AddressAutocompleteProps,
+  'existingAddress' | 'externalValue' | 'onAddressSelected' | 'onAddressCleared' | 'warningController'
+>) => {
+  const { predictions, setQuery, query, getPlaceDetails, resetPredictions } = usePlacesAutocomplete()
+  const { hideWarning, showWarning } = warningController ?? {}
+
+  const [inputValue, setInputValue] = useState(existingAddress?.raw_address ?? externalValue ?? '')
+  const [hasValidSelection, setHasValidSelection] = useState(Boolean(existingAddress))
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false)
+
+  const suggestions = predictions.suggestions
+
+  useEffect(() => {
+    setInputValue(existingAddress?.raw_address ?? '')
+    setHasValidSelection(Boolean(existingAddress))
+    if (existingAddress) {
+      hideWarning?.()
+    }
+  }, [existingAddress, hideWarning])
+
+  useEffect(() => {
+    if (existingAddress) return
+    if (externalValue !== undefined) {
+      setInputValue(externalValue)
+      setHasValidSelection(Boolean(externalValue))
+      if (externalValue) {
+        hideWarning?.()
+      }
+      setQuery('')
+    }
+  }, [existingAddress, externalValue, hideWarning, setQuery])
+
+  useEffect(() => {
+    setIsDropdownVisible(Boolean(query) && (predictions.isLoading || suggestions.length > 0))
+  }, [predictions.isLoading, query, suggestions.length])
+
+  const setSelectedAddress = useCallback(
+    (address: AddressPayload, rawLabel?: string) => {
+      setInputValue(rawLabel ?? address.raw_address ?? '')
+      setHasValidSelection(true)
+      hideWarning?.()
+      onAddressSelected(address)
+      resetPredictions()
+      setQuery('')
+      setIsDropdownVisible(false)
+    },
+    [hideWarning, onAddressSelected, resetPredictions, setQuery],
+  )
+
+  const handleSelectSuggestion = useCallback(
+    async (suggestion: PlaceSuggestion) => {
+      try {
+        const addressDetails = await getPlaceDetails(suggestion.placeId)
+        setSelectedAddress(addressDetails, suggestion.description)
+      } catch (error) {
+        console.error('Failed to select place', error)
+        showWarning?.('Unable to fetch address. Please try another option.')
+      }
+    },
+    [getPlaceDetails, setSelectedAddress, showWarning],
+  )
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value
+    setInputValue(value)
+    setQuery(value)
+    setHasValidSelection(false)
+    hideWarning?.()
+  }
+
+  const validateOnBlur = () => {
+    if (!inputValue.trim()) {
+      onAddressCleared?.()
+      return
+    }
+
+    if (!hasValidSelection) {
+      onAddressCleared?.()
+      showWarning?.('Please choose an address from the dropdown.')
+    }
+  }
+
+  return {
+    inputValue,
+    isDropdownVisible,
+    isLoading: predictions.isLoading,
+    suggestions,
+    setIsDropdownVisible,
+    handleInputChange,
+    handleSelectSuggestion,
+    setSelectedAddress,
+    validateOnBlur,
+  }
+}
+
+export function AddressAutocomplete({
+  placeholder = 'Search address',
+  onAddressSelected,
+  onAddressCleared,
+  existingAddress,
+  warningController,
+  leadingIcon,
+  rightAdornment,
+  externalValue,
+  onInputFocus,
+  onInputBlur,
+  inputRef,
+  enableManualPicker = false,
+}: AddressAutocompleteProps) {
+  const popupManager = useResourceManager('popupManager')
+  const { warning } = warningController ?? {}
+  const isInvalid = Boolean(warning?.isVisible)
+
+  const dropdownRef = useRef<HTMLUListElement>(null)
+
+  const {
+    inputValue,
+    isDropdownVisible,
+    isLoading,
+    suggestions,
+    setIsDropdownVisible,
+    handleInputChange,
+    handleSelectSuggestion,
+    setSelectedAddress,
+    validateOnBlur,
+  } = useAddressAutocompleteController({
+    existingAddress,
+    externalValue,
+    onAddressSelected,
+    onAddressCleared,
+    warningController,
+  })
+
+  const handleMapSelection = useCallback(
+    (address: AddressPayload) => {
+      setSelectedAddress(address)
+    },
+    [setSelectedAddress],
+  )
+
+  const openMapPicker = useCallback(() => {
+    const payload: MapLocationPickerPayload = {
+      initialAddress: existingAddress ?? null,
+      onConfirm: handleMapSelection,
+    }
+    popupManager.open({
+      key: 'MapLocationPicker',
+      payload,
+      parentParams: {
+        title: 'Pick location on map',
+      },
+    })
+  }, [existingAddress, handleMapSelection, popupManager])
+
+  const handleBlur = () => {
+    onInputBlur?.()
+    requestAnimationFrame(() => {
+      if (dropdownRef.current?.contains(document.activeElement)) {
+        return
+      }
+      setIsDropdownVisible(false)
+      validateOnBlur()
+    })
+  }
+
+  const handleFocus = () => {
+    onInputFocus?.()
+    if (suggestions.length || isLoading) {
+      setIsDropdownVisible(true)
+    }
+  }
+
+  const dropdownContent = useMemo(() => {
+    if (!isDropdownVisible) {
+      return null
+    }
+
+    if (isLoading) {
+      return (
+        <li className="flex items-center gap-2 px-3 py-3 text-sm text-[var(--color-muted)]">
+          <LoaderIcon className="app-icon h-4 w-4 animate-spin" />
+          Loading suggestions...
+        </li>
+      )
+    }
+
+    if (!suggestions.length) {
+      return (
+        <li className="px-3 py-3 text-sm text-[var(--color-muted)]">No matches. Try refining your search.</li>
+      )
+    }
+
+    return suggestions.map((suggestion) => (
+      <li key={suggestion.placeId}>
+        <button
+          type="button"
+          className="flex w-full flex-col gap-0.5 px-3 py-3 text-left text-sm hover:bg-[var(--color-page)]"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => handleSelectSuggestion(suggestion)}
+        >
+          <span className="font-medium text-[var(--color-text)]">{suggestion.mainText ?? suggestion.description}</span>
+          {suggestion.secondaryText && (
+            <span className="text-xs text-[var(--color-muted)]">{suggestion.secondaryText}</span>
+          )}
+        </button>
+      </li>
+    ))
+  }, [handleSelectSuggestion, isDropdownVisible, isLoading, suggestions])
+
+  const mapPickerButton = enableManualPicker ? (
+    <BasicButton
+      params={{
+        variant: 'rounded',
+        onClick: () => {
+          openMapPicker()
+        },
+        ariaLabel: 'Pick location on map',
+        className: 'ml-2 h-8 w-8',
+      }}
+    >
+      <PinLocationMapIcon className="app-icon-dark h-5 w-5" />
+    </BasicButton>
+  ) : null
+
+  const hasAdornment = enableManualPicker || Boolean(rightAdornment)
+
+  return (
+    <div className={`relative ${isDropdownVisible ? 'z-20' : ''}`}>
+      <div className={`${fieldContainer} ${isInvalid ? invalidStyles : ''}`}>
+        {leadingIcon ?? <LocationIcon className="app-icon h-4 w-4 text-[var(--color-muted)]" />}
+        <input
+          type="text"
+          className={`custom-input ${isInvalid ? 'placeholder-red-400' : ''}`}
+          placeholder={placeholder}
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          aria-invalid={isInvalid}
+          ref={inputRef}
+        />
+        {hasAdornment ? (
+          <div className="flex items-center gap-1">
+            {mapPickerButton}
+            {rightAdornment}
+          </div>
+        ) : null}
+      </div>
+      {isDropdownVisible && (
+        <ul
+          ref={dropdownRef}
+          className="absolute left-0 right-0 mt-2 max-h-60 overflow-auto rounded-2xl border border-[var(--color-border)] bg-white shadow-xl"
+        >
+          {dropdownContent}
+        </ul>
+      )}
+    </div>
+  )
+}

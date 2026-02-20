@@ -1,14 +1,16 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactElement } from 'react'
 
-import { AuthPage } from '../../features/auth/pages/AuthPage'
-import { HomePage } from '../../features/home/pages/HomePage'
-import { SettingsPage } from '../../features/settings/pages/SettingsPage'
-import { DeliveryRequestPage } from '../../features/external_form/pages/DeliveryRequestPage'
-import { useAuth } from '../../features/auth/context/AuthContext'
+import { AuthPage } from '@/featuresV2/auth/pages/AuthPage'
+import { Home } from '../../featuresV2/home/pages/HomePage'
+import { SettingsPage } from '@/featuresV2/settings/pages/SettingsPage'
+
+import { useAuthSession } from '../../featuresV2/auth/login/hooks/useAuthSelectors'
+import { ExternalCustomerFormPage } from '@/featuresV2/externalForm/pages/ExternalCustomerForm.page'
 
 function ProtectedRoute({ children }: { children: ReactElement }) {
-  const { isAuthenticated } = useAuth()
+  const session = useAuthSession()
+  const isAuthenticated = Boolean(session)
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />
   }
@@ -22,21 +24,32 @@ export function AppRouter() {
         path="/"
         element={
           <ProtectedRoute>
-            <HomePage />
+            <Home />
           </ProtectedRoute>
         }
       />
       <Route path="/auth/*" element={<AuthPage />} />
-      <Route path="/delivery-request" element={<DeliveryRequestPage />} />
-      <Route
-        path="/settings"
+     
+      
+      <Route 
+        path="/settings/*"
         element={
           <ProtectedRoute>
-            <SettingsPage />
+            <SettingsPage/>
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/external-form/*"
+        element={
+          <ProtectedRoute>
+            <ExternalCustomerFormPage/>
+          </ProtectedRoute>
+        }
+      />
+      
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    
   )
 }

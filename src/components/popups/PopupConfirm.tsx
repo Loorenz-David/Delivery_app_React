@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { BasicButton } from '../buttons/BasicButton'
+import { BasicButton } from '../../shared/buttons/BasicButton'
 
 type ConfirmParams = {
   header?: string

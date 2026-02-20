@@ -1,0 +1,38 @@
+import { useInputWarning } from '@/shared/inputs/useInputWarning.hook'
+import { validateString } from '@/shared/data-validation/stringValidation'
+import { validateDateComparison } from '@/shared/data-validation/timeValidation'
+
+export const usePlanFormWarnings = () => {
+
+    const planNameWarning = useInputWarning(
+        'Plan must have a name',
+        (value:string) => validateString(value)
+    )
+
+    const planStartDateWarning = useInputWarning(
+        'Plan must have a start date',
+        (
+            {start_date, end_date }: {start_date: string, end_date:string}, 
+            setWarningMessage
+
+        ) =>{
+            if ( !validateString(start_date) ){
+                setWarningMessage("Plan must have a start date")
+                return false
+            }
+            if ( !validateDateComparison( start_date, end_date ) ){
+                setWarningMessage("'From' date must be set before 'To' date")
+                return false
+            }
+            return true
+        }
+    )
+
+
+    return {
+        planNameWarning,
+        planStartDateWarning
+    }
+}
+
+

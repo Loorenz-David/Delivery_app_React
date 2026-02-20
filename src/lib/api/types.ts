@@ -1,24 +1,40 @@
-import type { SessionStorage, SessionSnapshot } from '../storage/sessionStorage'
+import type { SessionStorage, SessionSnapshot } from '@/featuresV2/auth/login/store/sessionStorage'
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-export interface ApiEnvelope<T = unknown> {
-  status: number
-  message: string
-  error: string | null
+export interface ApiSuccess<T = unknown> {
   data: T
-  is_compress: boolean
+  warnings: string[]
+  status?: number
+  message?: string
 }
 
-export interface ApiResult<T> {
-  data: T
-  status: number
-  message: string
-  error: string | null
-  envelope: ApiEnvelope<T>
+export interface ApiErrorPayload {
+  error: string
+  code?: string
 }
 
-export interface RequestOptions<TBody = unknown> {
+export type ApiEnvelope<T = unknown> = ApiSuccess<T> | ApiErrorPayload
+
+export type ApiResult<T> = ApiSuccess<T>
+
+export type QueryPrimitive =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Record<string,unknown>
+
+export type QueryValue =
+  | QueryPrimitive
+  | QueryPrimitive[]
+
+
+export interface RequestOptions<
+TBody = unknown,
+TQuery = Record<string, QueryValue>
+> {
   path: string
   method?: HttpMethod
   data?: TBody
@@ -26,7 +42,7 @@ export interface RequestOptions<TBody = unknown> {
   headers?: Record<string, string>
   signal?: AbortSignal
   requiresAuth?: boolean
-  query?: Record<string, string | number | boolean | undefined | null>
+  query?: TQuery
 }
 
 export interface ApiClientOptions {
@@ -40,4 +56,3 @@ export interface ApiClientOptions {
 export type SessionAccessor = Pick<SessionStorage, 'getSession' | 'setSession' | 'clear'>
 
 export type SessionUpdater = (session: SessionSnapshot | null) => void
-

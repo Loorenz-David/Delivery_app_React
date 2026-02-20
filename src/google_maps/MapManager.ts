@@ -1,4 +1,4 @@
-import { loadGoogleMaps } from './loadGoogleMaps'
+import { loadGoogleMaps } from '@/shared/google-maps/api/loadGoogleMaps'
 import { createOrderMarkerElement, type OrderMarkerStatus } from './components/OrderMarker'
 
 import type { AddressPayload } from '../features/home/types/backend'

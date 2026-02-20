@@ -2,9 +2,10 @@ import { cloneElement, isValidElement, useCallback, useEffect, useRef, useState 
 import type { ReactNode } from 'react'
 
 import { useResourceManager } from '../../resources_manager/resourcesManagerContext'
-import type { BeforeCloseConfig, ConfirmConfig } from '../../resources_manager/managers/ActionManager'
+import type { BeforeCloseConfig, ConfirmConfig } from '../../shared/stack-manager/StackActionManager'
 import { motion } from 'framer-motion'
 import PageLoader from '../spiner_loaders/PageLoader'
+import { useMobile } from '../../app/contexts/MobileContext'
 
 
 function HeaderRow({
@@ -18,9 +19,9 @@ function HeaderRow({
   headerContent?: ReactNode | null
   onClose?: () => void
 }) {
-  const isMobile = useResourceManager('isMobileObject')
+  const { isMobile } = useMobile()
   return (
-    <header className={isMobile.isMobile ? `border-b border-[var(--color-border)] px-4 py-4`
+    <header className={isMobile ? `border-b border-[var(--color-border)] px-4 py-4`
     :`border-b border-[var(--color-border)] px-6 py-4`}>
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
@@ -44,8 +45,8 @@ function HeaderRow({
 }
 
 function Body({ children }: { children: ReactNode }) {
-  const isMobile = useResourceManager('isMobileObject')
-  return <div className={isMobile.isMobile ? `flex-1 overflow-y-auto px-3 py-5 h-full`
+  const { isMobile } = useMobile()
+  return <div className={isMobile ? `flex-1 overflow-y-auto px-3 py-5 h-full`
     :`flex-1 overflow-y-auto px-6 py-5 min-h-[500px]`}>{children}</div>
 }
 
@@ -70,7 +71,7 @@ const Popup_1 = ({ params, children, onRequestClose }:PopupType ) => {
   const popupManager = useResourceManager('popupManager')
   const beforeCloseConfigRef = useRef<BeforeCloseConfig | null>(null)
   const isMountedRef = useRef(true)
-  const isMobile = useResourceManager('isMobileObject')
+  const { isMobile } = useMobile()
   useEffect(() => {
     return () => {
       isMountedRef.current = false
@@ -162,7 +163,7 @@ const Popup_1 = ({ params, children, onRequestClose }:PopupType ) => {
 
       {/* Popup element */}
       <motion.div
-        className={isMobile.isMobile ?`relative z-10 pointer-events-auto flex h-full w-full  flex-col  bg-white text-[var(--color-text)]`:
+        className={isMobile ?`relative z-10 pointer-events-auto flex h-full w-full  flex-col  bg-white text-[var(--color-text)]`:
         `relative z-10 pointer-events-auto flex h-full w-full max-h-[800px] max-w-[600px] flex-col rounded-none  bg-white text-[var(--color-text)] md:rounded-3xl`
         }
         initial={{ opacity: 0, x: 100 }}
