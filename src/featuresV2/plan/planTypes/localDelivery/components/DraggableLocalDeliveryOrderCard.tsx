@@ -13,6 +13,7 @@ type DraggableLocalDeliveryOrderCardProps = {
   planStartDate?: string | null
 }
 
+
 export const DraggableLocalDeliveryOrderCard = ({
   order,
   stop,
