@@ -87,7 +87,7 @@ export function HomeDesktopView() {
           ) : null
         }
         overlay={
-            <SectionManagerHost stackKey="dynamicSectionPanels" isBaseOpen={baseControlls.isBaseOpen} />
+            <SectionManagerHost stackKey="dynamicSectionPanels" isBaseOpen={baseControlls.isBaseOpen} width={400}/>
         }
         buttonTogglePlan={
           layout.canTogglePlan ? (

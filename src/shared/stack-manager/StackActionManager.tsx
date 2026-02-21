@@ -196,19 +196,24 @@ export class StackActionManager <
       return this.stackEntries.map((entry, index) => {
           const component = this.stackRegistry[entry.key]
           const isFirst = index === 0 
+          const panelWidth = typeof width === 'number' && width > 0 ? width : null
+          const baseClass = panelWidth == null
+            ? 'h-full min-w-0 w-full max-w-full md:w-[400px]'
+            : 'h-full min-w-0 w-full max-w-full'
           return (
             <motion.div
               key={entry.id}
               layout
-              initial={{ x: width ? width : 400}}
+              initial={{ x: panelWidth ?? 400}}
               animate={{ x: 0 }}
-              exit={{ x: width ? width : 400 }}
+              exit={{ x: panelWidth ?? 400 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className={
                 isFirst
-                  ? `h-full min-w-0 w-full max-w-full md:w-[${width ? width : 400}px]`
-                  : `h-full min-w-0 w-full max-w-full md:w-[${width ? width : 400}px] absolute top-0 left-0`
+                  ? baseClass
+                  : `${baseClass} absolute top-0 left-0`
               }
+              style={panelWidth == null ? undefined : { width: panelWidth, maxWidth: '100%' }}
             >
               <Blueprint
                 position={index}
