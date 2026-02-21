@@ -17,7 +17,7 @@ export const PopupFooter = ({ footerConfig }: PropsPopupFooter) => {
 
     return ( 
         <footer className={
-            ` absolute bottom-0 flex w-full items-center justify-between gap-4 border-t border-[var(--color-border)] bottom-0 left-0 bg-[var(--color-page)] rounded-b-xl` + 
+            ` absolute bottom-0 flex w-full items-center justify-between gap-4 border-t border-[var(--color-border)] bottom-0 left-0 bg-[var(--color-page)] rounded-b-xl ` + 
             (isMobile ? `px-4 py-4` : ` px-6 py-4 pt-3`)
         }
         >       
