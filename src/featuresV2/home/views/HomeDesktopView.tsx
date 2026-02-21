@@ -115,12 +115,13 @@ function HomeDesktopHeader() {
               params={{
                 variant: 'secondary',
                 ariaLabel: 'Notifications',
+                className:"border-[var(--color-muted)]/30",
                 onClick: () => sectionManager.open({ key: 'orderCase.main' }),
               }}
             >
               <ArchiveIcon className="h-5 w-5 " />
             </BasicButton>
-            <BasicButton
+            {/* <BasicButton
               params={{
                 variant: 'secondary',
                 ariaLabel: 'Notifications',
@@ -128,11 +129,12 @@ function HomeDesktopHeader() {
               }}
             >
               <BellIcon className="h-5 w-5 " />
-            </BasicButton>
+            </BasicButton> */}
             <BasicButton
               params={{ 
                 variant: 'secondary', 
                 ariaLabel: 'Settings',
+                className:"border-[var(--color-muted)]/30",
                 onClick: ()=> navigate('/settings')
               }}
 

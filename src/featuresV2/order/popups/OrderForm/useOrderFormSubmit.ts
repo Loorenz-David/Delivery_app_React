@@ -2,7 +2,7 @@ import type { RefObject } from 'react'
 import { useCallback } from 'react'
 
 import { useMessageManager } from '@/message_manager'
-import { usePopupManager } from '@/shared/resource-manager/useResourceManager'
+import { usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 import { getObjectDiff } from '@/shared/utils/getObjectDiff'
 
 import { useCreateItem, useDeleteItem, useUpdateItem } from '../../item/api/item.api'
@@ -49,7 +49,7 @@ export const useOrderFormSubmit = ({
   itemInitialByClientId: Record<string, Item>
 }) => {
   const { showMessage } = useMessageManager()
-  const { saveOrder } = useOrderController()
+  const { saveOrder, deleteOrderByServerId } = useOrderController()
   const createItemApi = useCreateItem()
   const updateItemApi = useUpdateItem()
   const deleteItemApi = useDeleteItem()
@@ -58,7 +58,7 @@ export const useOrderFormSubmit = ({
   const { downloadByEvent } = useDownloadTemplateByEventFlow()
   const validation = useOrderValidation()
   const popupManager = usePopupManager()
-
+  const sectionManager = useSectionManager()
   const handleSave = useCallback(async () => {
     const isValid = validateForm()
     if (!isValid) {
@@ -229,7 +229,23 @@ export const useOrderFormSubmit = ({
     validateForm,
   ])
 
+  const handleDelete = useCallback(async () => {
+    if (mode !== 'edit') return
+    if (!order?.id || !order?.client_id) return
+
+    
+
+    const success = await deleteOrderByServerId(order.id, order.client_id)
+    if (success) {
+      closeOrderPopup(popupManager)
+      sectionManager.closeByKey('order.details')
+    }
+  }, [deleteOrderByServerId, mode, order?.client_id, order?.id, popupManager])
+
   return {
     handleSave,
+    handleDelete,
   }
 }
+
+

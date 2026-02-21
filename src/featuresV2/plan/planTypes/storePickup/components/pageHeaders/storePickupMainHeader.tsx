@@ -1,4 +1,4 @@
-import { PlusIcon } from '@/assets/icons'
+import { EditIcon, PlusIcon } from '@/assets/icons'
 import type { DeliveryPlan } from '@/featuresV2/plan/types/plan'
 import { planIconTypeMap } from '@/featuresV2/plan/utils/planIconTypeMap'
 import { BasicButton } from '@/shared/buttons'
@@ -29,6 +29,12 @@ export const StorePickupMainHeader = ({ plan, actions }: StorePickupMainHeaderPr
           >
             <PlusIcon className="w-4 h-4 mr-2 stroke-[var(--color-secondary)]" />
             Order
+          </BasicButton>
+          <BasicButton
+              params={{ variant: 'secondary', onClick: actions.handleEditPlan, ariaLabel: 'Edit local delivery plan' }}
+          >
+              <EditIcon className="w-4 h-4 mr-2 stroke-[var(--color-secondary)]" />
+              Edit
           </BasicButton>
         </div>
       </div>

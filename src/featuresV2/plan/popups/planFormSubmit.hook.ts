@@ -3,7 +3,7 @@ import { useMessageManager } from '@/message_manager/MessageManagerContext'
 import type { DeliveryPlan } from '../types/plan'
 import type { PlanTypeState } from './PlanForm.types'
 import { usePlanMutations } from '../hooks/usePlanMutations'
-import { usePopupManager } from '@/shared/resource-manager/useResourceManager'
+import { useBaseControlls, usePopupManager } from '@/shared/resource-manager/useResourceManager'
 import { getObjectDiff } from '@/shared/utils/getObjectDiff'
 import type { RefObject } from 'react'
 
@@ -28,6 +28,7 @@ export const usePlanFormSubmiters = ({
     const { showMessage } = useMessageManager()
     const { createPlan, updatePlan, deletePlan } = usePlanMutations()
     const popupManager = usePopupManager()
+    const baseControlls = useBaseControlls()
 
 
     const handleCreatePlan = useCallback ( async ()=>{
@@ -118,6 +119,7 @@ export const usePlanFormSubmiters = ({
         const result = await deletePlan(planId)
         if (result) {
             popupManager.closeByKey('PlanForm')
+            baseControlls.closeBase()
         }
     }, [planForm, deletePlan, showMessage, popupManager])
 

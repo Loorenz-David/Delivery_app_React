@@ -51,6 +51,7 @@ export const OrderFormLayout = () => {
     warnings,
     setFormState,
     handleSave,
+    handleDelete,
     initialFormRef,
     visibleItemDrafts,
     isLoadingInitialItems,
@@ -282,6 +283,7 @@ export const OrderFormLayout = () => {
         <OrderFormFooter
           onSendForm={handleSendForm}
           onSaveOrder={handleSave}
+          onDeleteOrder={mode === 'edit' ? () => { void handleDelete() } : undefined}
           sendDisabled={employeeUserId <= 0}
         />
       </div>

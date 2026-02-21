@@ -92,7 +92,7 @@ export const LocalDeliveryEditFormProvider = ({ children }: ProviderProps) => {
   
   useLocalDeliveryEditFormPopupConfig({selectedVariantLabel, optimizationDate})
 
-  const hasMultipleVariants = (routeSolutions?.length ?? 0) > 1
+  const hasMultipleVariants = (routeSolutions?.length ?? 0) >= 1
 
   const value = {
     formState,

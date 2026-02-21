@@ -25,6 +25,7 @@ import type{ PayloadBase } from '../types/types'
 import { useBaseControlls } from '../hooks/useBaseControlls'
 import { homePopupRegistry } from '../registry/homePopups'
 import { homeSectionRegistry } from '../registry/homeSections'
+import { LoadingPopup } from '@/shared/popups/loadingPopup/loadingPopup'
 
 const collisionDetection = (args: Parameters<typeof pointerWithin>[0]) => {
     const pointerCollisions = pointerWithin(args)
@@ -60,6 +61,7 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
         }),
         [],
     )
+  
     const sectionManager = useMemo(
         () =>
         new StackActionManager({

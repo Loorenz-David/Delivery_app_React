@@ -3,10 +3,11 @@ import { useCallback } from 'react'
 import { useMessageManager } from '@/message_manager'
 import { upsertRouteSolutionStops } from '@/featuresV2/plan/planTypes/localDelivery/store/routeSolutionStop.store'
 
-import { useCreateOrder, useUpdateOrder as useUpdateOrderApi } from '../api/orderApi'
+import { useCreateOrder, useDeleteOrder, useUpdateOrder as useUpdateOrderApi } from '../api/orderApi'
 import { normalizeOrderStopResponse } from '../domain/orderStopResponse'
 
 import {
+  removeOrderByClientId,
   setOrder,
   selectOrderByClientId,
   updateOrderByClientId,
@@ -23,6 +24,7 @@ export type SaveOrderParams = {
 
 export const useOrderController = () => {
   const createOrder = useCreateOrder()
+  const deleteOrderApi = useDeleteOrder()
   const updateOrderApi = useUpdateOrderApi()
   
   const { showMessage } = useMessageManager()
@@ -77,7 +79,29 @@ export const useOrderController = () => {
     [createOrder, showMessage, updateOrderApi],
   )
 
+  const deleteOrderByServerId = useCallback(
+    async (serverId: number, clientId: string) => {
+      if (!serverId) {
+        showMessage({ status: 400, message: 'Order server id is missing.' })
+        return false
+      }
+
+      try {
+        await deleteOrderApi({ target_id: serverId })
+        removeOrderByClientId(clientId)
+        showMessage({ status: 200, message: 'Order deleted successfully.' })
+        return true
+      } catch (error) {
+        console.error('Failed to delete order', error)
+        showMessage({ status: 500, message: 'Unable to delete order.' })
+        return false
+      }
+    },
+    [deleteOrderApi, showMessage],
+  )
+
   return {
     saveOrder,
+    deleteOrderByServerId,
   }
 }

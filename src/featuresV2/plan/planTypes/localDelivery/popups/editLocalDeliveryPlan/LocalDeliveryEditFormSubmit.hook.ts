@@ -5,7 +5,7 @@ import { useMessageManager } from '@/message_manager'
 import { makeInitialFormCopy } from '@/shared/data-validation/initialFormSnapshot'
 import { useLocalDeliveryPlanSettingsMutations } from '@/featuresV2/plan/planTypes/localDelivery/hooks/settings/useLocalDeliveryPlanSettingsMutations'
 import { usePlanMutations } from '@/featuresV2/plan/hooks/usePlanMutations'
-import { usePopupManager } from '@/shared/resource-manager/useResourceManager'
+import { useBaseControlls, usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 
 import type { LocalDeliveryEditFormState } from './LocalDeliveryEditForm.types'
 
@@ -24,7 +24,8 @@ export const useLocalDeliveryEditFormSubmitters = ({
   const { updateLocalDeliverySettings } = useLocalDeliveryPlanSettingsMutations()
   const { deletePlan } = usePlanMutations()
   const popupManager = usePopupManager()
-
+  const sectionManager = useSectionManager()
+  const  baseControlls = useBaseControlls()
   const handleSave = useCallback(async () => {
     if (!validateForm()) {
       showMessage({ message: 'Invalid form, check required fields.', status: 'warning' })
@@ -78,8 +79,12 @@ export const useLocalDeliveryEditFormSubmitters = ({
     }
 
     const result = await deletePlan(formState.delivery_plan.id)
+
     if (result) {
       popupManager.closeByKey('LocalDeliveryEditForm')
+      sectionManager.closeByKey('LocalDeliveryPage')
+      baseControlls.closeBase()
+
     }
   }, [deletePlan, formState, showMessage, popupManager])
 

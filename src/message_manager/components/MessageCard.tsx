@@ -108,7 +108,7 @@ export function MessageCard({ status, message, details, createdAt, durationMs, o
         <button
           type="button"
           aria-label="Dismiss message"
-          className="absolute right-3 top-3 rounded-full p-1 text-white/80 transition hover:bg-white/15 hover:text-white"
+          className="absolute right-3 top-2 rounded-full p-1 text-white/80 transition hover:bg-white/15 hover:text-white"
           onClick={(event) => {
             event.stopPropagation()
             onDismiss()

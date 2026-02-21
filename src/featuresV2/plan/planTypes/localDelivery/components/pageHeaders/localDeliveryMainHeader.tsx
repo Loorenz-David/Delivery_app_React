@@ -1,3 +1,5 @@
+import { useCallback, useState } from 'react'
+
 import { planIconTypeMap } from "@/featuresV2/plan/utils/planIconTypeMap"
 import { SectionHeader } from "@/shared/section-panel/SectionHeader"
 import type { useLocalDeliveryHeaderAction } from "../../hooks/useLocalDeliveryHeaderAction"
@@ -7,6 +9,8 @@ import { EditIcon, PdfIcon, PlusIcon, StatsIcon } from "@/assets/icons"
 import { RouteOptimizationDropdownButton } from "../RouteOptimizationDropdownButton"
 import type { LocalDeliveryPlan } from "../../types/localDeliveryPlan"
 import { ThreeDotMenu } from "@/shared/buttons/ThreeDotMenu"
+import { OrderImportButton } from "@/featuresV2/order/components/OrderImportButton"
+import type { OrderImportControls } from "@/featuresV2/order/components/OrderImportButton"
 
 
 type HeaderProps = {
@@ -16,6 +20,14 @@ type HeaderProps = {
 }
 
 export const MainHeaderLocalDeliveryPage = ({localDeliveryActions, plan, localDeliveryPlan}:HeaderProps)=>{
+    const [importControls, setImportControls] = useState<OrderImportControls>({
+        triggerFileInput: () => undefined,
+        loading: false,
+        disabled: true,
+    })
+    const handleImportReady = useCallback((controls: OrderImportControls) => {
+        setImportControls(controls)
+    }, [])
 
     const PlanTypeIcon = planIconTypeMap.local_delivery
     const title = plan?.label ?? 'undefined plan'
@@ -55,7 +67,12 @@ export const MainHeaderLocalDeliveryPage = ({localDeliveryActions, plan, localDe
                             dotClassName={'bg-[var(--color-muted)]'}
                             triggerClassName={' p-2 w-5 rounded-full bg-[var(--color-page)] border border-[var(--color-border)] shadow-sm ml-auto  cursor-pointer'}
                             options={[
-                                {label:'Print route', action: localDeliveryActions.handlePrintRouteSolution, icon:<PdfIcon className="h-6 w-6"/>},
+                                {label:'Download route', action: localDeliveryActions.handlePrintRouteSolution, icon:<PdfIcon className="h-6 w-6"/>},
+                                {
+                                    label: importControls.loading ? 'Importing orders...' : 'Import orders (CSV)',
+                                    action: importControls.triggerFileInput,
+                                    disabled: importControls.disabled,
+                                },
                                 // {label:'Send messages', action: ()=>{}}
                             ]}
                         />
@@ -70,6 +87,7 @@ export const MainHeaderLocalDeliveryPage = ({localDeliveryActions, plan, localDe
                         />
                     </div>
                 </div>
+            <OrderImportButton planId={plan?.id} onReady={handleImportReady} />
         </>
     )
 }

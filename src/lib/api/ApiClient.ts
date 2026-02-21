@@ -142,6 +142,13 @@ export class ApiClient {
     data: unknown,
     compress: boolean,
   ): { body: BodyInit; headers: Record<string, string> } {
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      return {
+        body: data,
+        headers: {},
+      }
+    }
+
     const { json, bytes } = serializePayload(data)
 
     if (bytes.byteLength > MAX_DECOMPRESSED_BYTES) {

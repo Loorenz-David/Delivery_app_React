@@ -64,6 +64,7 @@ export const setOrderPlanId = (clientId: string, planId: number | null) =>
   }))
 
 export const clearOrders = () => useOrderStore.getState().clear()
+export const removeOrderByClientId = (clientId: string) => useOrderStore.getState().remove(clientId)
 
 export const upsertOrder = (order: Order) => {
   const state = useOrderStore.getState()
@@ -104,4 +105,3 @@ export const useUpsertOrdersStore = () =>
   useCallback((order: OrderMap) => {
     upsertOrders(order)
   }, [])
-
