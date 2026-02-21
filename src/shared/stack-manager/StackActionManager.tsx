@@ -189,7 +189,7 @@ export class StackActionManager <
 
     return this.getEntry( key as string )?.payload
   }
-  renderStack(variant?:string | null): ReactNode[] {
+  renderStack(variant?:string | null,width?:number): ReactNode[] {
     const Blueprint = this.blueprint
 
     if (variant == 'dynamicSectionPanels'){
@@ -200,11 +200,15 @@ export class StackActionManager <
             <motion.div
               key={entry.id}
               layout
-              initial={{ x: 400}}
+              initial={{ x: width ? width : 400}}
               animate={{ x: 0 }}
-              exit={{ x: 400 }}
+              exit={{ x: width ? width : 400 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className={isFirst ? ' h-full w-[400px]' : ' h-full w-[400px] absolute top-0 left-0'}
+              className={
+                isFirst
+                  ? `h-full min-w-0 w-full max-w-full md:w-[${width ? width : 400}px]`
+                  : `h-full min-w-0 w-full max-w-full md:w-[${width ? width : 400}px] absolute top-0 left-0`
+              }
             >
               <Blueprint
                 position={index}
@@ -243,4 +247,3 @@ export class StackActionManager <
     this.listeners.forEach((listener) => listener())
   }
 }
-

@@ -73,22 +73,62 @@ export const OrderDetailSummary = ({ order, orderState }: OrderDetailSummaryProp
                 </div>
                 <div>
                   <p className="text-xs text-[var(--color-muted)]">Email</p>
-                  <p>{asText(order?.client_email)}</p>
+                    {order?.client_email ? (
+                      <a
+                        href={`mailto:${order.client_email}`}
+                        className=""
+                      >
+                        {order.client_email}
+                      </a>
+                    ) : (
+                      <p>—</p>
+                    )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-[var(--color-muted)]">Phone</p>
-                  <p>{formatPhone(order?.client_primary_phone)}</p>
+                  {order?.client_primary_phone ? (
+                    <a
+                      href={`tel:${order.client_primary_phone}`}
+                      className="underline text-blue-800"
+                    >
+                      {formatPhone(order.client_primary_phone)}
+                    </a>
+                  ) : (
+                    <p>—</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-xs text-[var(--color-muted)]">Second Phone</p>
-                  <p>{formatPhone(order?.client_secondary_phone)}</p>
+                  {order?.client_secondary_phone ? (
+                    <a
+                      href={`tel:${order.client_secondary_phone}`}
+                      className="underline text-blue-800"
+                    >
+                      {formatPhone(order.client_secondary_phone)}
+                    </a>
+                  ) : (
+                    <p>—</p>
+                  )}
                 </div>
               </div>
               <div className="text-sm">
                 <p className="text-xs text-[var(--color-muted)]">Address</p>
-                <p>{asText(order?.client_address?.street_address)}</p>
+                  {order?.client_address?.street_address ? (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        order.client_address.street_address
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className=""
+                    >
+                      {order.client_address.street_address}
+                    </a>
+                  ) : (
+                    <p>—</p>
+                  )}
               </div>
             </>
           </SummaryCard>

@@ -28,6 +28,7 @@ import {
 } from '@/realtime/externalForm/externalForm.realtime'
 import { useExternalFormRealtime } from '@/realtime/externalForm/useExternalFormRealtime'
 import { sessionStorage } from '@/featuresV2/auth/login/store/sessionStorage'
+import { useMobile } from '@/app/contexts/MobileContext'
 
 
 const toDateValue = (value: string | null) => {
@@ -107,17 +108,19 @@ export const OrderFormLayout = () => {
 
   const label = mode === 'create' ? 'Create Order' : 'Edit Order'
 
+  const {isMobile} = useMobile()
+
 
 
   return (
 
-    <div className="flex h-full gap-6">
-      <div className="flex flex-col relative h-full w-[550px] bg-[var(--color-page)]  rounded-xl">
+    <div className={`flex h-full min-h-0 gap-6 ${isMobile ? 'flex-col overflow-y-auto overflow-x-hidden relative pb-10' : 'flex'}`}>
+      <div className={`flex min-h-0 flex-col bg-[var(--color-page)]  ${isMobile ? 'w-full shrink-0' : "rounded-xl w-[550px] h-full relative"}`}>
         <header className={
-          `flex items-center justify-between gap-4 border-b border-[var(--color-border)] px-6 py-4` 
+          `flex items-center justify-between gap-4 border-b border-[var(--color-border)] ${isMobile? 'pb-4 px-3': 'px-6 py-4'}` 
         }
         >
-          <div className="flex items-center justify-center rounded-full  bg-[var(--color-muted)]/20 p-3  ">
+          <div className="flex items-center justify-center rounded-full  bg-[var(--color-muted)]/20 p-3 ">
               <SingleOrderIcon className="h-6 w-6 text-[var(--color-muted)] "/>
           </div>
           <div className="flex flex-col gap-1">
@@ -147,7 +150,7 @@ export const OrderFormLayout = () => {
               </BasicButton>
           </div>
         </header>
-        <form className="flex pt-5  h-full flex-col gap-4 overflow-y-auto overflow-x-hidden px-2 pb-[100px] scroll-thin">
+        <form className={`flex min-h-0 flex-1 pt-5 flex-col gap-4 overflow-y-auto overflow-x-hidden px-2 scroll-thin ${isMobile ? 'pb-3' : 'pb-[100px] h-full'}`}>
           <AccordionSection
             title="Details"
             isOpen={openSection === 'details'}
@@ -280,14 +283,17 @@ export const OrderFormLayout = () => {
           
             
         </form>
-        <OrderFormFooter
-          onSendForm={handleSendForm}
-          onSaveOrder={handleSave}
-          onDeleteOrder={mode === 'edit' ? () => { void handleDelete() } : undefined}
-          sendDisabled={employeeUserId <= 0}
-        />
+       {(!isMobile || !isItemEditorOpen) && (
+          <OrderFormFooter
+            onSendForm={handleSendForm}
+            onSaveOrder={handleSave}
+            onDeleteOrder={mode === 'edit' ? () => { void handleDelete() } : undefined}
+            sendDisabled={employeeUserId <= 0}
+            isMobile={isMobile}
+          />
+        )}
       </div>
-      <motion.div className="flex   h-full bg-[var(--color-page)] w-[400px] rounded-xl overflow-hidden"
+      <motion.div className={`flex min-h-0 bg-[var(--color-page)] overflow-hidden ${isMobile ? 'w-full shrink-0' : "w-[400px] rounded-xl h-full"}`}
         initial={{ x: 120, opacity: 0 }}
         animate={{
                 opacity: 1,
@@ -307,7 +313,7 @@ export const OrderFormLayout = () => {
             },
         }}
       >
-            <div className="relative w-full rounded-lg border border-[var(--color-muted)]/20 shadow-sm">
+            <div className="relative w-full rounded-lg border border-[var(--color-muted)]/20 shadow-sm ">
               <AnimatePresence mode="wait" initial={false}>
                 {isItemEditorOpen && itemEditorPayload ? (
                   <motion.div
@@ -348,7 +354,7 @@ export const OrderFormLayout = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: -24, opacity: 0 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="w-full h-full bg-[var(--color-muted)]/10"
+                    className="flex min-h-0 flex-1 flex-col  bg-[var(--color-muted)]/10 "
                   >
                     {isLoadingInitialItems ? (
                       <div className="text-xs text-[var(--color-muted)]">Loading items...</div>
@@ -358,7 +364,7 @@ export const OrderFormLayout = () => {
                         items={visibleItemDrafts}
                         onAddItem={openItemCreateForm}
                         onEditItem={openItemEditForm}
-                        scrollBody
+                        stickyHeader
                       />
                     )}
                   </motion.div>

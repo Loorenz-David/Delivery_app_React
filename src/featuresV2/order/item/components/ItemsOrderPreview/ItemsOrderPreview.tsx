@@ -63,8 +63,6 @@ export const ItemsOrderPreview = ({
     openCreateItem(orderId)
   }
 
- 
-
   return (
     <section
       className="flex h-full min-h-0 w-full flex-col "
@@ -88,7 +86,7 @@ export const ItemsOrderPreview = ({
         </div>
       )}
 
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 px-3 py-5 ${scrollBody ? 'overflow-y-scroll': ''}`}>
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 px-3 py-5  ${scrollBody ? 'overflow-y-scroll': ''}`}>
         {resolvedLoading ? (
             <div className="text-xs text-[var(--color-muted)]">Loading items...</div>
           ) : resolvedItems.length ? (

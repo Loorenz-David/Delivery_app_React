@@ -1,10 +1,13 @@
 import { useEffect } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useSectionManager } from '@/shared/resource-manager/useResourceManager'
+import { useStackActionEntries } from '@/shared/stack-manager/useStackActionEntries'
 
 interface SectionManagerHostProps {
   stackKey: string
   isBaseOpen: boolean
+  containerClassName?: string
+  width?:number
 }
 
 type Section ={
@@ -13,15 +16,14 @@ type Section ={
   isClosing:boolean
 }
 
-export function SectionManagerHost({ stackKey, isBaseOpen }: SectionManagerHostProps) {
+export function SectionManagerHost({ stackKey, isBaseOpen, containerClassName, width }: SectionManagerHostProps) {
   const sectionManager = useSectionManager()
-  const sectionCount = sectionManager.getOpenCount()
+  const entries = useStackActionEntries(sectionManager)
+  const openSections = entries.filter((entry) => !entry.isClosing)
+  const sectionCount = openSections.length
 
   useEffect(()=>{
     const allowedOpenOnce = new Set(["order.details", 'orderCases.main', 'oderCase.details', "LocalDeliveryStatsPage"])
-    const openSections = sectionManager
-    .getSnapshot()
-    .filter(s=> !s.isClosing)
 
     const seen= new Map<string,Section>()
     const toClose: string[] = []
@@ -50,9 +52,19 @@ export function SectionManagerHost({ stackKey, isBaseOpen }: SectionManagerHostP
 
   },[isBaseOpen])
 
-  return (
+  const stack = (
     <AnimatePresence mode="popLayout">
-      {sectionManager.renderStack(stackKey)}
+      {sectionManager.renderStack(stackKey, width)}
     </AnimatePresence>
+  )
+
+  if (!containerClassName) {
+    return stack
+  }
+
+  return (
+    <div className={`${containerClassName} ${sectionCount > 0 ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+      {stack}
+    </div>
   )
 }
