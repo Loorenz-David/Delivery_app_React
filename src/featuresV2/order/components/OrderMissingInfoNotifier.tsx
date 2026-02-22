@@ -65,7 +65,7 @@ export const OrderMissingInfoNotifier = ({ order }: OrderMissingInfoNotifierProp
       onOpenChange={setIsPopoverOpen}
       offSetNum={8}
       crossOffSetNum={-4}
-      classes={`absolute -left-2 -top-3 ${isPopoverOpen ? 'z-[140]' : 'z-20'}`}
+      classes={`absolute -left-2 -top-3 ${isPopoverOpen ? 'z-2' : 'z-1'}`}
       reference={
         <button
           type="button"
