@@ -6,6 +6,8 @@ import { usePlanOrders } from '@/featuresV2/plan/hooks/usePlanOrders'
 import { useInternationalShippingHeaderAction } from '@/featuresV2/plan/planTypes/internationalShipping/hooks/useInternationalShippingHeaderAction'
 import { usePlanByServerId } from '@/featuresV2/plan/hooks/usePlanSelectors'
 import { InternationalShippingMainHeader } from '@/featuresV2/plan/planTypes/internationalShipping/components/pageHeaders/internationalShippingMainHeader'
+import { useOrderActions } from '@/featuresV2/order/hooks/useOrderActions'
+import type { Order } from '@/featuresV2/order/types/order'
 
 type PlanOrdersPagePayload = {
   planId?: number | string | null
@@ -32,6 +34,7 @@ export const InternationalShippingPage = ({ payload }: InternationalShippingPage
   const actions = useInternationalShippingHeaderAction({ planId })
   const plan = usePlanByServerId(planId)
   const orders = useOrdersByPlanId(planId)
+  const {openOrderDetail} = useOrderActions()
 
   useEffect(() => {
     if (planId == null) return
@@ -41,7 +44,11 @@ export const InternationalShippingPage = ({ payload }: InternationalShippingPage
   return (
     <div className="w-full h-full flex flex-col bg-[var(--color-primary)]/5">
       <InternationalShippingMainHeader plan={plan} actions={actions} />
-      <OrderList orders={orders} />
+      <OrderList orders={orders}onOpenOrder={(order:Order) => 
+              openOrderDetail(
+                  {mode:"edit", clientId:order.client_id},
+                  { borderLeft:'rgb(var(--color-light-blue-r),0.7)'}
+      )}/>
     </div>
   )
 }

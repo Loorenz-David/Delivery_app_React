@@ -6,6 +6,8 @@ import { usePlanOrders } from '@/featuresV2/plan/hooks/usePlanOrders'
 import { useStorePickupHeaderAction } from '@/featuresV2/plan/planTypes/storePickup/hooks/useStorePickupHeaderAction'
 import { usePlanByServerId } from '@/featuresV2/plan/hooks/usePlanSelectors'
 import { StorePickupMainHeader } from '@/featuresV2/plan/planTypes/storePickup/components/pageHeaders/storePickupMainHeader'
+import { useOrderActions } from '@/featuresV2/order/hooks/useOrderActions'
+import type { Order } from '@/featuresV2/order/types/order'
 
 type PlanOrdersPagePayload = {
   planId?: number | string | null
@@ -33,6 +35,7 @@ export const StorePickupPage = ({ payload }: StorePickupPageProps) => {
   const plan = usePlanByServerId(planId)
   const orders = useOrdersByPlanId(planId)
 
+  const {openOrderDetail} = useOrderActions()
   useEffect(() => {
     if (planId == null) return
     fetchPlanOrders(planId)
@@ -41,7 +44,11 @@ export const StorePickupPage = ({ payload }: StorePickupPageProps) => {
   return (
     <div className="w-full h-full flex flex-col bg-[var(--color-primary)]/5">
       <StorePickupMainHeader plan={plan} actions={actions} />
-      <OrderList orders={orders} />
+      <OrderList orders={orders} onOpenOrder={(order:Order) => 
+        openOrderDetail(
+            {mode:"edit", clientId:order.client_id},
+            { borderLeft:'rgb(var(--color-light-blue-r),0.7)'}
+      )}/>
     </div>
   )
 }
