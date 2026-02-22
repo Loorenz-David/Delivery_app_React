@@ -42,12 +42,14 @@ export type OrderQueryFilters = {
   order_state_id?: number | number[] | null
   
   schedule_order?: boolean
+  unschedule_order?:boolean
   after_date?: string
   after_id?: number
   before_date?: string
   before_id?: number
   limit?: number
   sort?: 'date_asc' | 'date_desc'
+  show_archived?:boolean
 }
 
 

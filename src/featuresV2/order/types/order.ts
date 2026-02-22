@@ -31,6 +31,7 @@ export type Order = {
   total_items?: number | null
   total_volume?: number | null
   open_order_cases?: number | null
+  archive_at?: string | null
 }
 
 export type OrderMap = {

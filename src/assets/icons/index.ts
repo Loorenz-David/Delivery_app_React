@@ -61,4 +61,7 @@ export { default as TwilioIcon } from './TwilioIcon.svg?react'
 
 export { default as DeliveryReadyIcon } from './DeliveryReadyIcon.svg?react'
 export { default as PdfIcon } from './PdfIcon.svg?react'
+export { default as ArchiveOrderIcon } from './ArchiveOrderIcon.svg?react'
+export { default as ExclamationIcon } from './ExclamationIcon.svg?react'
+export { default as SendBackIcon } from './SendBackIcon.svg?react'
 

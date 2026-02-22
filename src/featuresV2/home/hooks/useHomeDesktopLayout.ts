@@ -8,7 +8,12 @@ type HomeDesktopLayoutParams = {
 export function useHomeDesktopLayout({ openSectionsCount = 0 }: HomeDesktopLayoutParams ) {
   const [isPlanOpen, setIsPlanOpen] = useState(true)
 
-  
+  const closePlan = ()=>{
+    setIsPlanOpen(false)
+  }
+  const openPlan = ()=>{
+    setIsPlanOpen(true)
+  }
 
   const canTogglePlan = openSectionsCount == 0
 
@@ -26,6 +31,8 @@ export function useHomeDesktopLayout({ openSectionsCount = 0 }: HomeDesktopLayou
     togglePlan: () => {
       setIsPlanOpen(prev => !prev )
     },
+    openPlan,
+    closePlan,
     // layout values (tune later)
     mapFlex: 1,
     baseWidth: BASE_WIDTH,

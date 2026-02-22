@@ -26,7 +26,7 @@ export const OrderMainHeader = ({ onCreate, applySearch, deleteFilter, updateFil
     }
     return acc
   }, {})
- 
+
   return (
     <>
       <SectionHeader

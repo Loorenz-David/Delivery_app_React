@@ -70,6 +70,23 @@ export const deleteOrder = (
     method: 'DELETE',
     data: payload,
   })
+export const archiveOrder = (
+  payload: OrderDeletePayload,
+): Promise<ApiResult<Record<string, never>>> =>
+  apiClient.request<Record<string, never>>({
+    path: '/orders/archive',
+    method: 'PATCH',
+    data: payload,
+  })
+
+export const unarchiveOrder = (
+  payload: OrderDeletePayload,
+): Promise<ApiResult<Record<string, never>>> =>
+  apiClient.request<Record<string, never>>({
+    path: '/orders/unarchive',
+    method: 'PATCH',
+    data: payload,
+  })
 
 export const updateOrderDeliveryPlan = (
   orderId: number | string,
@@ -86,3 +103,5 @@ export const useCreateOrder = () => createOrder
 export const useUpdateOrder = () => updateOrder
 export const useDeleteOrder = () => deleteOrder
 export const useUpdateOrderDeliveryPlan = () => updateOrderDeliveryPlan
+export const useArchiveOrder = ()=> archiveOrder
+export const useUnarchiveOrder = () => unarchiveOrder

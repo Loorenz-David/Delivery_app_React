@@ -46,19 +46,21 @@ export const createEntityStore = <T extends { client_id: string, id?:number | nu
       }),
 
     insertMany: ( table )=> 
-      set(( ) => {
+      set(( state ) => {
+          const mergedByClientId = { ...state.byClientId, ...table.byClientId }
+          const currentIds = new Set(state.allIds)
+          const incomingIds = table.allIds.filter((client_id) => !currentIds.has(client_id))
+          const mergedAllIds = [ ...state.allIds, ...incomingIds ]
+          const mergedIdIndex: Record<number, string> = {}
 
-          const { byClientId, allIds } = table
-          const idIndex: Record<number, string> ={}
-
-          for ( const client_id of allIds){
-            const item = byClientId[ client_id ]
-            if (item.id !== null && item.id !== undefined ){
-              idIndex[ item.id ] = item.client_id
+          for ( const client_id of mergedAllIds ){
+            const item = mergedByClientId[ client_id ]
+            if (item?.id !== null && item?.id !== undefined ){
+              mergedIdIndex[ item.id ] = item.client_id
             }
           }
 
-          return { byClientId, idIndex, allIds }
+          return { byClientId: mergedByClientId, idIndex: mergedIdIndex, allIds: mergedAllIds }
       }),
 
     update: (client_id, updater)=> 

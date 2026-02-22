@@ -6,7 +6,7 @@ export const SettingsOverlays = () => {
   const popupManager  = usePopupManager()
   return (
     <AnimatePresence>
-      {popupManager.renderStack()}
+      {popupManager.renderStack({})}
     </AnimatePresence>
   )
 }

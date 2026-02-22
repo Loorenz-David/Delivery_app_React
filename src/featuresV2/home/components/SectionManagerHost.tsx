@@ -54,7 +54,7 @@ export function SectionManagerHost({ stackKey, isBaseOpen, containerClassName, w
 
   const stack = (
     <AnimatePresence mode="popLayout">
-      {sectionManager.renderStack(stackKey, width)}
+      {sectionManager.renderStack({variant:stackKey, width})}
     </AnimatePresence>
   )
 

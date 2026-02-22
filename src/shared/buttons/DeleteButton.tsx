@@ -7,6 +7,7 @@ type ConfirmActionButtonProps = {
   confirmContent: React.ReactNode
   deleteClassName?: string
   confirmClassName?: string
+  confirmOverLay?:string
   duration?: number
   stopPropagation?: boolean
 }
@@ -17,6 +18,7 @@ export const ConfirmActionButton = ({
   confirmContent,
   deleteClassName = '',
   confirmClassName = '',
+  confirmOverLay = 'bg-red-700',
   duration = 2500,
   stopPropagation = true,
 }: ConfirmActionButtonProps) => {
@@ -72,7 +74,7 @@ export const ConfirmActionButton = ({
         >
           {/* Progress Overlay */}
           <motion.span
-            className="absolute inset-0 bg-red-700"
+            className={`absolute inset-0 ${confirmOverLay}`}
             style={{ transformOrigin: 'left center' }}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}

@@ -20,6 +20,8 @@ import { useLocalDeliveryBoundaryLocations } from '../hooks/useLocalDeliveryBoun
 
 import { LocalDeliveryContext } from './LocalDeliveryContext'
 import { usePlanStateRegistry } from '@/featuresV2/plan/hooks/planStates/usePlanStateRegistry'
+import { useMobile } from '@/app/contexts/MobileContext'
+import { useBaseControlls, usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 
 type LocalDeliveryProviderProps = {
   planId: number
@@ -27,6 +29,13 @@ type LocalDeliveryProviderProps = {
 }
 
 export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProviderProps) {
+  const {isMobile} = useMobile()
+  const sectionManager = useSectionManager()
+  const popupManager = usePopupManager()
+  const isPopupOpen = popupManager.getOpenCount() > 0 
+  const areSectionsOpen = sectionManager.getOpenCount()  > 0
+  const baseControlls = useBaseControlls()
+
   const { fetchLocalDeliveryOverview } = useLocalDeliveryOverview()
   const plan = usePlanByServerId(planId)
   const localDeliveryPlan = useLocalDeliveryPlanByPlanId(planId)
@@ -63,6 +72,29 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
     fetchLocalDeliveryOverview(planId)
   }, [fetchLocalDeliveryOverview, planId])
 
+  const hanldeKeyDown = (event:KeyboardEvent)=>{
+    
+    
+    console.log(areSectionsOpen)
+    if(event.key == 'Escape') {
+      if(isPopupOpen || areSectionsOpen ) return
+      baseControlls.closeBase()
+    }
+   
+  }
+
+  useEffect(()=>{
+
+    if(!isMobile){
+      window.addEventListener('keydown', hanldeKeyDown)
+    }
+
+      return () => {
+
+          window.removeEventListener('keydown', hanldeKeyDown)
+      }
+  },[isMobile, isPopupOpen, areSectionsOpen])
+  
   const contextValue = useMemo(
     () => ({
       planId,

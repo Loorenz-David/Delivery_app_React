@@ -1,5 +1,5 @@
 import type { FilterConfig } from "@/shared/searchBars";
-import type { OrderQueryStringQueries } from "../types/orderMeta";
+import type { OrderQueryStringQueries, OrderQueryFilters } from "../types/orderMeta";
 
 export const orderStringFilters = new Set<OrderQueryStringQueries>([
   'reference_number',
@@ -17,42 +17,29 @@ export const orderStringFilters = new Set<OrderQueryStringQueries>([
 
 
 
+
+
 export const filterConfig: FilterConfig[] = [
     { 
       type: 'option',
       key: "schedule_order",
       label: "Only schedule orders",
-      value: "",
+      value: true,
     },
-
-// CLIENT DETAILS
     { 
       type: 'option',
-      key: "client_name",
-      label: "Client Name",
-      value: "",
+      key: "unschedule_order",
+      label: "Only unschedule orders",
+      value: true,
     },
-    {
+    { 
       type: 'option',
-      key: "client_email",
-      label: "Client Email",
-      value: "",
-    },
-    // new
-    {
-      type: 'option',
-      key: "client_address",
-      label: "Client address",
-      value: "",
-    },
-    {
-      type: 'option',
-      key: "client_phone",
-      label: "Client Phone",
-      value: "",
+      key: "show_archived",
+      label: "Archived",
+      value: true,
     },
 
-// ORDER DETAIL FILTERS new
+  // ORDER DETAIL FILTERS new
     {
       type: 'option',
       key: "plan_label",
@@ -84,6 +71,35 @@ export const filterConfig: FilterConfig[] = [
       label: "Tracking number",
       value: "",
     },
+
+
+// CLIENT DETAILS
+    { 
+      type: 'option',
+      key: "client_name",
+      label: "Client Name",
+      value: "",
+    },
+    {
+      type: 'option',
+      key: "client_email",
+      label: "Client Email",
+      value: "",
+    },
+    // new
+    {
+      type: 'option',
+      key: "client_address",
+      label: "Client address",
+      value: "",
+    },
+    {
+      type: 'option',
+      key: "client_phone",
+      label: "Client Phone",
+      value: "",
+    },
+
 
 
 // ITEM FILTERS new
@@ -138,3 +154,29 @@ export const filterConfig: FilterConfig[] = [
 
     
 ]
+
+
+export const filterBehavior = {
+  schedule_order: {
+    exclusiveWith: ['unschedule_order']
+  },
+  unschedule_order: {
+    exclusiveWith: ['schedule_order']
+  }
+}
+
+export const resolveConflicts = (
+  current:OrderQueryFilters,
+  key: string
+)=>{
+  const currentFilters = {...current}
+  const conflict = filterBehavior[ key as keyof typeof filterBehavior ]
+
+  if(conflict?.exclusiveWith){
+    conflict.exclusiveWith.forEach(c =>
+      delete currentFilters[ c as keyof OrderQueryFilters ]
+    )
+  }
+
+  return currentFilters
+}

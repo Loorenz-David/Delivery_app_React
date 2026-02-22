@@ -1,10 +1,12 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 
 import { createEntityStore } from '@/store/StoreFactory'
 import type { EntityTable } from '@/store/StoreFactory'
 import { selectAll, selectByClientId, selectByServerId, selectVisible } from '@/store/entitySelectors'
 
+import { reactiveOrderVisibility } from '../domain/orderReactiveVisibility'
+import { useOrderQuery } from './orderQueryStore'
 import type { Order, OrderMap } from '../types/order'
 
 export const useOrderStore = createEntityStore<Order>()
@@ -33,7 +35,21 @@ export const selectOrdersByPlanId = (planId: number | null | undefined) =>
 
 export const useOrders = () => useOrderStore(useShallow(selectAllOrders))
 
-export const useVisibleOrders = () => useOrderStore(useShallow(selectVisibleOrders))
+export const useVisibleOrders = () => {
+  const visibleIds = useOrderStore((state) => state.visibleIds)
+  const byClientId = useOrderStore((state) => state.byClientId)
+  const query = useOrderQuery()
+
+  return useMemo(() => {
+    if (!visibleIds) return []
+
+    return visibleIds
+      .map((id) => byClientId[id])
+      .filter(
+        (order): order is Order => !!order && reactiveOrderVisibility(order, query.filters),
+      )
+  }, [visibleIds, byClientId, query])
+}
 
 
 

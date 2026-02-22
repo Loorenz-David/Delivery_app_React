@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import { DndContext, DragOverlay, closestCenter, pointerWithin } from '@dnd-kit/core'
 
@@ -26,6 +26,7 @@ import { useBaseControlls } from '../hooks/useBaseControlls'
 import { homePopupRegistry } from '../registry/homePopups'
 import { homeSectionRegistry } from '../registry/homeSections'
 import { LoadingPopup } from '@/shared/popups/loadingPopup/loadingPopup'
+import { useMobile } from '@/app/contexts/MobileContext'
 
 const collisionDetection = (args: Parameters<typeof pointerWithin>[0]) => {
     const pointerCollisions = pointerWithin(args)
@@ -52,6 +53,7 @@ type ManagerContextProps = {
 }
 
 export function HomeManagersProvider({children}: ManagerContextProps) {
+    const {isMobile} = useMobile()
 
     const popupManager = useMemo(
         () =>
@@ -77,6 +79,22 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
 
     useStackActionEntries(popupManager)
     useStackActionEntries(sectionManager)
+
+    const hanldeKeyDown = (event:KeyboardEvent)=>{
+
+        if(popupManager.getOpenCount() > 0 ) return
+
+        sectionManager.closeLastOnEsc(event)
+    }
+
+    useEffect(()=>{
+        if(!isMobile){
+            window.addEventListener('keydown', hanldeKeyDown)
+        }
+        return () => {
+            window.removeEventListener('keydown', hanldeKeyDown)
+        }
+    },[isMobile])
 
     const { onDragStart, onDragOver, onDragEnd, onDragCancel, activeDrag, droppedInPlan, sensors }  = usePlanOrderDndControllers()
 

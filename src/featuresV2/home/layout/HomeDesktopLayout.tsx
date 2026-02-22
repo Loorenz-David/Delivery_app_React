@@ -38,20 +38,41 @@ export function HomeDesktopLayout({
         
 
         {/* Delivery plan */}
-        <AnimatePresence mode="popLayout">
-          {isPlanVisible && (
-            <motion.div
-              layout
-              className="h-full z-1"
-              initial={{ x: 450 }}
-              animate={{ x: 0 }}
-              exit={{ x: 450 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-            >
-              {plan}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="relative h-full  "> 
+          <AnimatePresence mode="popLayout">
+            {!isPlanVisible &&
+                (
+                  <motion.div className="absolute z-1 flex top-0 -left-8  items-center justify-center"
+                    layout
+                    initial={{x:100}}
+                    animate={{x:0}}
+
+                    transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                  >
+                    {buttonTogglePlan}
+                  </motion.div>
+                )
+              }
+          </AnimatePresence>
+
+          <AnimatePresence mode="popLayout">
+            {isPlanVisible && (
+              <motion.div
+                layout
+                className="h-full z-1"
+                initial={{ x: 450 }}
+                animate={{ x: 0 }}
+                exit={{ x: 450 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+              >
+                {plan}
+              </motion.div>
+            )} 
+          </AnimatePresence>
+
+         
+         
+        </div>
 
         {/* Overlay  sections */}
         <div className="h-full relative z-2">{overlay}</div>
@@ -62,18 +83,7 @@ export function HomeDesktopLayout({
             {base}
             
             {/* Plan toggle button */}
-            {buttonTogglePlan && (
-              <div className="absolute z-20"
-                style={{
-                  top: '50%',
-                  left: '-9px',
-                  transform: 'translateY(-50%)',
-                  
-                }}
-              >
-                {buttonTogglePlan}
-              </div>
-            )}
+           
             {/* Overlay sections */}
             <AnimatePresence mode="popLayout">
               {orderOverlay && (

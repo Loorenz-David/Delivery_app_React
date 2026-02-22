@@ -11,7 +11,10 @@ const OrderMainContent = () => {
   const { orders, orderActions, query } = useOrderContext()
 
   const handleOpenOrder = (order: Order) => {
-    orderActions.openOrderDetail({ clientId: order.client_id, mode: 'view' })
+    orderActions.openOrderDetail(
+      { clientId: order.client_id, mode: 'view' },
+      {pageClass:'bg-[var(--color-muted)]/10 ', borderLeft:'rgb(var(--color-light-blue-r),0.7)'}
+    )
   }
 
   return (
@@ -26,7 +29,12 @@ const OrderMainContent = () => {
 
       />
       <div className="flex-1 overflow-y-auto p-2">
-        <OrderList orders={orders}  onOpenOrder={handleOpenOrder} />
+        <OrderList
+          orders={orders}
+          onOpenOrder={handleOpenOrder}
+          onArchive={orderActions.handleArchiveOrder}
+          onUnarchive={orderActions.handleUnarchiveOrder}
+        />
       </div>
     </div>
   )

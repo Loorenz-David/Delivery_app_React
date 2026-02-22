@@ -1,6 +1,6 @@
 import { formatPhone } from '@/shared/data-validation/phoneValidation'
 import { StateCard } from '@/shared/layout/StateCard'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import type { Order } from '../types/order'
 import type { OrderState } from '../types/orderState'
@@ -14,6 +14,31 @@ type OrderDetailSummaryProps = {
 }
 
 type SummarySectionKey = 'details' | 'client' | 'dates'
+const ORDER_DETAIL_LAST_OPEN_SECTION_STORAGE_KEY = 'orderDetail.lastOpenSection'
+const isBrowser = typeof window !== 'undefined'
+
+const isSummarySectionKey = (value: string): value is SummarySectionKey =>
+  value === 'details' || value === 'client' || value === 'dates'
+
+const persistLastOpenSection = (section: SummarySectionKey) => {
+  if (!isBrowser) return
+  try {
+    window.localStorage.setItem(ORDER_DETAIL_LAST_OPEN_SECTION_STORAGE_KEY, section)
+  } catch {
+    // Ignore storage failures to keep detail rendering stable.
+  }
+}
+
+const getLastOpenSection = (): SummarySectionKey | null => {
+  if (!isBrowser) return null
+  try {
+    const storedSection = window.localStorage.getItem(ORDER_DETAIL_LAST_OPEN_SECTION_STORAGE_KEY)
+    if (!storedSection) return null
+    return isSummarySectionKey(storedSection) ? storedSection : null
+  } catch {
+    return null
+  }
+}
 
 const asText = (value?: string | null) => value || '—'
 
@@ -21,8 +46,20 @@ export const OrderDetailSummary = ({ order, orderState }: OrderDetailSummaryProp
   const [openSection, setOpenSection] = useState<SummarySectionKey | null>(null)
 
   const toggleSection = (section: SummarySectionKey) => {
-    setOpenSection((current) => (current === section ? null : section))
+    setOpenSection((current) => {
+      const nextSection = current === section ? null : section
+      if (nextSection) {
+        persistLastOpenSection(nextSection)
+      }
+      return nextSection
+    })
   }
+
+  useEffect(() => {
+    const lastSection = getLastOpenSection()
+    if (!lastSection) return
+    setOpenSection(lastSection)
+  }, [])
 
   return (
     <>

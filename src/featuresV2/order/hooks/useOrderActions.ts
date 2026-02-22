@@ -1,18 +1,47 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 import { usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 import { deleteQueryFilter, resetQuery, setQueryFilters, setQuerySearch, updateQueryFilters, useOrderQuery } from '../store/orderQueryStore'
 import type { OrderQueryFilters, OrderQueryStringQueries } from "../types/orderMeta";
-import { orderStringFilters } from '../domain/orderFilterConfig'
+import { filterBehavior, orderStringFilters, resolveConflicts } from '../domain/orderFilterConfig'
+import type { Order } from '../types/order';
+import { useOrderController } from './useOrderController';
+
+type openOrderDetailProps ={ 
+  clientId?: string; 
+  serverId?: number; 
+  mode?: 'view' | 'edit' 
+}
+type parentParamsProps ={
+  borderLeft?:string
+  pageClass?:string
+}
+
 
 export const useOrderActions = () => {
+
+
   const popupManager = usePopupManager()
   const sectionManager = useSectionManager()
   const query = useOrderQuery()
+  const { archiveOrder, unarchiveOrder } = useOrderController()
   
+  const handleArchiveOrder = useCallback(
+    (order:Order)=>{
+        archiveOrder( order.client_id, order.id )
+    },
+    [archiveOrder]
+  )
+
+  const handleUnarchiveOrder = useCallback(
+    (order: Order) => {
+      unarchiveOrder(order.client_id, order.id)
+    },
+    [unarchiveOrder]
+  )
   const openOrderForm = useCallback(
     (payload?: { clientId?: string; mode?: 'create' | 'edit'; deliveryPlanId?: number | null }) => {
-      console.log('open order form ??')
+
       popupManager.open({ key: 'order.edit', payload:{...payload, controllBodyLayout:true} })
     },
     [popupManager],
@@ -24,8 +53,14 @@ export const useOrderActions = () => {
     []
   )
   const openOrderDetail = useCallback(
-    (payload: { clientId?: string; serverId?: number; mode?: 'view' | 'edit' }) => {
-      sectionManager.open({ key: 'order.details', payload , parentParams:{pageClass:'bg-[var(--color-muted)]/10 ', borderLeft:'rgb(var(--color-light-blue-r),0.7)'}})
+    (payload: openOrderDetailProps, parentParams:parentParamsProps) => {
+      const key = 'order.details'
+      const openPayload = sectionManager.getEntryPayload(key) as openOrderDetailProps | undefined
+      if(openPayload && openPayload?.clientId == payload?.clientId){
+        return
+      }
+      
+      sectionManager.open({ key: key, payload , parentParams:parentParams})
     },
     [sectionManager],
   )
@@ -45,10 +80,20 @@ export const useOrderActions = () => {
   )
   const resetFilters = useCallback(() => {
     resetQuery()
+
   }, [])
 
   const updateFilters = useCallback(
     (key: OrderQueryStringQueries, value: unknown) => {
+
+      if (key in filterBehavior){
+        const updatedFilters = resolveConflicts(query.filters, key)
+        applyFilters({...updatedFilters, [key]:value})
+        return
+      }
+      
+     
+
       if (orderStringFilters.has(key)) {
         const previous = query.filters.s ?? []
         const alreadySelected = previous.includes(key as OrderQueryStringQueries)
@@ -59,10 +104,11 @@ export const useOrderActions = () => {
       } 
       updateQueryFilters({ [key]: value })
     },
-    [query]
+    [query, ]
   )
   const deleteFilter = useCallback(
     (key:OrderQueryStringQueries) => {
+        
         if (orderStringFilters.has(key)) { 
          
           const newStringFilters = (query.filters.s || []).filter(f => f !== key)
@@ -84,8 +130,9 @@ export const useOrderActions = () => {
     resetFilters,
     updateFilters,
     deleteFilter,
-    openOrderCases
+    openOrderCases,
+    handleArchiveOrder,
+    handleUnarchiveOrder
   }
 }
-
 

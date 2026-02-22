@@ -2,6 +2,7 @@ import { FilterIcon, OrderIcon, PlusIcon } from '@/assets/icons'
 import { BasicButton } from '@/shared/buttons/BasicButton'
 import { SectionHeader } from '@/shared/section-panel/SectionHeader'
 import type { PlanQueryFilters } from '../../types/planMeta'
+import { useMobile } from '@/app/contexts/MobileContext'
 
 type PlanMainHeaderProps = {
   onCreate: () => void
@@ -10,14 +11,14 @@ type PlanMainHeaderProps = {
 }
 
 export const PlanMainHeader = ({ onCreate, applySearch, applyFilters }: PlanMainHeaderProps) => {
- 
+  const {isMobile} = useMobile()
 
   return (
     <>
       <SectionHeader
         title="Plans"
         icon={<OrderIcon className="h-6 w-6 fill-[var(--color-muted)]" />}
-        closeButton={false}
+        closeButton={ isMobile ? false : true}
       />
       <div className="flex gap-4 p-4">
         

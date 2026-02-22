@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 
 import { BasicButton } from '@/shared/buttons/BasicButton'
@@ -21,7 +21,7 @@ import { useOrderFormConfig } from './useOrderFormConfig'
 import { useOrderFormSetters } from './useOrderFormSetters'
 import { OrderFormFooter } from './OrderFormFooter'
 import { usePopupContext } from '@/shared/popups/MainPopup/PopupContext'
-import { CloseIcon, SingleOrderIcon } from '@/assets/icons'
+import { CloseIcon, PlusIcon, SingleOrderIcon } from '@/assets/icons'
 import {
   emitExternalFormRequest,
   type ExternalFormReceivedPayload,
@@ -30,6 +30,8 @@ import { useExternalFormRealtime } from '@/realtime/externalForm/useExternalForm
 import { sessionStorage } from '@/featuresV2/auth/login/store/sessionStorage'
 import { useMobile } from '@/app/contexts/MobileContext'
 
+
+type OrderFormSection = 'details' | 'client_information' | 'date_times'
 
 const toDateValue = (value: string | null) => {
   if (!value) return null
@@ -43,6 +45,33 @@ const ORDER_PLAN_OBJECTIVE_OPTIONS: Array<PopoverSelectOption<string>> = [
   { label: 'International shipping', value: 'international_shipping' },
   { label: 'Store pickup', value: 'store_pickup' },
 ]
+
+const ORDER_FORM_LAST_OPEN_SECTION_STORAGE_KEY = 'orderForm.lastOpenSection'
+const SECTION_RESTORE_DELAY_MS = 180
+const isBrowser = typeof window !== 'undefined'
+
+const isOrderFormSection = (value: string): value is OrderFormSection =>
+  value === 'details' || value === 'client_information' || value === 'date_times'
+
+const persistLastOpenSection = (section: OrderFormSection) => {
+  if (!isBrowser) return
+  try {
+    window.localStorage.setItem(ORDER_FORM_LAST_OPEN_SECTION_STORAGE_KEY, section)
+  } catch {
+    // Ignore storage failures to avoid blocking form rendering.
+  }
+}
+
+const getLastOpenSection = (): OrderFormSection | null => {
+  if (!isBrowser) return null
+  try {
+    const storedSection = window.localStorage.getItem(ORDER_FORM_LAST_OPEN_SECTION_STORAGE_KEY)
+    if (!storedSection) return null
+    return isOrderFormSection(storedSection) ? storedSection : null
+  } catch {
+    return null
+  }
+}
 
 export const OrderFormLayout = () => {
   const {
@@ -63,8 +92,9 @@ export const OrderFormLayout = () => {
     closeItemEditor,
   } = useOrderForm()
 
-  const [openSection, setOpenSection] = useState<'details' | 'client_information' | 'date_times' | null>(
-    null,
+  const [openSection, setOpenSection] = useState<OrderFormSection | null>(null)
+  const [showSecondaryPhone, setShowSecondaryPhone] = useState(
+    () => (formState.client_secondary_phone?.number ?? '').trim().length > 0,
   )
 
   const setters = useOrderFormSetters({
@@ -105,6 +135,44 @@ export const OrderFormLayout = () => {
       },
     })
   }, [employeeUserId, formState.reference_number])
+
+  const handleShowSecondaryPhone = useCallback(() => {
+    setShowSecondaryPhone(true)
+  }, [])
+
+  const handleSectionToggle = useCallback((section: OrderFormSection) => {
+    setOpenSection((prev) => {
+      const nextSection = prev === section ? null : section
+      if (nextSection) {
+        persistLastOpenSection(nextSection)
+      }
+      return nextSection
+    })
+  }, [])
+
+  const handleHideSecondaryPhone = useCallback(() => {
+    setShowSecondaryPhone(false)
+    setters.handleSecondaryPhone({
+      ...formState.client_secondary_phone,
+      number: '',
+    })
+  }, [formState.client_secondary_phone, setters])
+
+  useEffect(() => {
+    if ((formState.client_secondary_phone?.number ?? '').trim().length > 0) {
+      setShowSecondaryPhone(true)
+    }
+  }, [formState.client_secondary_phone?.number])
+
+  useEffect(() => {
+    const lastSection = getLastOpenSection()
+    if (!lastSection) return
+
+    
+      setOpenSection(lastSection)
+
+
+  }, [])
 
   const label = mode === 'create' ? 'Create Order' : 'Edit Order'
 
@@ -154,7 +222,7 @@ export const OrderFormLayout = () => {
           <AccordionSection
             title="Details"
             isOpen={openSection === 'details'}
-            onToggle={() => setOpenSection((prev) => (prev === 'details' ? null : 'details'))}
+            onToggle={() => handleSectionToggle('details')}
           >
             <Field label="Reference number:" required={true} warningController={warnings.referenceWarning}>
               <InputField
@@ -199,25 +267,26 @@ export const OrderFormLayout = () => {
           <AccordionSection
             title="Client information"
             isOpen={openSection === 'client_information'}
-            onToggle={() =>
-              setOpenSection((prev) => (prev === 'client_information' ? null : 'client_information'))
-            }
+            onToggle={() => handleSectionToggle('client_information')}
           >
-            <Field label="Client first name:" required={true} warningController={warnings.firstNameWarning}>
-              <InputField
-                value={formState.client_first_name}
-                onChange={setters.handleFirstName}
-                warningController={warnings.firstNameWarning}
-              />
-            </Field>
+            <div className="flex gap-4">
+              <Field label="Client first name:" required={true} warningController={warnings.firstNameWarning}>
+                <InputField
+                  value={formState.client_first_name}
+                  onChange={setters.handleFirstName}
+                  warningController={warnings.firstNameWarning}
+                />
+              </Field>
 
-            <Field label="Client last name:" required={true} warningController={warnings.lastNameWarning}>
-              <InputField
-                value={formState.client_last_name}
-                onChange={setters.handleLastName}
-                warningController={warnings.lastNameWarning}
-              />
-            </Field>
+              <Field label="Client last name:" required={true} warningController={warnings.lastNameWarning}>
+                <InputField
+                  value={formState.client_last_name}
+                  onChange={setters.handleLastName}
+                  warningController={warnings.lastNameWarning}
+                />
+              </Field>
+
+            </div>
 
             <Field label="Client email:" required={true} warningController={warnings.emailWarning}>
               <InputField
@@ -227,19 +296,55 @@ export const OrderFormLayout = () => {
               />
             </Field>
 
-            <Field label="Client primary phone:" required={true} warning={warnings.primaryPhoneWarning.warning}>
-              <PhoneField
-                phoneNumber={formState.client_primary_phone}
-                onChange={setters.handlePrimaryPhone}
-              />
-            </Field>
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Field label="Client primary phone:" required={true} warning={warnings.primaryPhoneWarning.warning}>
+                  <PhoneField
+                    phoneNumber={formState.client_primary_phone}
+                    onChange={setters.handlePrimaryPhone}
+                  />
+                </Field>
+              </div>
+              {!showSecondaryPhone ? (
+                <div className="pb-1">
+                  <BasicButton
+                    params={{
+                      variant: 'rounded',
+                      onClick: handleShowSecondaryPhone,
+                      ariaLabel: 'Add secondary phone',
+                      style: { border: '1px dashed rgb(var(--color-muted-r), 0.5)' },
+                    }}
+                  >
+                    <PlusIcon className="h-4 w-4 app-icon" />
+                  </BasicButton>
+                </div>
+              ) : null}
+            </div>
 
-            <Field label="Client secondary phone:">
-              <PhoneField
-                phoneNumber={formState.client_secondary_phone}
-                onChange={setters.handleSecondaryPhone}
-              />
-            </Field>
+            {showSecondaryPhone ? (
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Field label="Client secondary phone:">
+                    <PhoneField
+                      phoneNumber={formState.client_secondary_phone}
+                      onChange={setters.handleSecondaryPhone}
+                    />
+                  </Field>
+                </div>
+                <div className="pb-1">
+                  <BasicButton
+                    params={{
+                      variant: 'rounded',
+                      onClick: handleHideSecondaryPhone,
+                      ariaLabel: 'Remove secondary phone',
+                      style: { border: '1px dashed rgb(var(--color-muted-r), 0.5)' },
+                    }}
+                  >
+                    <span className="text-lg leading-none text-[var(--color-muted)]">-</span>
+                  </BasicButton>
+                </div>
+              </div>
+            ) : null}
 
             <Field label="Client address:" required={true} warning={warnings.addressWarning.warning}>
               <AddressAutocomplete
@@ -252,7 +357,7 @@ export const OrderFormLayout = () => {
           <AccordionSection
             title="Date & times"
             isOpen={openSection === 'date_times'}
-            onToggle={() => setOpenSection((prev) => (prev === 'date_times' ? null : 'date_times'))}
+            onToggle={() => handleSectionToggle('date_times')}
           >
             <Field
               label="Earliest delivery date & start time:"

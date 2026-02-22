@@ -130,7 +130,7 @@ export const useOrderFormSubmit = ({
         const saved = await saveOrder(payload)
 
         if (!saved) return
-
+        showMessage({ status: 200, message: 'Order successfully created.' })
         closeOrderPopup(popupManager)
         return
       }
@@ -203,7 +203,8 @@ export const useOrderFormSubmit = ({
 
         await loadItemsByOrderId(orderServerId)
       }
-
+      
+      showMessage({ status: 200, message: 'Order successfully updated.' })
       closeOrderPopup(popupManager)
     } catch (error) {
       console.error('Failed to save order form transaction', error)

@@ -4,7 +4,11 @@ import { useShallow } from "zustand/react/shallow";
 
 
 
-export const useOrderQueryStore = createQueryStore<OrderQueryFilters>()
+export const useOrderQueryStore = createQueryStore<OrderQueryFilters>({
+    filters: {
+        unschedule_order:true
+    }
+})
 
 export const selectOrderQuery = (state: ReturnType<typeof useOrderQueryStore.getState>) => ({
   q: state.search,

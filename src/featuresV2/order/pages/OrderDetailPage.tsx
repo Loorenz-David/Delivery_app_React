@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+ import { useEffect } from 'react'
 
 import type { StackComponentProps } from '@/shared/stack-manager/types'
 
@@ -10,6 +10,8 @@ import { useOrderFlow } from '../hooks/useOrderFlow'
 import { useOrderByClientId, useOrderByServerId } from '../hooks/useOrderSelectors'
 import { useOrderStateByServerId } from '../hooks/orderStates/useOrderStateSelectors'
 import { OrderDetailHeader } from '../components/pageHeaders/OrderDetailHeader'
+import { useMobile } from '@/app/contexts/MobileContext'
+import { usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 
 type OrderDetailPayload = {
   clientId?: string
@@ -24,12 +26,15 @@ const OrderDetailContent = ({ payload }: { payload?: OrderDetailPayload }) => {
 
   const headerActions = useOrderActions()
   const { loadOrders } = useOrderFlow()
+  const {isMobile} = useMobile()
 
   const orderByClient = useOrderByClientId(clientId)
   const orderByServer = useOrderByServerId(serverId)
   const order = orderByClient ?? orderByServer
   const orderServerId = typeof order?.id === 'number' ? order.id : null
   const orderState = useOrderStateByServerId(order?.order_state_id ?? null)
+  const popupManager = usePopupManager()
+  const sectionManager = useSectionManager()
 
   useEffect(() => {
     if (order) return
@@ -37,6 +42,30 @@ const OrderDetailContent = ({ payload }: { payload?: OrderDetailPayload }) => {
   }, [ order])
 
 
+  const hanldeKeyDown = (event:KeyboardEvent)=>{
+    const isPopupOpen = popupManager.getOpenCount()
+    if(event.key == 'e' && clientId){
+      if(isPopupOpen) return
+      headerActions.openOrderForm({mode: 'edit', clientId: clientId})
+    }
+    if(event.key == 'c' && clientId){
+      if(isPopupOpen) return
+      const isCaseOpen = sectionManager.hasKey('orderCase.orderCases')
+      if(isCaseOpen) return
+      headerActions.openOrderCases({ orderId: order?.id, orderReference: order?.reference_number ?? '' })
+    }
+  }
+
+  useEffect(()=>{
+     if(!isMobile){
+      window.addEventListener('keydown', hanldeKeyDown)
+    }
+
+      return () => {
+
+          window.removeEventListener('keydown', hanldeKeyDown)
+      }
+  },[isMobile])
 
   
   return (

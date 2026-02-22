@@ -33,8 +33,19 @@ export const MainHeaderLocalDeliveryPage = ({localDeliveryActions, plan, localDe
     const title = plan?.label ?? 'undefined plan'
     return (
         <>
+           
             <SectionHeader
-                title={title}
+                title={
+                     <div className="flex flex-col ">
+                        <span>
+                            {title}
+                        </span>
+                        <p className="text-[11px] text-[var(--color-muted)] font-normal">
+                            {plan?.total_orders ?? 0 } orders • {plan?.total_items ?? 0 } items • {plan?.total_volume?.toFixed(2) ?? 0 } ㎥ • {plan?.total_weight?.toFixed(2) ?? 0 } kg
+                        </p>
+
+                    </div>
+                }
                 icon={<PlanTypeIcon className="h-6 w-6 text-[var(--color-muted)]" />}
                 closeButton
             />

@@ -17,6 +17,7 @@ export const OrderProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     if (fistLoad.current) {
+      
       loadOrders(query, true)
       fistLoad.current = false
     } else {

@@ -7,6 +7,7 @@ import { useOrderStateByServerId } from '@/featuresV2/order/hooks/orderStates/us
 import type { RouteSolutionStop } from '@/featuresV2/plan/planTypes/localDelivery/types/routeSolutionStop'
 import { RouteStopWarnings } from './RouteStopWarnings'
 import { formatRouteTime } from '@/featuresV2/plan/planTypes/localDelivery/utils/formatRouteTime'
+import { useOrderActions } from '@/featuresV2/order/hooks/useOrderActions'
 
 type LocalDeliveryOrderCardProps = {
     order: Order;
@@ -16,7 +17,7 @@ type LocalDeliveryOrderCardProps = {
 }
 
 export const LocalDeliveryOrderCard = ({ order, stop, displayStopOrder, planStartDate }: LocalDeliveryOrderCardProps) => {
-    const sectionManager = useSectionManager()
+    const {openOrderDetail} = useOrderActions()
     const mapManager = useMapManager()
     const orderLabel = order.reference_number ?? 'undf'
     const streetAddress = order.client_address?.street_address ?? 'No address'
@@ -31,12 +32,13 @@ export const LocalDeliveryOrderCard = ({ order, stop, displayStopOrder, planStar
 
     const openOrder = ()=>{
         mapManager.selectOrder(order.client_id)
-        sectionManager.open({
-            key:"order.details",
-            payload:{mode:"edit", clientId:order.client_id},
-            parentParams:{ borderLeft:'rgb(var(--color-light-blue-r),0.7)'}
-        })
+        openOrderDetail(
+            {mode:"edit", clientId:order.client_id},
+            { borderLeft:'rgb(var(--color-light-blue-r),0.7)'}
+        )
+        
     }
+    
 
 
     return ( 

@@ -52,7 +52,10 @@ type StackEntryUnion<T extends Record<PropertyKey, any>> = {
 }[keyof T]
 
 
-
+export type RenderStackProps ={
+  variant?: string | null
+  width?: number
+}
 
 export class StackActionManager <
   TPayloadMap extends Record<PropertyKey, any>
@@ -189,9 +192,20 @@ export class StackActionManager <
 
     return this.getEntry( key as string )?.payload
   }
-  renderStack(variant?:string | null,width?:number): ReactNode[] {
+
+  closeLastOnEsc = (event:KeyboardEvent)=>{
+    if(event.key !== 'Escape') return
+    const entries = this.getSnapshot()
+    const lastEntry = entries.at(-1)
+    if(lastEntry){
+      this.close(lastEntry.id)
+    }
+  }
+
+  renderStack({variant, width}:RenderStackProps): ReactNode[] | undefined {
     const Blueprint = this.blueprint
 
+   
     if (variant == 'dynamicSectionPanels'){
       return this.stackEntries.map((entry, index) => {
           const component = this.stackRegistry[entry.key]

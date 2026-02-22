@@ -1,4 +1,5 @@
 import type { PhonePrefixOption } from './phonePrefixes'
+import { getFlagEmoji } from './phonePrefixes'
 
 type PhonePrefixCardProps = {
   prefixOption: PhonePrefixOption
@@ -19,6 +20,9 @@ export const PhonePrefixCard = ({
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => onSelectPrefix(prefixOption)}
       >
+        <span className="text-base leading-none" aria-hidden>
+          {getFlagEmoji(prefixOption.countryCode)}
+        </span>
         <span className="text-sm font-medium text-[var(--color-text)]">
           {prefixOption.display}
         </span>

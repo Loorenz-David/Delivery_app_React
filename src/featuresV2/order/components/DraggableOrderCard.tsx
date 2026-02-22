@@ -9,11 +9,15 @@ import { OrderCard } from './OrderCard'
 type DraggableOrderCardProps = {
   order: Order
   onOpen?: (order: Order) => void
+  onArchive?:(order: Order)=> void
+  onUnarchive?: (order: Order) => void
 }
 
 export const DraggableOrderCard = ({
   order,
   onOpen,
+  onArchive,
+  onUnarchive,
 }: DraggableOrderCardProps) => {
   const {
     attributes,
@@ -41,6 +45,8 @@ export const DraggableOrderCard = ({
       <OrderCard
         order={order}
         onOpen={onOpen}
+        onArchive={onArchive}
+        onUnarchive={onUnarchive}
       />
     </div>
   )

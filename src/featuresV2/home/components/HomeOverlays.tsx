@@ -7,7 +7,7 @@ export const HomeOverlays = () => {
  
   return (
     <AnimatePresence>
-      {popupManager.renderStack()}
+      {popupManager.renderStack({})}
     </AnimatePresence>
   )
 }

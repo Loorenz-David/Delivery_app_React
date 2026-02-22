@@ -18,6 +18,7 @@ type PropsConfrimPopup = {
    children: ReactNode
    reference: ReactNode
    offSetNum?: number
+   crossOffSetNum?: number
    matchReferenceWidth?: boolean 
    removeFlip?:boolean
    closeOnInsideClick?:boolean
@@ -30,6 +31,7 @@ export const FloatingPopover = ({
     children,
     reference,
     offSetNum,
+    crossOffSetNum,
     matchReferenceWidth,
     removeFlip,
     closeOnInsideClick
@@ -44,7 +46,10 @@ export const FloatingPopover = ({
         onOpenChange: onOpenChange,
         placement: 'bottom-start',
         middleware: [
-            offset( typeof offSetNum == 'number' ? offSetNum : 8 ),
+            offset({
+                mainAxis: typeof offSetNum == 'number' ? offSetNum : 8,
+                crossAxis: typeof crossOffSetNum == 'number' ? crossOffSetNum : 0,
+            }),
             !removeFlip && flip(),
             shift({ padding: 8 }),
 

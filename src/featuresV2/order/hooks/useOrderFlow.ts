@@ -24,11 +24,7 @@ export const useOrderFlow = () => {
 
   const loadOrders = useCallback(
     async (query?: OrderQueryStoreFilters, firstLoad?: boolean) => {
-
-      if (!query?.q?.trim() && firstLoad === false) {
-        setVisibleOrders(null)
-        return null
-      }
+    
 
       const queryKey = buildQueryKey(query)
       setOrderListLoading(true)

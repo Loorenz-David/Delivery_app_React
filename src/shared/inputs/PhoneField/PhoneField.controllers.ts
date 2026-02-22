@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
+import { parsePhoneNumberFromString } from 'libphonenumber-js'
+import type { CountryCode } from 'libphonenumber-js'
 
+import { DEFAULT_PREFIX, PHONE_PREFIX_STORAGE_KEY } from '@/constants/dropDownOptions'
 import type { Phone } from '@/types/phone'
 import { phonePrefixes } from './phonePrefixes'
 import type { PhonePrefixOption } from './phonePrefixes'
@@ -8,6 +11,26 @@ import type { PhonePrefixOption } from './phonePrefixes'
 type PhoneFieldControllerProps = {
   phoneNumber: Phone
   onChange: (value: Phone) => void
+}
+
+const isBrowser = typeof window !== 'undefined'
+
+const getStoredPrefix = (): string | null => {
+  if (!isBrowser) return null
+  try {
+    return window.localStorage.getItem(PHONE_PREFIX_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+const persistPrefix = (prefix: string) => {
+  if (!isBrowser) return
+  try {
+    window.localStorage.setItem(PHONE_PREFIX_STORAGE_KEY, prefix)
+  } catch {
+    // Ignore storage write errors to keep the field usable.
+  }
 }
 
 export const usePhoneFieldControllers = ({
@@ -36,6 +59,19 @@ export const usePhoneFieldControllers = ({
     setInputValue(selectedPrefix?.display ?? phoneNumber.prefix)
   }, [isOpen, phoneNumber.prefix, selectedPrefix?.display])
 
+  useEffect(() => {
+    const storedPrefix = getStoredPrefix()
+    if (!storedPrefix) return
+
+    const hasValidStoredPrefix = phonePrefixes.some((option) => option.value === storedPrefix)
+    if (!hasValidStoredPrefix) return
+
+    if (phoneNumber.prefix !== DEFAULT_PREFIX) return
+    if (storedPrefix === phoneNumber.prefix) return
+
+    onChange({ ...phoneNumber, prefix: storedPrefix })
+  }, [onChange, phoneNumber])
+
   const handleOpenChange = useCallback(
     (open: boolean) => {
       setIsOpen(open)
@@ -59,6 +95,7 @@ export const usePhoneFieldControllers = ({
 
   const handleSelectPrefix = useCallback(
     (prefixOption: PhonePrefixOption) => {
+      persistPrefix(prefixOption.value)
       onChange({ ...phoneNumber, prefix: prefixOption.value })
       setInputValue(prefixOption.display)
       requestAnimationFrame(() => {
@@ -71,9 +108,28 @@ export const usePhoneFieldControllers = ({
 
   const handleNumberChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      onChange({ ...phoneNumber, number: event.target.value })
+      const rawValue = event.target.value.replace(/\s+/g, '')
+
+      if (!selectedPrefix?.countryCode) {
+        onChange({ ...phoneNumber, number: rawValue })
+        return
+      }
+
+      const parsed = parsePhoneNumberFromString(rawValue, selectedPrefix.countryCode as CountryCode)
+
+      if (parsed) {
+        onChange({
+          ...phoneNumber,
+          number: parsed.nationalNumber,
+        })
+      } else {
+        onChange({
+          ...phoneNumber,
+          number: rawValue,
+        })
+      }
     },
-    [onChange, phoneNumber],
+    [onChange, phoneNumber, selectedPrefix],
   )
 
   return {
