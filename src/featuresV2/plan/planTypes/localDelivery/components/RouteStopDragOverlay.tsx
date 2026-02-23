@@ -1,7 +1,7 @@
 import { useDndContext } from '@dnd-kit/core'
 
 import type { Order } from '@/featuresV2/order/types/order'
-import { LocalDeliveryOrderCard } from '@/featuresV2/plan/planTypes/localDelivery/components/LocalDeliveryOrderCard'
+import { LocalDeliveryOrderCard } from '@/featuresV2/plan/planTypes/localDelivery/components'
 import type { RouteSolutionStop } from '@/featuresV2/plan/planTypes/localDelivery/types/routeSolutionStop'
 
 type RouteStopDragOverlayProps = {

@@ -3,6 +3,7 @@ import type { LocalDeliveryPlan } from '@/featuresV2/plan/planTypes/localDeliver
 
 import { createEntityStore } from '@/store/StoreFactory'
 import { selectAll, selectByClientId, selectByServerId } from '@/store/entitySelectors'
+import { selectPlanByServerId, usePlanStore } from '@/featuresV2/plan/store/plan.slice'
 
 export const useLocalDeliveryPlanStore = createEntityStore<LocalDeliveryPlan>()
 
@@ -24,6 +25,14 @@ export const selectLocalDeliveryPlanByPlanId = (planId: number | null | undefine
       .map((clientId) => state.byClientId[clientId])
       .find((plan) => plan.delivery_plan_id === planId) ?? null
   }
+
+export const getPlanEndDateByLocalDeliveryPlanId = (localDeliveryPlanId?: number | null) => {
+  if (localDeliveryPlanId == null) return null
+  const localPlan = selectLocalDeliveryPlanByServerId(localDeliveryPlanId)(useLocalDeliveryPlanStore.getState())
+  if (!localPlan?.delivery_plan_id) return null
+  const plan = selectPlanByServerId(localPlan.delivery_plan_id)(usePlanStore.getState())
+  return plan?.end_date ?? null
+}
 
 export const insertLocalDeliveryPlan = (plan: LocalDeliveryPlan) =>
   useLocalDeliveryPlanStore.getState().insert(plan)

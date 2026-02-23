@@ -7,7 +7,7 @@ import type { LocalDeliveryPlanInput } from '../planTypes/localDelivery/types/lo
 import type { StorePickupPlanInput } from '../types/storePickupPlan'
 import type { InternationalShippingPlanInput } from '../types/internationalShippingPlan'
 import type { PlanWarningsControllers } from './PlanForm.types'
-import {  usePlanStateRegistry } from '../hooks/planStates/usePlanStateRegistry'
+import { usePlanStateRegistryFlow } from '../flows/planStateRegistry.flow'
 type SetDeliveryPlanState = Dispatch< SetStateAction<DeliveryPlan> >
 type SetPlanTypeState = Dispatch< SetStateAction<PlanTypeState | null> >
 
@@ -64,7 +64,7 @@ export const usePlanFormSetters = ({
 }
 
 export const initialPlanForm = ()=>{
-    const stateRegistry =  usePlanStateRegistry()
+    const stateRegistry =  usePlanStateRegistryFlow()
     const client_id = buildClientId('deliveryPlan')
     const plan_state_id =  stateRegistry.getByName('Open')?.id
     const label = 'Plan'

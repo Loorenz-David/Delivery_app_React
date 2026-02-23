@@ -1,4 +1,4 @@
-import { planPopupRegistry } from '@/featuresV2/plan/registry/planPopups'
+import { planPopupRegistry } from '@/featuresV2/plan/'
 import { popupRegistry as orderPopupRegistry } from '@/featuresV2/order/registry/popupRegistry'
 // import { itemPopupRegistry } from '@/featuresV2/item/registry/itemPopups'
 

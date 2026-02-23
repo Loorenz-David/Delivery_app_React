@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useMessageManager } from '@/message_manager/MessageManagerContext'
 import type { DeliveryPlan } from '../types/plan'
 import type { PlanTypeState } from './PlanForm.types'
-import { usePlanMutations } from '../hooks/usePlanMutations'
+import { usePlanController } from '../controllers/plan.controller'
 import { useBaseControlls, usePopupManager } from '@/shared/resource-manager/useResourceManager'
 import { getObjectDiff } from '@/shared/utils/getObjectDiff'
 import type { RefObject } from 'react'
@@ -26,7 +26,7 @@ export const usePlanFormSubmiters = ({
     initialPlanTypeFormRef,
 }: Props) => {
     const { showMessage } = useMessageManager()
-    const { createPlan, updatePlan, deletePlan } = usePlanMutations()
+    const { createPlan, updatePlan, deletePlan } = usePlanController()
     const popupManager = usePopupManager()
     const baseControlls = useBaseControlls()
 

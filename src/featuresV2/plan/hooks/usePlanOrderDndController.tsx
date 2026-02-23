@@ -1,22 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMobile } from '@/app/contexts/MobileContext'
 import type { DragStartEvent, DragEndEvent } from '@dnd-kit/core'
-import {
-  useSensor,
-  useSensors,
-  PointerSensor,
-} from '@dnd-kit/core'
-import { useOrderMutations } from '@/featuresV2/order/hooks/useOrderMutations'
-import { useRouteSolutionStopMutations } from '@/featuresV2/plan/planTypes/localDelivery/hooks/routeSolutionStops/useRouteSolutionStopMutations'
+import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import type { Order } from '@/featuresV2/order/types/order'
 import type { RouteSolutionStop } from '@/featuresV2/plan/planTypes/localDelivery/types/routeSolutionStop'
 
-import { selectPlanByClientId, usePlanStore } from '../store/plan.slice'
-import type { DeliveryPlan } from '../types/plan'
-
-
-
-
+import { derivePlanDndIntent } from '@/featuresV2/plan/domain/planDndIntent'
+import { useExecutePlanDndIntent } from '@/featuresV2/plan/controllers/useExecutePlanDndIntent'
 
 export type ActiveDrag =
   | { type: 'order'; order: Order }
@@ -29,38 +19,52 @@ export type ActiveDrag =
     }
   | null
 
-
-
-export const usePlanOrderDndControllers = ()=>{
-  const [ activeDrag, setActiveDrag ] = useState< ActiveDrag >(null)
-  const { updateOrderDeliveryPlan } = useOrderMutations()
-  const { updateRouteStopPositionOptimistic } = useRouteSolutionStopMutations()
-  const [ droppedInPlan, setDroppedInPlan ] = useState<string | null>(null)
+export const usePlanOrderDndController = () => {
+  const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null)
+  const [droppedInPlan, setDroppedInPlan] = useState<string | null>(null)
+  const dropFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { isMobile } = useMobile()
+  const { execute } = useExecutePlanDndIntent()
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: isMobile 
-      ?{distance:10}
-      : {distance:6}
-    })
+      activationConstraint: isMobile ? { distance: 10 } : { distance: 6 },
+    }),
   )
 
   const setDroppedInPlanFeedback = (planClientId: string) => {
+    if (dropFeedbackTimeoutRef.current) {
+      clearTimeout(dropFeedbackTimeoutRef.current)
+    }
     setDroppedInPlan(planClientId)
-    setTimeout(() => {
+    dropFeedbackTimeoutRef.current = setTimeout(() => {
       setDroppedInPlan(null)
+      dropFeedbackTimeoutRef.current = null
     }, 350)
   }
 
-  const onDragStart = (event: DragStartEvent) =>{
+  useEffect(() => {
+    return () => {
+      if (dropFeedbackTimeoutRef.current) {
+        clearTimeout(dropFeedbackTimeoutRef.current)
+      }
+      document.body.style.cursor = ''
+    }
+  }, [])
+
+  const resetDragUi = () => {
+    document.body.style.cursor = ''
+    setActiveDrag(null)
+  }
+
+  const onDragStart = (event: DragStartEvent) => {
     const { active } = event
     document.body.style.cursor = 'grabbing'
-    if(active.data.current?.type == 'order' && active.data.current?.order){
+    if (active.data.current?.type === 'order' && active.data.current?.order) {
       setActiveDrag({ type: 'order', order: active.data.current.order })
       return
     }
-    if(active.data.current?.type == 'route_stop' && active.data.current?.order){
+    if (active.data.current?.type === 'route_stop' && active.data.current?.order) {
       setActiveDrag({
         type: 'route_stop',
         order: active.data.current.order,
@@ -76,65 +80,48 @@ export const usePlanOrderDndControllers = ()=>{
   }
 
   const onDragCancel = () => {
-    document.body.style.cursor = ''
-    setActiveDrag(null)
+    resetDragUi()
   }
 
-  const onDragEnd = (event: DragEndEvent) => {
+  const onDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
-    
+
     if (!over) {
-      document.body.style.cursor = ''
-      setActiveDrag(null)
+      resetDragUi()
       return
     }
-    
+
     const activeData = active.data.current
     const overData = over.data.current
-    if (!activeData || !overData?.id) {
-      document.body.style.cursor = ''
-      setActiveDrag(null)
+    if (!activeData) {
+      resetDragUi()
       return
     }
 
-    let deliveryPlan: DeliveryPlan | null = null
-    if(overData.type == 'plan'){
-      deliveryPlan = selectPlanByClientId(overData.id)(usePlanStore.getState())
+    const activeId = active.id ? String(active.id) : undefined
+    const overId = overData?.id ? String(overData.id) : undefined
+    const activeOrderClientId =
+      activeData.type === 'order'
+        ? (typeof activeData.id === 'string' ? activeData.id : activeId)
+        : activeData.type === 'route_stop'
+          ? (activeData.order?.client_id as string | undefined)
+          : undefined
+
+    const intent = derivePlanDndIntent({
+      activeType: activeData?.type as string | undefined,
+      overType: overData?.type as string | undefined,
+      activeId,
+      overId,
+      activeOrderClientId,
+    })
+
+    const result = await execute(intent)
+    if (result?.droppedPlanClientId) {
+      setDroppedInPlanFeedback(result.droppedPlanClientId)
     }
 
-    if (activeData.type === 'route_stop') {
-
-      if (overData.type === 'route_stop') {
-        if (activeData.id) {
-          void updateRouteStopPositionOptimistic(activeData.id, overData.id)
-        }
-      }
-      if (overData.type === 'plan') {
-        const routeStopOrderClientId = activeData.order?.client_id
-        if (routeStopOrderClientId && deliveryPlan?.id) {
-          void updateOrderDeliveryPlan(routeStopOrderClientId, deliveryPlan.id)
-          setDroppedInPlanFeedback(overData.id)
-        }
-      }
-      document.body.style.cursor = ''
-      setActiveDrag(null)
-      return
-    }
-
-    if (activeData.type === 'order' && overData.type === 'plan' && activeData.id && deliveryPlan?.id) {
-      void updateOrderDeliveryPlan(
-        activeData.id,
-        deliveryPlan.id
-      )
-      setDroppedInPlanFeedback(overData.id)
-    }
-
-    setActiveDrag(null)
-    document.body.style.cursor = ''
-
+    resetDragUi()
   }
-
-  
 
   return {
     onDragOver,
@@ -143,6 +130,6 @@ export const usePlanOrderDndControllers = ()=>{
     onDragCancel,
     sensors,
     droppedInPlan,
-    activeDrag
+    activeDrag,
   }
 }

@@ -2,14 +2,14 @@ import { useMemo } from 'react'
 import { useDndContext } from '@dnd-kit/core'
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
-import { LocalDeliveryOrderCard } from './LocalDeliveryOrderCard'
-import { DraggableLocalDeliveryOrderCard } from './DraggableLocalDeliveryOrderCard'
-import { LocalDeliveryBoundaryLocationCard } from './LocalDeliveryBoundaryLocationCard'
+import { LocalDeliveryOrderCard } from './cards/LocalDeliveryOrderCard'
+import { DraggableLocalDeliveryOrderCard } from './cards/DraggableLocalDeliveryOrderCard'
+import { LocalDeliveryBoundaryLocationCard } from './cards/LocalDeliveryBoundaryLocationCard'
 import { useLocalDeliveryContext } from '../context/useLocalDeliveryContext'
 import { useLocalDeliveryStopOrdering } from '../hooks/useLocalDeliveryStopOrdering'
 import { formatRouteTime } from '@/featuresV2/plan/planTypes/localDelivery/utils/formatRouteTime'
 import { BasicButton } from '@/shared/buttons'
-import type { useLocalDeliveryHeaderAction } from '../hooks/useLocalDeliveryHeaderAction'
+import type { useLocalDeliveryHeaderAction } from '../actions/useLocalDeliveryHeaderAction'
 import { DeliveryReadyIcon } from '@/assets/icons'
 
 
@@ -118,7 +118,7 @@ export const LocalDeliveryOrderList = ({
                                 variant:'primary',
                                 className:"w-full py-3",
                                 style:{backgroundColor:'rgb(0, 172, 195)'},
-                                onClick:localDeliveryActions.routeRedyForDelivery
+                                onClick:localDeliveryActions.routeReadyForDelivery
                             }}>
                                 <div className="flex gap-4">
                                     <DeliveryReadyIcon className="h-5 w-5 text-[var(--color-page)] "/>

@@ -14,6 +14,10 @@ export function usePlanOrders() {
     try {
       const response = await planApi.getPlanOrders(planId)
       const payload = response.data
+      if (!payload?.order) {
+        setOrderListError('Missing orders response.')
+        return null
+      }
       upsertOrders(payload.order)
 
       return payload
@@ -26,7 +30,7 @@ export function usePlanOrders() {
         showMessage({ status, message })
       return null
     }
-  }, [])
+  }, [showMessage])
 
   
 

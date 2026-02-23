@@ -3,8 +3,8 @@ import type { RefObject } from 'react'
 
 import { useMessageManager } from '@/message_manager'
 import { makeInitialFormCopy } from '@/shared/data-validation/initialFormSnapshot'
-import { useLocalDeliveryPlanSettingsMutations } from '@/featuresV2/plan/planTypes/localDelivery/hooks/settings/useLocalDeliveryPlanSettingsMutations'
-import { usePlanMutations } from '@/featuresV2/plan/hooks/usePlanMutations'
+import { useLocalDeliveryPlanSettingsMutations } from '@/featuresV2/plan/planTypes/localDelivery/controllers/localDeliveryPlanSettings.controller'
+import { usePlanController } from '@/featuresV2/plan/controllers/plan.controller'
 import { useBaseControlls, usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 
 import type { LocalDeliveryEditFormState } from './LocalDeliveryEditForm.types'
@@ -22,7 +22,7 @@ export const useLocalDeliveryEditFormSubmitters = ({
 }: Props) => {
   const { showMessage } = useMessageManager()
   const { updateLocalDeliverySettings } = useLocalDeliveryPlanSettingsMutations()
-  const { deletePlan } = usePlanMutations()
+  const { deletePlan } = usePlanController()
   const popupManager = usePopupManager()
   const sectionManager = useSectionManager()
   const  baseControlls = useBaseControlls()

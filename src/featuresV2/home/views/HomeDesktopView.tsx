@@ -5,10 +5,10 @@ import { useSectionManager, useMapManager, usePopupManager } from '@/shared/reso
 
 import { ArchiveIcon, BellIcon, ChevronDownIcon, SettingIcon } from '@/assets/icons'
 
-import { PlanPage } from '@/featuresV2/plan/pages/PlanPage'
+import { PlanPage } from '@/featuresV2/plan/pages/Plan.page'
 import { OrderPage } from '@/featuresV2/order/pages/OrderPage'
 import { useBaseControlls } from '@/shared/resource-manager/useResourceManager'
-import { SelectedPlanOrders } from '@/featuresV2/plan/utils/planSectionTypeMap'
+import { planSectionsMap } from '@/featuresV2/plan/'
 
 
 import { HomeDesktopLayout } from '../layout/HomeDesktopLayout'
@@ -32,7 +32,10 @@ export function HomeDesktopView() {
   const {isMobile} = useMobile()
 
   const ordersPlanType = baseControlls.payload ? baseControlls.payload?.ordersPlanType ?? null : null
-  const SelectedOrdersPlanType = SelectedPlanOrders({ planType: ordersPlanType })
+  let SelectedOrdersPlanType = null
+  if(ordersPlanType){
+    SelectedOrdersPlanType = planSectionsMap[ordersPlanType] 
+  }
 
   useEffect(()=>{
     void initialize(mapContainerRef.current)

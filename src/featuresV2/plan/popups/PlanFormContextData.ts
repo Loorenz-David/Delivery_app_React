@@ -1,7 +1,7 @@
 // hooks/usePlanFormContextData.ts
 import { usePopupManager } from '@/shared/resource-manager/useResourceManager'
-import { usePlanByClientId, usePlanByServerId } from '@/featuresV2/plan/hooks/usePlanSelectors'
-import {  usePlanTypeWithFetch } from '@/featuresV2/plan/hooks/usePlanTypeWithFetch'
+import { usePlanByClientId, usePlanByServerId } from '@/featuresV2/plan/store/usePlan.selector'
+import { usePlanTypeWithFetch } from '@/featuresV2/plan/flows/planTypeWithFetch.flow'
 import type { PopupPayload } from './PlanForm.types'
 
 export const usePlanFormContextData = () => {

@@ -2,23 +2,19 @@ import { useMemo } from 'react'
 import { Field } from '@/shared/inputs/FieldContainer'
 import { InputField } from '@/shared/inputs/InputField'
 import { CustomDatePicker } from '@/shared/inputs/CustomDatePicker'
-import { PlanTypeSelector } from '../components/planTypeSelector/PlanTypeSelector'
+import { PlanTypeSelector } from '../components'
 import { InputWarning } from '@/shared/inputs/InputWarning'
 import { PopupFooter } from '@/shared/popups/MainPopup/PopupFooter'
 
 import { usePlanForm } from './PlanForm.context'
 import { usePlanFormPopupConfig } from './planFormPopupConfig.hook'
 
-import { StorePickupForm } from '@/featuresV2/plan/planTypes/storePickup/popups/StorePickup.form'
-import { LocalDeliveryForm } from '@/featuresV2/plan/planTypes/localDelivery/popups/LocalDelivery.form'
-import { InternationalShippingForm } from '@/featuresV2/plan/planTypes/internationalShipping/popups/InternationalShipping.form'
 
 
-const PlanTypeComponentMap = {
-    'local_delivery':<LocalDeliveryForm/>,
-    'international_shipping': <InternationalShippingForm/>,
-    'store_pickup':<StorePickupForm/>,
-}
+
+
+
+
 
 export const PlanFormLayout = ({}) => {
     const {
@@ -90,9 +86,7 @@ export const PlanFormLayout = ({}) => {
                     </Field>
                 }
                 
-                {/* { planForm.plan_type && 
-                    PlanTypeComponentMap[ planForm.plan_type ]
-                } */}
+                
             </form>
             <PopupFooter footerConfig={footerConfig} />
         </>

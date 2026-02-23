@@ -4,7 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { DndContext, DragOverlay, closestCenter, pointerWithin } from '@dnd-kit/core'
 
 
-import { usePlanOrderDndControllers } from '@/featuresV2/plan/hooks/usePlanOrderDndController'
+import { usePlanOrderDndController } from '@/featuresV2/plan/hooks/usePlanOrderDndController'
 import type { StackComponentProps } from '@/shared/stack-manager/types'
 
 import { ResourcesManagerProvider } from '@/shared/resource-manager/ResourceManagerContext'
@@ -96,7 +96,7 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
         }
     },[isMobile])
 
-    const { onDragStart, onDragOver, onDragEnd, onDragCancel, activeDrag, droppedInPlan, sensors }  = usePlanOrderDndControllers()
+    const { onDragStart, onDragOver, onDragEnd, onDragCancel, activeDrag, droppedInPlan, sensors }  = usePlanOrderDndController()
 
     return (
        <ResourcesManagerProvider managers={{ sectionManager, mapManager, popupManager, baseControlls, droppedInPlan }}>

@@ -29,9 +29,9 @@ export const useInternationalShippingForm = () => {
 
   useEffect(()=>{
       setPlanTypeValidationForm( ()=> {
-        return ()=> internationalShippingValidation({ internationalShippingWarnings })
+        return ()=> internationalShippingValidation({ internationalShippingWarnings, formState })
       } )
-    },[formState])
+    },[formState, internationalShippingWarnings, setPlanTypeValidationForm])
   
 
   return {

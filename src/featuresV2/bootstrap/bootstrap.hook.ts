@@ -10,7 +10,7 @@ import { insertItemStates } from '../itemConfigurations/store/itemStateStore'
 import { insertPrintTemplates } from '../templates/printDocument/store'
 import { insertEmailMessages } from '../messaging/emailMessage/store'
 import { insertSmsMessages } from '../messaging/smsMessage/store'
-import { insertDeliveryPlanStates } from '../plan/store/planStateStore'
+import { insertDeliveryPlanStates } from '../plan/store/planState.store'
 
 
 

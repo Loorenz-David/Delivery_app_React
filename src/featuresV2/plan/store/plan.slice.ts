@@ -5,7 +5,7 @@ import type { DeliveryPlanState } from '@/featuresV2/plan/types/planState'
 
 import { createEntityStore } from '@/store/StoreFactory'
 import { selectAll, selectByClientId, selectByServerId } from '@/store/entitySelectors'
-import { useDeliveryPlanStateStore } from '@/featuresV2/plan/store/planStateStore'
+import { useDeliveryPlanStateStore } from '@/featuresV2/plan/store/planState.store'
 
 export const usePlanStore = createEntityStore<DeliveryPlan>()
 

@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 
 import { planIconTypeMap } from "@/featuresV2/plan/utils/planIconTypeMap"
 import { SectionHeader } from "@/shared/section-panel/SectionHeader"
-import type { useLocalDeliveryHeaderAction } from "../../hooks/useLocalDeliveryHeaderAction"
+import type { useLocalDeliveryHeaderAction } from "../../actions/useLocalDeliveryHeaderAction"
 import type { DeliveryPlan } from "@/featuresV2/plan/types/plan"
 import { BasicButton } from "@/shared/buttons"
 import { EditIcon, PdfIcon, PlusIcon, StatsIcon } from "@/assets/icons"

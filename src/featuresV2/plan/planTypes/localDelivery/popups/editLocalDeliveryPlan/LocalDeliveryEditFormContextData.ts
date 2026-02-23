@@ -1,10 +1,10 @@
 import { usePopupManager } from '@/shared/resource-manager/useResourceManager'
-import { useLocalDeliveryPlanByServerId } from '@/featuresV2/plan/planTypes/localDelivery/hooks/useLocalDeliveryPlan'
-import { usePlanByServerId } from '@/featuresV2/plan/hooks/usePlanSelectors'
+import { useLocalDeliveryPlanByServerId } from '@/featuresV2/plan/planTypes/localDelivery/store/useLocalDeliveryPlan.selector'
+import { usePlanByServerId } from '@/featuresV2/plan/store/usePlan.selector'
 import {
   useRouteSolutionsByLocalDeliveryPlanId,
   useSelectedRouteSolutionByLocalDeliveryPlanId,
-} from '@/featuresV2/plan/planTypes/localDelivery/hooks/routeSolution/useRouteSolutionSelectors'
+} from '@/featuresV2/plan/planTypes/localDelivery/store/useRouteSolution.selector'
 
 import type { PopupPayload } from './LocalDeliveryEditForm.types'
 

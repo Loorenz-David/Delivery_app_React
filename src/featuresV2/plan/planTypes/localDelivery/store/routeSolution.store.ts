@@ -3,6 +3,11 @@ import type { RouteSolution } from '@/featuresV2/plan/planTypes/localDelivery/ty
 
 import { createEntityStore } from '@/store/StoreFactory'
 import { selectAll, selectByClientId, selectByServerId } from '@/store/entitySelectors'
+import {
+  selectLocalDeliveryPlanByServerId,
+  useLocalDeliveryPlanStore,
+} from '@/featuresV2/plan/planTypes/localDelivery/store/localDelivery.slice'
+import { selectPlanByServerId, usePlanStore } from '@/featuresV2/plan/store/plan.slice'
 
 export const useRouteSolutionStore = createEntityStore<RouteSolution>()
 
@@ -42,6 +47,18 @@ export const selectSelectedRouteSolutionByLocalDeliveryPlanId = (
         (solution) => solution.local_delivery_plan_id === localDeliveryPlanId && solution.is_selected,
       ) ?? null
   }
+
+export const getPlanEndDateByRouteSolutionId = (routeSolutionId?: number | null) => {
+  if (routeSolutionId == null) return null
+  const solution = selectRouteSolutionByServerId(routeSolutionId)(useRouteSolutionStore.getState())
+  if (!solution?.local_delivery_plan_id) return null
+  const localPlan = selectLocalDeliveryPlanByServerId(solution.local_delivery_plan_id)(
+    useLocalDeliveryPlanStore.getState(),
+  )
+  if (!localPlan?.delivery_plan_id) return null
+  const plan = selectPlanByServerId(localPlan.delivery_plan_id)(usePlanStore.getState())
+  return plan?.end_date ?? null
+}
 
 export const insertRouteSolution = (solution: RouteSolution) =>
   useRouteSolutionStore.getState().insert(solution)

@@ -1,7 +1,7 @@
 
 import type {DeliveryPlan} from '../types/plan';
-import { PlanCard } from './PlanCard';
-import { DroppablePlanCard } from './DroppablePlanCard';
+import { PlanCard } from './cards/PlanCard';
+import { DroppablePlanCard } from './cards/DroppablePlanCard';
 type PropsPlanList = {
     plans: DeliveryPlan[];
     droppable?: boolean

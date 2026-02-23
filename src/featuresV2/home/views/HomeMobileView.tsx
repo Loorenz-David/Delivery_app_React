@@ -1,6 +1,6 @@
 import { OrderPage } from "@/featuresV2/order/pages/OrderPage";
-import { PlanPage } from "@/featuresV2/plan/pages/PlanPage";
-import { SelectedPlanOrders } from "@/featuresV2/plan/utils/planSectionTypeMap";
+import { PlanPage } from "@/featuresV2/plan/pages/Plan.page";
+import { useSelectedPlanOrders } from "@/featuresV2/plan/hooks/useSelectedPlanOrders";
 import { useBaseControlls } from "@/shared/resource-manager/useResourceManager";
 import { SectionPanel } from "@/shared/section-panel/SectionPanel";
 import { SectionManagerHost } from "../components/SectionManagerHost";
@@ -10,7 +10,7 @@ export const HomeMobileView = () => {
 
     const baseControlls = useBaseControlls()
     const ordersPlanType = baseControlls.payload ? baseControlls.payload?.ordersPlanType ?? null : null
-    const SelectedOrdersPlanType = SelectedPlanOrders({ planType: ordersPlanType })
+    const SelectedOrdersPlanType = useSelectedPlanOrders(ordersPlanType)
     const windowWidth = window.innerWidth
     return ( 
         <div className="flex flex-1 relative min-w-0 overflow-hidden">

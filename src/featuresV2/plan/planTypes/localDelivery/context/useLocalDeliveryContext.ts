@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 
-import { LocalDeliveryContext } from './LocalDeliveryContext'
+import { LocalDeliveryContext } from './LocalDelivery.context'
 
 export const useLocalDeliveryContext = () => {
   const context = useContext(LocalDeliveryContext)

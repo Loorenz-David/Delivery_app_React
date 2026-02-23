@@ -2,13 +2,13 @@ import { useCallback, useState } from 'react'
 
 import { ApiError } from '@/lib/api/ApiClient'
 import { useMessageManager } from '@/message_manager'
-import { useLocalDeliveryOverview } from '@/featuresV2/plan/planTypes/localDelivery/hooks/overview/useLocalDeliveryOverview'
+import { useLocalDeliveryOverviewFlow } from '@/featuresV2/plan/planTypes/localDelivery/flows/localDeliveryOverview.flow'
 
 import { useUploadOrderCsv } from '../api/orderImport.api'
 
 export const useOrderImport = (planId?: number | null) => {
   const uploadOrderCsv = useUploadOrderCsv()
-  const { fetchLocalDeliveryOverview } = useLocalDeliveryOverview()
+  const { fetchLocalDeliveryOverview } = useLocalDeliveryOverviewFlow()
   const { showMessage } = useMessageManager()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
