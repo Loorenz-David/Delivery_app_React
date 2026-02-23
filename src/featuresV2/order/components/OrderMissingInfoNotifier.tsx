@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 
 import { ExclamationIcon, TriangleWarningIcon } from '@/assets/icons'
 import { useOrderValidation } from '@/featuresV2/order/domain/useOrderValidation'
-import { useOrderActions } from '@/featuresV2/order/hooks/useOrderActions'
+import { useOrderActions } from '@/featuresV2/order'
 import type { Order } from '@/featuresV2/order/types/order'
 import { FloatingPopover } from '@/shared/popups/FloatingPopover/FloatingPopover'
 

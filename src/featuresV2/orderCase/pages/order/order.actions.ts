@@ -6,7 +6,7 @@ import { selectOrderCaseByClientId,  useOrderCaseStore } from "../../store/order
 import { useCaseOrderController } from "../../controllers/order.controllers"
 import { apiClient } from "@/lib/api/ApiClient"
 import { useOrderCaseModel } from "../../domain/orderCase.model"
-import { useOrderForCase } from "@/featuresV2/order/hooks/useOrderCase"
+import { useOrderForCase } from "@/featuresV2/order"
 
 
 

@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import type { Order } from '@/featuresV2/order/types/order'
 import type { RouteSolutionStop } from '@/featuresV2/plan/planTypes/localDelivery/types/routeSolutionStop'
 import type { RouteSolution } from '@/featuresV2/plan/planTypes/localDelivery/types/routeSolution'
-import type { MapOrder } from '@/shared/map'
+import { MAP_MARKER_LAYERS, type MapOrder } from '@/shared/map'
 import { useMapManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 import type { BoundaryLocationMeta } from '@/featuresV2/plan/planTypes/localDelivery/domain/getLocalDeliveryBoundaryLocations'
 
@@ -81,13 +81,23 @@ export const useLocalDeliveryMapFlow = ({
 
     mapOrders.push(...orderMarkers)
 
-    mapManager.showOrders(mapOrders)
+    mapManager.setMarkerLayer(MAP_MARKER_LAYERS.localDelivery, mapOrders)
+    mapManager.setMarkerLayerVisibility(MAP_MARKER_LAYERS.localDelivery, true)
    
     if(selectedRouteSolution && selectedRouteSolution.route_polyline ){
       mapManager.showRoute( {path: selectedRouteSolution.route_polyline} )
+    } else {
+      mapManager.showRoute(null)
     }
 
   }, [boundaryLocations, mapManager, orders, selectedRouteSolution, stopByOrderId])
+
+  useEffect(() => {
+    return () => {
+      mapManager.clearMarkerLayer(MAP_MARKER_LAYERS.localDelivery)
+      mapManager.showRoute(null)
+    }
+  }, [mapManager])
 }
 
 

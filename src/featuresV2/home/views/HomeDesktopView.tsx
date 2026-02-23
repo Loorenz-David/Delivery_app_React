@@ -6,7 +6,8 @@ import { useSectionManager, useMapManager, usePopupManager } from '@/shared/reso
 import { ArchiveIcon, BellIcon, ChevronDownIcon, SettingIcon } from '@/assets/icons'
 
 import { PlanPage } from '@/featuresV2/plan/pages/Plan.page'
-import { OrderPage } from '@/featuresV2/order/pages/OrderPage'
+import { OrderPage } from '@/featuresV2/order/pages/order.page'
+import { OrderMapOverlay } from '@/featuresV2/order/components/OrderMapOverlay'
 import { useBaseControlls } from '@/shared/resource-manager/useResourceManager'
 import { planSectionsMap } from '@/featuresV2/plan/'
 
@@ -41,7 +42,7 @@ export function HomeDesktopView() {
     void initialize(mapContainerRef.current)
   }, [initialize])
 
-  const hanldeKeyDown = (event:KeyboardEvent)=>{
+  const handleKeyDown = (event:KeyboardEvent)=>{
     const isPopupOpen = popupManager.getOpenCount() > 0 
     
     if(event.key == 'p'){
@@ -50,16 +51,16 @@ export function HomeDesktopView() {
       layout.togglePlan()
     }
   }
-
+  
   useEffect(()=>{
 
     if(!isMobile){
-      window.addEventListener('keydown', hanldeKeyDown)
+      window.addEventListener('keydown', handleKeyDown)
     }
 
       return () => {
 
-          window.removeEventListener('keydown', hanldeKeyDown)
+          window.removeEventListener('keydown', handleKeyDown)
       }
   },[isMobile,baseControlls.isBaseOpen])
  
@@ -83,6 +84,7 @@ export function HomeDesktopView() {
             }}
           />
         }
+        mapOverlay={<OrderMapOverlay />}
         plan={
           <SectionPanel style={{ width: layout.planWidth}}
             parentParams={{ borderLeft: '#8a8a8a5b' }}

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef } from 'react'
 
 import { useMessageManager } from '@/message_manager'
 
-import { useOrderImport } from '../hooks/useOrderImport'
+import { useOrderImport } from '../controllers/orderImport.controller'
 
 export type OrderImportControls = {
   triggerFileInput: () => void

@@ -19,7 +19,7 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transform: translateY(-50%);
   white-space: nowrap;
-  transition: scale ease 0.15s;
+  transition: transform ease 0.15s, filter ease 0.15s, box-shadow ease 0.15s;
   z-index:2;
 }
 .map-marker::after {
@@ -50,19 +50,19 @@
   border-top: 7px solid transparent;
 }
 
-.map-marker--selected::after {
+.map-marker--selected-default::after {
   border-top-color: #eff6ff;
 }
-.map-marker--selected::before {
+.map-marker--selected-default::before {
   border-top-color: #1d4ed8; /* same as square border */
 }
 
-.map-marker:hover{
+.map-marker--variant-default:hover{
   cursor:pointer;
-  scale:1.1;
+  transform: translateY(-50%) scale(1.1);
 }
 
-.map-marker--selected {
+.map-marker--selected-default {
   border: 0.5px solid #1d4ed8;      
   background: #eff6ff;        
   color:#1d4ed8;
@@ -80,4 +80,77 @@
   background:#008b92;
   color:#00f2ff;
 
+}
+
+
+.order-marker {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  background: #253ad9;
+  border-radius: 50% 50% 50% 0;
+
+  transform: rotate(-45deg);
+  transform-origin: 50% 50%;
+  margin-top: -24px; /* anchors bottom tip to map point */
+
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  border: 1px solid #ffffff;
+}
+
+.map-marker--variant-order::before {
+  content: none;
+}
+
+.map-marker--variant-order::after {
+  border: 0;
+}
+
+.order-marker::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border-radius: 50%;
+
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.map-marker--variant-order:hover {
+  cursor: pointer;
+  filter: brightness(1.05);
+}
+
+.map-marker--selected-order {
+   outline: 2px solid rgba(59, 130, 246, 0.4);
+  background:#ffffff;
+  outline-offset: 1px;
+   filter: brightness(1.08);
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 6px rgba(37, 58, 217, 0.35), 0 3px 10px rgba(0, 0, 0, 0.28);
+}
+.map-marker--selected-order::after{
+  background: #253ad9;   /* new inner color */
+  width: 12px;          /* optional: bigger */
+  height: 12px;         /* optional: bigger */
+}
+
+
+.map-marker--multi-selected {
+  outline: 2px solid rgba(59, 130, 246, 0.4);
+  background:#ffffff;
+  outline-offset: 1px;
+}
+.map-marker--variant-order.map-marker--multi-selected::after {
+  background: #253ad9;   /* new inner color */
+  width: 12px;          /* optional: bigger */
+  height: 12px;         /* optional: bigger */
+}
+
+
+.map-marker--variant-order.map-marker--multi-selected {
+  filter: brightness(1.08);
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 6px rgba(37, 58, 217, 0.35), 0 3px 10px rgba(0, 0, 0, 0.28);
 }

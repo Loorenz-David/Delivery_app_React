@@ -1,15 +1,20 @@
 import type { StackComponentProps } from '@/shared/stack-manager/types'
 
-import { OrderProvider } from '../../context/OrderProvider'
-import type { OrderFormPayload } from './OrderForm.types'
+import { OrderFormFeature } from '@/featuresV2/order/forms/orderForm/OrderForm'
+import { useOrderForm } from '@/featuresV2/order/forms/orderForm/OrderForm.context'
+import type { OrderFormPayload } from '@/featuresV2/order/forms/orderForm/OrderForm.types'
 
-import { OrderFormLayout } from './OrderForm.layout'
-import { OrderFormProvider } from './OrderForm.provider'
+import { useOrderFormPopupConfig } from './OrderFormPopupConfig.hook'
+
+const OrderFormPopupConfigBridge = () => {
+  const { formState, meta } = useOrderForm()
+  const { mode, initialFormRef } = meta
+  useOrderFormPopupConfig({ mode, formState, initialFormRef })
+  return null
+}
 
 export const OrderForm = ({ payload }: StackComponentProps<OrderFormPayload>) => (
-  <OrderProvider>
-    <OrderFormProvider payload={payload}>
-      <OrderFormLayout />
-    </OrderFormProvider>
-  </OrderProvider>
+  <OrderFormFeature payload={payload}>
+    <OrderFormPopupConfigBridge />
+  </OrderFormFeature>
 )

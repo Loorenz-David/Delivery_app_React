@@ -16,6 +16,11 @@ export type MapConfig = {
 export type MapBridge = {
   initialize: (container: HTMLElement | null, options?: MapConfig) => Promise<void>
   showOrders: (orders: MapOrder[]) => void
+  setMarkerLayer: (layerId: string, orders: MapOrder[]) => void
+  setMarkerLayerVisibility: (layerId: string, visible: boolean) => void
+  clearMarkerLayer: (layerId: string) => void
+  enableCircleSelection: (callback: (ids: string[]) => void) => void
+  disableCircleSelection: () => void
   showRoute: (route: Route | null) => void
   selectOrder: (id: number | string ) => void
   resize: ()=>void
@@ -24,6 +29,11 @@ export type MapBridge = {
 export interface MapAdapter {
   initialize: (container: HTMLElement, options?: MapConfig) => Promise<void>
   setMarkers: (orders: MapOrder[]) => void
+  setLayerMarkers: (layerId: string, orders: MapOrder[]) => void
+  setLayerVisibility: (layerId: string, visible: boolean) => void
+  clearLayer: (layerId: string) => void
+  enableCircleSelection: (callback: (ids: string[]) => void) => void
+  disableCircleSelection: () => void
   clearMarkers: () => void
   drawRoute: (route: Route | null) => void
   fitBounds: (points?: Coordinates[]) => void

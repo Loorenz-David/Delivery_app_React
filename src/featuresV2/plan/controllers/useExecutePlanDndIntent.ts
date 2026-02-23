@@ -1,4 +1,4 @@
-import { useOrderMutations } from '@/featuresV2/order/hooks/useOrderMutations'
+import { useOrderMutations } from '@/featuresV2/order'
 import { useRouteSolutionStopMutations } from '@/featuresV2/plan/planTypes/localDelivery/controllers/routeSolutionStop.controller'
 import { selectPlanByClientId, usePlanStore } from '@/featuresV2/plan/store/plan.slice'
 import type { PlanDndIntent } from '@/featuresV2/plan/domain/planDndIntent'

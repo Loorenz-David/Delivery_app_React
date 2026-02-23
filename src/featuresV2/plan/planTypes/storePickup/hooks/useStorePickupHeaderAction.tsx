@@ -1,6 +1,6 @@
 import { PlusIcon } from '@/assets/icons'
 import { BasicButton } from '@/shared/buttons/BasicButton'
-import { useOrderActions } from '@/featuresV2/order/hooks/useOrderActions'
+import { useOrderActions } from '@/featuresV2/order'
 import { usePopupManager } from '@/shared/resource-manager/useResourceManager'
 
 type Props = {

@@ -7,7 +7,7 @@ import { DimensionsIcon, ItemIcon, OrderIcon, StatsIcon, WeightIcon } from '@/as
 import { formatMetric } from '@/shared/utils/formatMetrics'
 import { coerceUtcFromOffset } from '@/shared/data-validation/timeValidation'
 import { formatRouteTime } from '@/featuresV2/plan/planTypes/localDelivery/utils/formatRouteTime'
-import { useOrdersByPlanId } from '@/featuresV2/order/hooks/useOrderSelectors'
+import { useOrdersByPlanId } from '@/featuresV2/order/store/orderHooks.store'
 import { usePlanByServerId } from '@/featuresV2/plan/store/usePlan.selector'
 import { useLocalDeliveryPlanByPlanId, useLocalDeliveryPlanByServerId } from '@/featuresV2/plan/planTypes/localDelivery/store/useLocalDeliveryPlan.selector'
 import { useSelectedRouteSolutionByLocalDeliveryPlanId } from '@/featuresV2/plan/planTypes/localDelivery/store/useRouteSolution.selector'

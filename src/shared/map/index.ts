@@ -1,6 +1,7 @@
 export type { Coordinates, MapConfig, MapAdapter, MapBridge } from './domain/types'
 export type { MapOrder, MapOrderStatus } from './domain/entities/MapOrder'
 export type { Route } from './domain/entities/Route'
+export { MAP_MARKER_LAYERS } from './domain/constants/markerLayers'
 export { MapController } from './domain/services/MapController'
 export { GoogleMapAdapter } from './infrastructure/GoogleMapAdapter'
 export { useMap } from './hooks/useMap'

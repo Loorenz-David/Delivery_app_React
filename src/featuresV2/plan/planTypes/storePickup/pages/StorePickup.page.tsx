@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 
 import { OrderList } from '@/featuresV2/order/components/OrderList'
-import { useOrdersByPlanId } from '@/featuresV2/order/hooks/useOrderSelectors'
+import { useOrdersByPlanId } from '@/featuresV2/order/store/orderHooks.store'
 import { usePlanOrders } from '@/featuresV2/plan/hooks/usePlanOrders'
 import { useStorePickupHeaderAction } from '@/featuresV2/plan/planTypes/storePickup/hooks/useStorePickupHeaderAction'
 import { usePlanByServerId } from '@/featuresV2/plan/store/usePlan.selector'
 import { StorePickupMainHeader } from '@/featuresV2/plan/planTypes/storePickup/components/pageHeaders/storePickupMainHeader'
-import { useOrderActions } from '@/featuresV2/order/hooks/useOrderActions'
+import { useOrderActions } from '@/featuresV2/order'
 import type { Order } from '@/featuresV2/order/types/order'
 
 type PlanOrdersPagePayload = {

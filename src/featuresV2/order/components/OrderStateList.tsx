@@ -2,8 +2,8 @@ import { useMemo } from 'react'
 
 import { CheckMarkIcon } from '@/assets/icons'
 
-import { useOrderStateController } from '../hooks/useOrderStateController'
-import { useOrderStates } from '../hooks/orderStates/useOrderStateSelectors'
+import { useOrderStateController } from '../controllers/orderState.controller'
+import { useOrderStates } from '../store/orderStateHooks.store'
 import type { Order } from '../types/order'
 
 type OrderStateListProps = {

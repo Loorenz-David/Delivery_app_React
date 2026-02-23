@@ -3,11 +3,11 @@ import type { Order } from '@/featuresV2/order/types/order'
 import { ItemIcon, TimeIcon } from '@/assets/icons'
 import { StateCard } from '@/shared/layout/StateCard'
 import { useSectionManager, useMapManager } from '@/shared/resource-manager/useResourceManager'
-import { useOrderStateByServerId } from '@/featuresV2/order/hooks/orderStates/useOrderStateSelectors'
+import { useOrderStateByServerId } from '@/featuresV2/order/store/orderStateHooks.store'
 import type { RouteSolutionStop } from '@/featuresV2/plan/planTypes/localDelivery/types/routeSolutionStop'
 import { RouteStopWarnings } from '../RouteStopWarnings'
 import { formatRouteTime } from '@/featuresV2/plan/planTypes/localDelivery/utils/formatRouteTime'
-import { useOrderActions } from '@/featuresV2/order/hooks/useOrderActions'
+import { useOrderActions } from '@/featuresV2/order'
 
 type LocalDeliveryOrderCardProps = {
     order: Order;

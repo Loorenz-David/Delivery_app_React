@@ -1,4 +1,4 @@
-import { useOrderStateByServerId } from '@/featuresV2/order/hooks/orderStates/useOrderStateSelectors'
+import { useOrderStateByServerId } from '@/featuresV2/order/store/orderStateHooks.store'
 import { ArchiveOrderIcon, DeleteIcon, ItemIcon, SendBackIcon } from '@/assets/icons'
 
 import type { Order } from '../types/order'

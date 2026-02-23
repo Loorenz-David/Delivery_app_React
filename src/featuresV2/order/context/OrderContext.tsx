@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 
 
 import type { Order } from '../types/order'
-import type { useOrderActions } from '../hooks/useOrderActions'
+import type { useOrderActions } from '../actions/order.actions'
 import type { OrderQueryFilters } from '../types/orderMeta'
 
 export type OrderContextValue = {

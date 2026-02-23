@@ -1,5 +1,5 @@
 
-import { useOrderActions } from '@/featuresV2/order/hooks/useOrderActions'
+import { useOrderActions } from '@/featuresV2/order'
 import { useDownloadTemplateByEventFlow } from '@/featuresV2/templates/printDocument/flows'
 import { serializeRouteSolutionForTemplate } from '@/featuresV2/plan/planTypes/localDelivery/domain/serializeRouteSolutionForTemplate'
 import { usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'

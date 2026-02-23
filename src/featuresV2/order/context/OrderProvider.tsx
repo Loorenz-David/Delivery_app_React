@@ -1,19 +1,32 @@
 import type { PropsWithChildren } from 'react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
-import {  useVisibleOrders } from '../store/orderStore'
+import {  useVisibleOrders } from '../store/orderHooks.store'
 import { OrderContextProvider } from './OrderContext'
-import { useOrderFlow } from '../hooks/useOrderFlow'
-import { useOrderActions } from '../hooks/useOrderActions'
-import {   useOrderQuery } from "../store/orderQueryStore";
+import { useOrderFlow } from '../flows/order.flow'
+import { useOrderActions } from '../actions/order.actions'
+import {   useOrderQuery } from "../store/orderQuery.store";
+import { useOrderMapMarkersFlow } from '../flows/orderMapMarkers.flow'
+import { useBaseControlls } from '@/shared/resource-manager/useResourceManager'
+import { useOrderCircleSelectionFlow } from '../flows/orderCircleSelection.flow'
 
 export const OrderProvider = ({ children }: PropsWithChildren) => {
   const orders = useVisibleOrders()
   const orderActions = useOrderActions()
+  const baseControlls = useBaseControlls()
   const query = useOrderQuery()
   const fistLoad = useRef(true)
 
   const { loadOrders } = useOrderFlow()
+  
+
+  useOrderMapMarkersFlow({
+    orders,
+    onMarkerClick: orderActions.handleOrderMarkerClick,
+    markerClassName: 'order-marker',
+    visible: !baseControlls.isBaseOpen,
+  })
+  useOrderCircleSelectionFlow()
 
   useEffect(() => {
     if (fistLoad.current) {

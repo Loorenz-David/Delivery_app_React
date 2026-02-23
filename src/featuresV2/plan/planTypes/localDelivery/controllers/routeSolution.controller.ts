@@ -23,7 +23,7 @@ import {
   upsertRouteSolutionStop,
   upsertRouteSolutionStops,
 } from '@/featuresV2/plan/planTypes/localDelivery/store/routeSolutionStop.store'
-import { useOrderStateBatch } from '@/featuresV2/order/hooks/orderStates/useOrderStateBatch'
+import { useOrderStateBatch } from '@/featuresV2/order/controllers/orderStateBatch.controller'
 import { usePlanStateChanges } from '@/featuresV2/plan/controllers/planState.controller'
 
 const resolveError = (error: unknown, fallback: string) => ({

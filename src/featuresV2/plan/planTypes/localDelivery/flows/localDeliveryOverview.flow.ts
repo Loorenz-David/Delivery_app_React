@@ -5,8 +5,8 @@ import { useMessageManager } from '@/message_manager'
 
 import { planOverviewApi } from '@/featuresV2/plan/planTypes/localDelivery/api/planOverview.api'
 import type { LocalDeliveryOverviewResponse } from '@/featuresV2/plan/planTypes/localDelivery/api/planOverview.api'
-import { upsertOrders } from '@/featuresV2/order/store/orderStore'
-import { setOrderListError } from '@/featuresV2/order/store/orderListStore'
+import { upsertOrders } from '@/featuresV2/order/store/order.store'
+import { setOrderListError } from '@/featuresV2/order/store/orderList.store'
 import {
   setSelectedRouteSolution,
   upsertRouteSolutions,

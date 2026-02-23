@@ -1,4 +1,4 @@
-import { OrderPage } from "@/featuresV2/order/pages/OrderPage";
+import { OrderPage } from "@/featuresV2/order/pages/order.page";
 import { PlanPage } from "@/featuresV2/plan/pages/Plan.page";
 import { useSelectedPlanOrders } from "@/featuresV2/plan/hooks/useSelectedPlanOrders";
 import { useBaseControlls } from "@/shared/resource-manager/useResourceManager";

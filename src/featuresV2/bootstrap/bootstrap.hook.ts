@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 
 import { useMessageManager } from '@/message_manager'
 import { ApiError } from '@/lib/api/ApiClient'
-import { insertOrderStates } from '@/featuresV2/order/store/orderStateStore'
+import { insertOrderStates } from '@/featuresV2/order/store/orderState.store'
 import { insertTeamMembers } from '@/featuresV2/team/members/store/teamMemberStore'
 
 import { bootstrapApi } from './bootstrp.api'

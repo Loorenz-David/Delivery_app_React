@@ -115,7 +115,7 @@ export interface GoogleMapsPlacesLibrary {
 
 export type PlacesLibraryImport = GoogleMapsPlacesLibrary
 
-export type ImportLibraryName = 'core' | 'maps' | 'marker' | 'places'
+export type ImportLibraryName = 'core' | 'maps' | 'marker' | 'places' | 'drawing'
 
 export type ImportLibraryFn = (name: ImportLibraryName) => Promise<any>
 

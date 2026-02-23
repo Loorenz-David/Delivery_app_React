@@ -14,6 +14,8 @@ export type PopupPayload = {
     clientId?: string
     serverId?: number
     mode: PlanFormMode
+    selectedOrderServerIds?: number[]
+    source?: 'order_multi_select'
 }
 
 export type PlanTypeState =

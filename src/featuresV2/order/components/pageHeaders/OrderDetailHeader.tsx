@@ -5,7 +5,7 @@ import type { Order } from '../../types/order'
 import { DropdownButton } from '@/shared/buttons/DropdownButton'
 import { OrderStateList } from '../OrderStateList'
 import { useOrderStateRegistry } from '../../domain/useOrderStateRegistry'
-import { useOrderStateController } from '../../hooks/useOrderStateController'
+import { useOrderStateController } from '../../controllers/orderState.controller'
 import { CounterBadge } from '@/shared/layout/CounterBadge'
 
 type OrderDetailHeaderProps = {

@@ -17,7 +17,7 @@ import {
   selectRouteSolutionStopsBySolutionId,
 } from '@/featuresV2/plan/planTypes/localDelivery/store/routeSolutionStop.store'
 
-import { useOrderStore, selectOrderByServerId } from '@/featuresV2/order/store/orderStore'
+import { useOrderStore, selectOrderByServerId } from '@/featuresV2/order/store/order.store'
 
 import { useItemStore, selectItemsByOrderId } from '@/featuresV2/order/item/store/item.store'
 

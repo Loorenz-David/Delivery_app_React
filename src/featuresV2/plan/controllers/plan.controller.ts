@@ -124,9 +124,12 @@ export function usePlanController() {
 
 
   const createPlan = useCallback(
-    async (payload: DeliveryPlanFields) => {
+    async (payload: DeliveryPlanFields, options?: { newOrderLinks?: number[] }) => {
     
       const planTypeKey = payload.plan_type
+      const sanitizedNewOrderLinks = Array.isArray(options?.newOrderLinks)
+        ? options.newOrderLinks.filter((id) => Number.isFinite(id))
+        : []
 
       const planClientId = payload.client_id || buildClientId('delivery_plan')
       const planTypeClientId =  buildClientId( planTypeKey )
@@ -146,7 +149,10 @@ export function usePlanController() {
 
         const planPayloadApi = {
           ...normalizedPlanFields,
-          [planTypeKey]: {client_id:planTypeClientId}
+          [planTypeKey]: {client_id:planTypeClientId},
+          ...(sanitizedNewOrderLinks.length > 0
+            ? { order_ids: sanitizedNewOrderLinks }
+            : {}),
         }
 
         const response = await planApi.createPlan( planPayloadApi )

@@ -1,6 +1,7 @@
 import type { MapAdapter, MapConfig } from '../types'
 import type { MapOrder } from '../entities/MapOrder'
 import type { Route } from '../entities/Route'
+import { MAP_MARKER_LAYERS } from '../constants/markerLayers'
 
 export class MapController {
   private adapter: MapAdapter
@@ -18,7 +19,27 @@ export class MapController {
     this.adapter.selectMarker(String(id))
   }
   showOrders(orders: MapOrder[]) {
-    this.adapter.setMarkers(orders)
+    this.adapter.setLayerMarkers(MAP_MARKER_LAYERS.default, orders)
+  }
+
+  setMarkerLayer(layerId: string, orders: MapOrder[]) {
+    this.adapter.setLayerMarkers(layerId, orders)
+  }
+
+  setMarkerLayerVisibility(layerId: string, visible: boolean) {
+    this.adapter.setLayerVisibility(layerId, visible)
+  }
+
+  clearMarkerLayer(layerId: string) {
+    this.adapter.clearLayer(layerId)
+  }
+
+  enableCircleSelection(callback: (ids: string[]) => void) {
+    this.adapter.enableCircleSelection(callback)
+  }
+
+  disableCircleSelection() {
+    this.adapter.disableCircleSelection()
   }
 
   showRoute(route: Route | null) {

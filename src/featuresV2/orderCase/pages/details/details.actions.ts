@@ -3,7 +3,7 @@ import { useSectionManager } from '@/shared/resource-manager/useResourceManager'
 import type { OrderCaseState } from "../../types"
 
 import { useOrderCaseByClientId } from "../../store/orderCaseStore"
-import { useOrderForCase } from "@/featuresV2/order/hooks/useOrderCase"
+import { useOrderForCase } from "@/featuresV2/order"
 import { useDetailsControllers } from "../../controllers/details.controllers"
 
 export const useDetailsActions = (orderCaseClientId:string) =>{

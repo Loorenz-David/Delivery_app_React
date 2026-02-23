@@ -21,7 +21,7 @@ export const SectionHeader = ({title, icon, buttons, actions, closeButton, DotMe
         return () => {
             setHeader(null);
         }
-    }, [title, icon, buttons, actions, setHeader]);
+    }, []);
 
     return null
 }

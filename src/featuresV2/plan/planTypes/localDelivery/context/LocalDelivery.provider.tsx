@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { useEffect, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 
-import { useOrdersByPlanId } from '@/featuresV2/order/hooks/useOrderSelectors'
+import { useOrdersByPlanId } from '@/featuresV2/order/store/orderHooks.store'
 import { usePlanByServerId } from '@/featuresV2/plan/store/usePlan.selector'
 import { useLocalDeliveryPlanByPlanId } from '@/featuresV2/plan/planTypes/localDelivery/store/useLocalDeliveryPlan.selector'
 import { useSelectedRouteSolutionByLocalDeliveryPlanId } from '@/featuresV2/plan/planTypes/localDelivery/store/useRouteSolution.selector'
@@ -75,7 +75,7 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
     fetchLocalDeliveryOverview(planId)
   }, [fetchLocalDeliveryOverview, planId])
 
-  const hanldeKeyDown = (event:KeyboardEvent)=>{
+  const handleKeyDown = (event:KeyboardEvent)=>{
     if(event.key == 'Escape') {
       if(isPopupOpen || areSectionsOpen ) return
       baseControlls.closeBase()
@@ -86,12 +86,12 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
   useEffect(()=>{
 
     if(!isMobile){
-      window.addEventListener('keydown', hanldeKeyDown)
+      window.addEventListener('keydown', handleKeyDown)
     }
 
       return () => {
 
-          window.removeEventListener('keydown', hanldeKeyDown)
+          window.removeEventListener('keydown', handleKeyDown)
       }
   },[isMobile, isPopupOpen, areSectionsOpen])
   

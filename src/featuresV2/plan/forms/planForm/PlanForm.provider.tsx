@@ -37,12 +37,16 @@ export const PlanFormProvider = ({ children }:PlanFormProvider) => {
     const {
         hasPlan,
         mode,
+        source,
         planData,
+        selectedOrderServerIds,
     } = usePlanFormContextData()
  
      const planActions = usePlanFormActions({
         planForm,
         planValidateForm,
+        source,
+        selectedOrderServerIds,
     })
 
     useEffect(()=>{

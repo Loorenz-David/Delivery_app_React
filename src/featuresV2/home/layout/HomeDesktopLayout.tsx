@@ -4,6 +4,7 @@ import {motion, AnimatePresence} from 'framer-motion'
 
 interface HomeDesktopLayoutProps {
   map: ReactNode
+  mapOverlay?: ReactNode
   plan?: ReactNode
   base: ReactNode
   overlay: ReactNode
@@ -15,6 +16,7 @@ interface HomeDesktopLayoutProps {
 
 export function HomeDesktopLayout({
   map,
+  mapOverlay,
   mapResize,
   plan,
   base,
@@ -31,18 +33,22 @@ export function HomeDesktopLayout({
 
       <main className="flex flex-1 overflow-hidden relative justify-end">
         {/* Map */}
-
-        {map}
+        <div className="absolute inset-0 z-0">
+          <div className="relative w-full h-full">
+            {map}
+            {mapOverlay}
+          </div>
+        </div>
 
 
         
 
         {/* Delivery plan */}
-        <div className="relative h-full  "> 
+        <div className="relative z-10 h-full"> 
           <AnimatePresence mode="popLayout">
             {!isPlanVisible &&
                 (
-                  <motion.div className="absolute z-1 flex top-0 -left-8  items-center justify-center"
+                  <motion.div className="absolute left-[-32px] top-0 z-10 flex items-center justify-center"
                     layout
                     initial={{x:100}}
                     animate={{x:0}}
@@ -59,7 +65,7 @@ export function HomeDesktopLayout({
             {isPlanVisible && (
               <motion.div
                 layout
-                className="h-full z-1"
+                className="z-10 h-full"
                 initial={{ x: 450 }}
                 animate={{ x: 0 }}
                 exit={{ x: 450 }}
@@ -75,11 +81,11 @@ export function HomeDesktopLayout({
         </div>
 
         {/* Overlay  sections */}
-        <div className="h-full relative z-2">{overlay}</div>
+        <div className="relative z-20 h-full">{overlay}</div>
 
         {/* Orders without plan (base layer) */}
         
-          <div className="relative h-full z-3">
+          <div className="relative z-30 h-full">
             {base}
             
             {/* Plan toggle button */}
@@ -87,7 +93,7 @@ export function HomeDesktopLayout({
             {/* Overlay sections */}
             <AnimatePresence mode="popLayout">
               {orderOverlay && (
-                <motion.div className="absolute inset-1  z-10 w-full h-full"
+                <motion.div className="absolute inset-1 z-40 h-full w-full"
                   layout
                   key={orderOverlay ? 'with-order' : 'without-order'}
                   initial={{ x: 450}}

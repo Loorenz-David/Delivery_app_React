@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import { useOrderStates } from '../hooks/orderStates/useOrderStateSelectors'
+import { useOrderStates } from '../store/orderStateHooks.store'
 
 
 import type { OrderState, OrderStates } from '../types/orderState'

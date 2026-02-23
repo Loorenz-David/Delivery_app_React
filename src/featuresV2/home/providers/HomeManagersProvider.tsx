@@ -80,7 +80,7 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
     useStackActionEntries(popupManager)
     useStackActionEntries(sectionManager)
 
-    const hanldeKeyDown = (event:KeyboardEvent)=>{
+    const handleKeyDown = (event:KeyboardEvent)=>{
 
         if(popupManager.getOpenCount() > 0 ) return
 
@@ -89,10 +89,10 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
 
     useEffect(()=>{
         if(!isMobile){
-            window.addEventListener('keydown', hanldeKeyDown)
+            window.addEventListener('keydown', handleKeyDown)
         }
         return () => {
-            window.removeEventListener('keydown', hanldeKeyDown)
+            window.removeEventListener('keydown', handleKeyDown)
         }
     },[isMobile])
 

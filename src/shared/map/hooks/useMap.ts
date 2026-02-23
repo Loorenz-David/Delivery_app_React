@@ -52,6 +52,38 @@ export const useMap = (options?: MapConfig): MapBridge => {
     [controller],
   )
 
+  const setMarkerLayer = useCallback(
+    (layerId: string, orders: MapOrder[]) => {
+      controller.setMarkerLayer(layerId, orders)
+    },
+    [controller],
+  )
+
+  const setMarkerLayerVisibility = useCallback(
+    (layerId: string, visible: boolean) => {
+      controller.setMarkerLayerVisibility(layerId, visible)
+    },
+    [controller],
+  )
+
+  const clearMarkerLayer = useCallback(
+    (layerId: string) => {
+      controller.clearMarkerLayer(layerId)
+    },
+    [controller],
+  )
+
+  const enableCircleSelection = useCallback(
+    (callback: (ids: string[]) => void) => {
+      controller.enableCircleSelection(callback)
+    },
+    [controller],
+  )
+
+  const disableCircleSelection = useCallback(() => {
+    controller.disableCircleSelection()
+  }, [controller])
+
   const showRoute = useCallback(
     (route: Route | null) => {
       controller.showRoute(route)
@@ -96,10 +128,15 @@ export const useMap = (options?: MapConfig): MapBridge => {
     () => ({
       initialize,
       showOrders,
+      setMarkerLayer,
+      setMarkerLayerVisibility,
+      clearMarkerLayer,
+      enableCircleSelection,
+      disableCircleSelection,
       showRoute,
       selectOrder,
       resize
     }),
-    [initialize, showOrders, showRoute,resize],
+    [clearMarkerLayer, disableCircleSelection, enableCircleSelection, initialize, resize, selectOrder, setMarkerLayer, setMarkerLayerVisibility, showOrders, showRoute],
   )
 }

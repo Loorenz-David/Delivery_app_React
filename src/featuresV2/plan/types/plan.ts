@@ -80,7 +80,10 @@ export type PlanTypeStoreFields = {
   store_pickup_plan?: StorePickupPlanInput
 }
 
-export type PlanCreatePayload = DeliveryPlanFields & Partial<PlanTypeFields & PlanTypeStoreFields>
+export type PlanCreatePayload = DeliveryPlanFields &
+  Partial<PlanTypeFields & PlanTypeStoreFields> & {
+    order_ids?: number[]
+  }
 
 export type PlanUpdateFields = Partial<PlanCreatePayload>
 
