@@ -4,25 +4,21 @@ import type { RefObject } from 'react'
 
 import { hasFormChanges } from '@/shared/data-validation/compareChanges'
 
-import type { DeliveryPlan } from '../types/plan'
+import type { DeliveryPlan } from '../../types/plan'
 import type { PlanWarningsControllers, PlanTypeState } from './PlanForm.types'
 
 type Props = {
     registerCloseGuard: ( fn:()=>boolean )=> void
     planFormWarnings: PlanWarningsControllers
     planForm: DeliveryPlan
-    planTypeForm: PlanTypeState  | null
     initialPlanFormRef: RefObject<DeliveryPlan | null>
-    initialPlanTypeFormRef: RefObject<PlanTypeState | null>
 }
 
 export const usePlanFormValidation = ({
     registerCloseGuard,
     planFormWarnings,
     planForm,
-    planTypeForm,
     initialPlanFormRef,
-    initialPlanTypeFormRef
 }:Props)=>{
 
     const planValidateForm = ()=>{
@@ -39,7 +35,6 @@ export const usePlanFormValidation = ({
     const setCloseGuards = () =>{
         const val =  (
             !hasFormChanges( planForm, initialPlanFormRef) 
-            && !hasFormChanges( planTypeForm, initialPlanTypeFormRef) 
         )
        
         return val
@@ -49,7 +44,7 @@ export const usePlanFormValidation = ({
 
         const unregister = registerCloseGuard( setCloseGuards )
         return unregister
-    },[planForm, planTypeForm ])
+    },[planForm ])
 
 
     return {

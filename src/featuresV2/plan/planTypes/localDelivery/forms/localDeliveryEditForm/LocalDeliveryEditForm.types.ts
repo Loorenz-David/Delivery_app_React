@@ -1,8 +1,8 @@
-import type { ChangeEvent } from 'react'
 import type { address } from '@/types/address'
 
 import { useLocalDeliveryEditFormWarnings } from './LocalDeliveryEditForm.warnings'
-import { useLocalDeliveryEditFormSubmitters } from './LocalDeliveryEditFormSubmit.hook'
+import { useLocalDeliveryEditFormActions } from './localDeliveryEditForm.actions'
+import type { useLocalDeliveryEditFormSetters } from './localDeliveryEditForm.setters'
 
 export type PopupPayload = {
   localDeliveryPlanId?: number
@@ -26,7 +26,7 @@ export type LocalDeliveryEditFormState = {
     end_location: address | null
     set_start_time: string | null
     set_end_time: string | null
-    route_end_strategy: string
+    route_end_strategy: 'round_trip' | 'custom_end_address' | 'end_at_last_stop'
     driver_id: number | null
     created_at?: string | null
     is_optimized?: string | null
@@ -36,20 +36,12 @@ export type LocalDeliveryEditFormState = {
 
 export type LocalDeliveryEditFormWarnings = ReturnType<typeof useLocalDeliveryEditFormWarnings>
 
-export type LocalDeliveryEditFormSubmitters = ReturnType<typeof useLocalDeliveryEditFormSubmitters>
+export type LocalDeliveryEditFormActions = ReturnType<typeof useLocalDeliveryEditFormActions>
 
 export type PropsLocalDeliveryEditFormContext = {
   formState: LocalDeliveryEditFormState
   formWarnings: LocalDeliveryEditFormWarnings
   hasMultipleVariants: boolean
-  handlePlanLabel: (event: ChangeEvent<HTMLInputElement>) => void
-  handlePlanStartDate: (value: string | null) => void
-  handlePlanEndDate: (value: string | null) => void
-  handleRouteStartTime: (value: string | null) => void
-  handleRouteEndTime: (value: string | null) => void
-  handleRouteStartLocation: (value: address | null) => void
-  handleRouteEndLocation: (value: address | null) => void
-  handleRouteEndStrategy: (value: string | number) => void
-  handleDriverSelection: (value: number | null) => void
-  handleCreateVariantToggle: (value: boolean) => void
-} & LocalDeliveryEditFormSubmitters
+  formSetters: ReturnType<typeof useLocalDeliveryEditFormSetters>
+  actions: LocalDeliveryEditFormActions
+}

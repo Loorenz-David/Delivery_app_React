@@ -1,13 +1,8 @@
-import { PlanFormLayout } from './PlanForm.layout'
-import { PlanFormProvider } from './PlanForm.provider'
+import { PlanFormFeature } from '@/featuresV2/plan/forms/planForm/PlanForm'
+import { usePlanFormPopupConfig } from './planFormPopupConfig.hook'
 
+export const PlanForm = () => {
+  usePlanFormPopupConfig()
 
-
-export const PlanForm = ({}) => {
-    
-    return ( 
-        <PlanFormProvider >
-            <PlanFormLayout/>
-        </PlanFormProvider>
-    );
+  return <PlanFormFeature />
 }

@@ -25,6 +25,7 @@ export type LocalDeliveryPlanSettingsPayload = {
     end_location?: address | null
     set_start_time?: string | null
     set_end_time?: string | null
+    route_end_strategy?: 'round_trip' | 'custom_end_address' | 'end_at_last_stop'
     driver_id?: number | null
   }
   create_variant_on_save?: boolean

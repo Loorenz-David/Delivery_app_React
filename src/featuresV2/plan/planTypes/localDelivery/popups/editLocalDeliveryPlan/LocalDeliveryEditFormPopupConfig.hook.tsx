@@ -1,14 +1,20 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import { ThunderIcon } from '@/assets/icons'
 import { usePopupContext } from '@/shared/popups/MainPopup/PopupContext'
+import { useLocalDeliveryEditFormContextData } from '@/featuresV2/plan/planTypes/localDelivery/forms/localDeliveryEditForm/LocalDeliveryEditFormContextData'
 
-type PropsPopupConfig = {
-  selectedVariantLabel: string | null
-  optimizationDate: string | null
-}
-
-export const useLocalDeliveryEditFormPopupConfig = ({selectedVariantLabel, optimizationDate}:PropsPopupConfig) => {
+export const useLocalDeliveryEditFormPopupConfig = () => {
+  const { selectedRouteSolution } = useLocalDeliveryEditFormContextData()
+  const selectedVariantLabel = useMemo(() => {
+    if (selectedRouteSolution?.label) return selectedRouteSolution.label
+    if (selectedRouteSolution?.id) return `Variant ${selectedRouteSolution.id}`
+    return null
+  }, [selectedRouteSolution?.id, selectedRouteSolution?.label])
+  const optimizationDate = useMemo(() => {
+    if (!isOptimized(selectedRouteSolution?.is_optimized)) return null
+    return formatOptimizationDate(selectedRouteSolution?.created_at)
+  }, [selectedRouteSolution?.created_at, selectedRouteSolution?.is_optimized])
 
   const { setPopupHeader } = usePopupContext()
 
@@ -28,5 +34,19 @@ export const useLocalDeliveryEditFormPopupConfig = ({selectedVariantLabel, optim
       description,
       icon: <ThunderIcon className="h-5 w-5 text-blue-500" />,
     })
-  }, [selectedVariantLabel, setPopupHeader])
+  }, [optimizationDate, selectedVariantLabel, setPopupHeader])
+}
+
+const isOptimized = (value?: string | null) =>
+  value === 'optimize' || value === 'partial optimize'
+
+const formatOptimizationDate = (value?: string | null) => {
+  if (!value) return null
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }

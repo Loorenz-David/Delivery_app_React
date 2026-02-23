@@ -5,12 +5,13 @@ import { useMessageManager } from '@/message_manager'
 
 import {
   localDeliveryPlanSettingsApi,
-  type LocalDeliveryPlanSettingsPayload,
 } from '@/featuresV2/plan/planTypes/localDelivery/api/localDeliveryPlanSettings.api'
+import { normalizeLocalDeliveryEditFormToSettingsPayload } from '@/featuresV2/plan/planTypes/localDelivery/api/mappers/localDeliveryPlanSettings.mapper'
 import { normalizeByClientIdArray } from '@/featuresV2/plan/planTypes/localDelivery/api/mappers/routeSolutionPayload.mapper'
 import type { DeliveryPlan } from '@/featuresV2/plan/types/plan'
 import type { LocalDeliveryPlan } from '@/featuresV2/plan/planTypes/localDelivery/types/localDeliveryPlan'
 import type { RouteSolution } from '@/featuresV2/plan/planTypes/localDelivery/types/routeSolution'
+import type { LocalDeliveryEditFormState } from '@/featuresV2/plan/planTypes/localDelivery/forms/localDeliveryEditForm/LocalDeliveryEditForm.types'
 
 import {
   selectPlanByServerId,
@@ -67,7 +68,8 @@ export function useLocalDeliveryPlanSettingsMutations() {
   const { showMessage } = useMessageManager()
 
   const updateLocalDeliverySettings = useCallback(
-    async (payload: LocalDeliveryPlanSettingsPayload) => {
+    async (formState: LocalDeliveryEditFormState) => {
+      const payload = normalizeLocalDeliveryEditFormToSettingsPayload(formState)
       
       const snapshots: {
         plan: DeliveryPlan | null

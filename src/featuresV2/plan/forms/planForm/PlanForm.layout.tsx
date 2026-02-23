@@ -2,12 +2,11 @@ import { useMemo } from 'react'
 import { Field } from '@/shared/inputs/FieldContainer'
 import { InputField } from '@/shared/inputs/InputField'
 import { CustomDatePicker } from '@/shared/inputs/CustomDatePicker'
-import { PlanTypeSelector } from '../components'
+import { PlanTypeDescription, PlanTypeSelector } from '../../components'
 import { InputWarning } from '@/shared/inputs/InputWarning'
 import { PopupFooter } from '@/shared/popups/MainPopup/PopupFooter'
 
 import { usePlanForm } from './PlanForm.context'
-import { usePlanFormPopupConfig } from './planFormPopupConfig.hook'
 
 
 
@@ -20,26 +19,20 @@ export const PlanFormLayout = ({}) => {
     const {
         mode,
         planForm,
-        handlePlanName,
-        handleStartDate,
-        handleEndDate,
-        handlePlanType,
-        handleCreatePlan,
-        handleSavePlan,
-        handleDeletePlan,
+        planSetters,
+        planActions,
         planFormWarnings,
     } = usePlanForm()
-    usePlanFormPopupConfig()
+
     const footerConfig = useMemo(() => {
         return mode == 'edit'
             ? {
-                  saveButton: { label: 'Save Plan', action: handleSavePlan },
-                  deleteButton: { label: 'Delete', action: handleDeletePlan },
+                  deleteButton: { label: 'Delete', action: planActions.handleDeletePlan },
               }
             : {
-                  saveButton: { label: 'Create Plan', action: handleCreatePlan },
+                  saveButton: { label: 'Create Plan', action: planActions.handleCreatePlan },
               }
-    }, [mode, handleCreatePlan, handleSavePlan, handleDeletePlan])
+    }, [mode, planActions.handleCreatePlan, planActions.handleDeletePlan])
 
     return ( 
         <>
@@ -53,7 +46,7 @@ export const PlanFormLayout = ({}) => {
                     warningController={ planFormWarnings.planNameWarning }
                 >
                     <InputField value={ planForm.label }
-                        onChange={handlePlanName}
+                        onChange={ planSetters.handlePlanName }
                     />
                 </Field>
                 
@@ -63,13 +56,13 @@ export const PlanFormLayout = ({}) => {
                    
                     >
                         <CustomDatePicker date={ planForm.start_date ? new Date( planForm.start_date ) : new Date() } 
-                            onChange={ handleStartDate }
+                            onChange={ planSetters.handleStartDate }
                         />
                     </Field>
                     <Field label="To:" required={true} 
                     >
                         <CustomDatePicker date={ planForm.end_date ? new Date( planForm.end_date ) : new Date() } 
-                            onChange={ handleEndDate }
+                            onChange={ planSetters.handleEndDate }
                         />
                     </Field>
                     
@@ -81,8 +74,9 @@ export const PlanFormLayout = ({}) => {
                     >
                         <PlanTypeSelector
                             selectedValue={ planForm.plan_type }
-                            onChange={ handlePlanType }
+                            onChange={ planSetters.handlePlanType }
                         />
+                        <PlanTypeDescription planType={planForm.plan_type} />
                     </Field>
                 }
                 

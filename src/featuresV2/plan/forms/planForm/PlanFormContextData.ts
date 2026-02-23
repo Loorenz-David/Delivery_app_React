@@ -13,15 +13,13 @@ export const usePlanFormContextData = () => {
   const mode = entryPayload?.mode ?? 'create'
 
   const planData = usePlanByServerId(serverId)
-  const planTypeData = usePlanTypeWithFetch(planData?.client_id)
+
 
   return {
     clientId,
     mode,
     planData,
-    planTypeData,
     isEdit: mode === 'edit',
     hasPlan: !!planData,
-    hasPlanType: !!planTypeData
   }
 }

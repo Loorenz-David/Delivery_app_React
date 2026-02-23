@@ -18,7 +18,7 @@ export const PLAN_TYPE_STORE_KEYS = [
 
 export type PlanTypeStoreKey = typeof PLAN_TYPE_STORE_KEYS[number]
 
-export type PlanTypePayloadKey = PlanTypeKey | PlanTypeStoreKey
+export type PlanTypePayloadKey = PlanTypeKey 
 
 export const PLAN_TYPE_KEY_MAP: Record<PlanTypeStoreKey, PlanTypeKey> = {
   local_delivery_plan: 'local_delivery',

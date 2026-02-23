@@ -1,10 +1,8 @@
-import { LocalDeliveryEditFormLayout } from './LocalDeliveryEditForm.layout'
-import { LocalDeliveryEditFormProvider } from './LocalDeliveryEditForm.provider'
+import { LocalDeliveryEditFormFeature } from '@/featuresV2/plan/planTypes/localDelivery/forms/localDeliveryEditForm/LocalDeliveryEditForm'
+import { useLocalDeliveryEditFormPopupConfig } from './LocalDeliveryEditFormPopupConfig.hook'
 
-export const LocalDeliveryEditForm = ({}) => {
-  return (
-    <LocalDeliveryEditFormProvider>
-      <LocalDeliveryEditFormLayout />
-    </LocalDeliveryEditFormProvider>
-  )
+export const LocalDeliveryEditForm = () => {
+  useLocalDeliveryEditFormPopupConfig()
+
+  return <LocalDeliveryEditFormFeature />
 }

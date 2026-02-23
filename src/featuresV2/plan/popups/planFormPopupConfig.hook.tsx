@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { StackIcon } from '@/assets/icons'
 import { usePopupContext } from '@/shared/popups/MainPopup/PopupContext'
-
-import { usePlanForm } from './PlanForm.context'
-import type { PlanFormMode } from './PlanForm.types'
+import type { PlanFormMode } from '@/featuresV2/plan/forms/planForm/PlanForm.types'
+import { usePopupManager } from '@/shared/resource-manager/useResourceManager'
 
 export const usePlanFormPopupConfig = () => {
-    const { mode } = usePlanForm()
+    const popupManager = usePopupManager()
+    const entryPayload = popupManager.getEntryPayload('PlanForm') as { mode?: PlanFormMode } | undefined
+    const mode = entryPayload?.mode ?? 'create'
     const { setPopupHeader } = usePopupContext()
 
     useEffect(() => {

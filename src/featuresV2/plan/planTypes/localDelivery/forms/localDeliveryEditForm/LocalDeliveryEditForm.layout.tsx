@@ -22,34 +22,24 @@ export const LocalDeliveryEditFormLayout = ({}) => {
     formState,
     formWarnings,
     hasMultipleVariants,
-    handlePlanLabel,
-    handlePlanStartDate,
-    handlePlanEndDate,
-    handleRouteStartTime,
-    handleRouteEndTime,
-    handleRouteStartLocation,
-    handleRouteEndLocation,
-    handleRouteEndStrategy,
-    handleDriverSelection,
-    handleCreateVariantToggle,
-    handleSave,
-    handleDelete,
+    formSetters,
+    actions,
   } = useLocalDeliveryEditForm()
 
   
 
   const footerConfig = useMemo(() => {
     const config = {
-      saveButton: { label: 'Save', action: handleSave },
+      saveButton: { label: 'Save', action: actions.handleSave },
     }
     if (hasMultipleVariants) {
       return {
         ...config,
-        deleteButton: { label: 'Delete', action: handleDelete },
+        deleteButton: { label: 'Delete', action: actions.handleDelete },
       }
     }
     return config
-  }, [handleSave, handleDelete, hasMultipleVariants])
+  }, [actions, hasMultipleVariants])
 
   const startDate = formState.delivery_plan.start_date
     ? new Date(toDateOnly(formState.delivery_plan.start_date))
@@ -66,22 +56,22 @@ export const LocalDeliveryEditFormLayout = ({}) => {
       >
         
         <Field label="Plan label:">
-          <InputField value={formState.delivery_plan.label} onChange={handlePlanLabel} />
+          <InputField value={formState.delivery_plan.label} onChange={formSetters.handlePlanLabel} />
         </Field>
 
         <SectionGroup label="Start">
           <Field label="">
             <AddressAutocomplete
-              onSelectedAddress={handleRouteStartLocation}
+              onSelectedAddress={formSetters.handleRouteStartLocation}
               selectedAddress={formState.route_solution.start_location}
             />
           </Field>
           <Field label="">
             <CustomDateTimePicker
               date={startDate}
-              onChangeDate={handlePlanStartDate}
+              onChangeDate={formSetters.handlePlanStartDate}
               selectedTime={formState.route_solution.set_start_time}
-              onChangeTime={handleRouteStartTime}
+              onChangeTime={formSetters.handleRouteStartTime}
             />
           </Field>
           {formWarnings.planDateWarning.warning && (
@@ -98,7 +88,7 @@ export const LocalDeliveryEditFormLayout = ({}) => {
                 { label: 'End at last stop', value: 'end_at_last_stop' },
               ]}
               selectedValue={formState.route_solution.route_end_strategy}
-              onSelect={handleRouteEndStrategy}
+              onSelect={formSetters.handleRouteEndStrategy}
               styleConfig={{textSize:'12px', containerBg:'#eaeaea'}}
             />
           </Field>
@@ -113,7 +103,7 @@ export const LocalDeliveryEditFormLayout = ({}) => {
               >
                 <Field label="">
                   <AddressAutocomplete
-                    onSelectedAddress={handleRouteEndLocation}
+                    onSelectedAddress={formSetters.handleRouteEndLocation}
                     selectedAddress={formState.route_solution.end_location}
                   />
                 </Field>
@@ -123,9 +113,9 @@ export const LocalDeliveryEditFormLayout = ({}) => {
           <Field label="">
             <CustomDateTimePicker
               date={endDate}
-              onChangeDate={handlePlanEndDate}
+              onChangeDate={formSetters.handlePlanEndDate}
               selectedTime={formState.route_solution.set_end_time}
-              onChangeTime={handleRouteEndTime}
+              onChangeTime={formSetters.handleRouteEndTime}
             />
           </Field>
           {formWarnings.routeTimeWarning.warning && (
@@ -137,7 +127,7 @@ export const LocalDeliveryEditFormLayout = ({}) => {
         <Field label="Driver:">
           <MemberSelector
             selectedMember={formState.route_solution.driver_id}
-            onSelectMember={handleDriverSelection}
+            onSelectMember={formSetters.handleDriverSelection}
           />
         </Field>
 
@@ -150,7 +140,7 @@ export const LocalDeliveryEditFormLayout = ({}) => {
           </div>
           <Switch
             value={formState.create_variant_on_save}
-            onChange={handleCreateVariantToggle}
+            onChange={formSetters.handleCreateVariantToggle}
             ariaLabel="Create variant on save"
           />
         </div>

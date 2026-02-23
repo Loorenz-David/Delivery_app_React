@@ -10,6 +10,15 @@ type Props = {
   formWarnings: LocalDeliveryEditFormWarnings
 }
 
+const normalizeRouteEndStrategy = (
+  value: string | number,
+): 'round_trip' | 'custom_end_address' | 'end_at_last_stop' => {
+  const normalized = String(value)
+  if (normalized === 'custom_end_address') return 'custom_end_address'
+  if (normalized === 'end_at_last_stop') return 'end_at_last_stop'
+  return 'round_trip'
+}
+
 export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: Props) => {
   const handlePlanLabel = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value
@@ -111,7 +120,7 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
   const handleRouteEndStrategy = (value: string | number) => {
     setFormState((prev) => ({
       ...prev,
-      route_solution: { ...prev.route_solution, route_end_strategy: String(value) },
+      route_solution: { ...prev.route_solution, route_end_strategy: normalizeRouteEndStrategy(value) },
     }))
   }
 
