@@ -3,6 +3,7 @@ export { RouteOptimizationDropdownButton } from './RouteOptimizationDropdownButt
 export { RouteStopDragOverlay } from './RouteStopDragOverlay'
 export { RouteStopWarnings } from './RouteStopWarnings'
 export { MainHeaderLocalDeliveryPage } from './pageHeaders/localDeliveryMainHeader'
+export { LocalDeliveryMapOverlay } from './LocalDeliveryMapOverlay'
 
 export { LocalDeliveryOrderCard } from './cards/LocalDeliveryOrderCard'
 export { DraggableLocalDeliveryOrderCard } from './cards/DraggableLocalDeliveryOrderCard'

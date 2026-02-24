@@ -3,10 +3,13 @@ import { useEffect, useRef } from 'react'
 import { useMessageManager } from '@/message_manager'
 import { MAP_MARKER_LAYERS } from '@/shared/map'
 import { useMapManager } from '@/shared/resource-manager/useResourceManager'
+import { useOrderStore } from '@/featuresV2/order/store/order.store'
+import type { Order } from '@/featuresV2/order/types/order'
 
-import { useOrderSelectionActions, useOrderSelectionMode } from '../store/orderSelectionHooks.store'
-import { useOrderStore } from '../store/order.store'
-import type { Order } from '../types/order'
+import {
+  useLocalDeliverySelectionActions,
+  useLocalDeliverySelectionMode,
+} from '../store/localDeliverySelectionHooks.store'
 
 type SelectionFromClientIds = {
   clientIds: string[]
@@ -14,16 +17,21 @@ type SelectionFromClientIds = {
   unsyncedCount: number
 }
 
-export const buildOrderSelectionFromClientIds = (
+const isLocalDeliveryOrderMarkerId = (markerId: string) =>
+  !markerId.startsWith('route-start-') && !markerId.startsWith('route-end-')
+
+export const buildLocalDeliverySelectionFromClientIds = (
   clientIds: string[],
   byClientId: Record<string, Order>,
 ): SelectionFromClientIds => {
-  const uniqueClientIds = Array.from(new Set(clientIds))
+  const uniqueClientIds = Array.from(new Set(clientIds)).filter(isLocalDeliveryOrderMarkerId)
   const selectedServerIds: number[] = []
   let unsyncedCount = 0
-
+ 
   uniqueClientIds.forEach((clientId) => {
     const order = byClientId[clientId]
+    if (!order) return
+
     if (typeof order?.id === 'number') {
       selectedServerIds.push(order.id)
       return
@@ -38,14 +46,22 @@ export const buildOrderSelectionFromClientIds = (
   }
 }
 
-export const useOrderCircleSelectionFlow = () => {
+export const useLocalDeliveryCircleSelectionFlow = (isActive: boolean) => {
   const mapManager = useMapManager()
   const { showMessage } = useMessageManager()
-  const isSelectionMode = useOrderSelectionMode()
-  const { setSelectedOrders, clearSelection, disableSelectionMode } = useOrderSelectionActions()
+  const isSelectionMode = useLocalDeliverySelectionMode()
+  const { setSelectedOrders, clearSelection, disableSelectionMode } = useLocalDeliverySelectionActions()
   const unsyncedWarningKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
+    if (!isActive) {
+      mapManager.disableCircleSelection()
+      clearSelection()
+      unsyncedWarningKeyRef.current = null
+      disableSelectionMode()
+      return
+    }
+
     if (!isSelectionMode) {
       mapManager.disableCircleSelection()
       clearSelection()
@@ -54,10 +70,10 @@ export const useOrderCircleSelectionFlow = () => {
     }
 
     mapManager.enableCircleSelection({
-      layerId: MAP_MARKER_LAYERS.orders,
+      layerId: MAP_MARKER_LAYERS.localDelivery,
       callback: (clientIds) => {
         const byClientId = useOrderStore.getState().byClientId
-        const { clientIds: resolvedClientIds, serverIds, unsyncedCount } = buildOrderSelectionFromClientIds(
+        const { clientIds: resolvedClientIds, serverIds, unsyncedCount } = buildLocalDeliverySelectionFromClientIds(
           clientIds,
           byClientId,
         )
@@ -71,7 +87,7 @@ export const useOrderCircleSelectionFlow = () => {
         if (unsyncedCount > 0 && unsyncedWarningKeyRef.current !== warningKey) {
           showMessage({
             status: 'warning',
-            message: `${unsyncedCount} selected orders are unsynced and will be skipped.`,
+            message: `${unsyncedCount} selected local delivery orders are unsynced and will be skipped.`,
           })
           unsyncedWarningKeyRef.current = warningKey
         }
@@ -96,5 +112,11 @@ export const useOrderCircleSelectionFlow = () => {
       window.removeEventListener('keydown', handleEscapeKeyDown, true)
       mapManager.disableCircleSelection()
     }
-  }, [clearSelection, disableSelectionMode, isSelectionMode, mapManager, setSelectedOrders, showMessage])
+  }, [clearSelection, disableSelectionMode, isActive, isSelectionMode, mapManager, setSelectedOrders, showMessage])
+
+  useEffect(() => {
+    return () => {
+      disableSelectionMode()
+    }
+  }, [disableSelectionMode])
 }

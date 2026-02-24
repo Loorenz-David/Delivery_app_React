@@ -11,6 +11,7 @@ type LocalDeliveryMapParams = {
   orders: Order[]
   stopByOrderId: Map<number, RouteSolutionStop>
   selectedRouteSolution: RouteSolution | null
+  isActive: boolean
   boundaryLocations: {
     start: BoundaryLocationMeta
     end: BoundaryLocationMeta
@@ -22,6 +23,7 @@ export const useLocalDeliveryMapFlow = ({
   orders,
   stopByOrderId,
   selectedRouteSolution,
+  isActive,
   boundaryLocations, 
 }: LocalDeliveryMapParams) => {
   const mapManager = useMapManager()
@@ -82,15 +84,21 @@ export const useLocalDeliveryMapFlow = ({
     mapOrders.push(...orderMarkers)
 
     mapManager.setMarkerLayer(MAP_MARKER_LAYERS.localDelivery, mapOrders)
-    mapManager.setMarkerLayerVisibility(MAP_MARKER_LAYERS.localDelivery, true)
+    mapManager.setMarkerLayerVisibility(MAP_MARKER_LAYERS.localDelivery, isActive)
    
-    if(selectedRouteSolution && selectedRouteSolution.route_polyline ){
+    if(isActive && selectedRouteSolution && selectedRouteSolution.route_polyline ){
       mapManager.showRoute( {path: selectedRouteSolution.route_polyline} )
     } else {
       mapManager.showRoute(null)
     }
 
-  }, [boundaryLocations, mapManager, orders, selectedRouteSolution, stopByOrderId])
+  }, [boundaryLocations, isActive, mapManager, orders, selectedRouteSolution, stopByOrderId])
+
+  useEffect(() => {
+    if (isActive) return
+    mapManager.clearMarkerLayer(MAP_MARKER_LAYERS.localDelivery)
+    mapManager.showRoute(null)
+  }, [isActive, mapManager])
 
   useEffect(() => {
     return () => {

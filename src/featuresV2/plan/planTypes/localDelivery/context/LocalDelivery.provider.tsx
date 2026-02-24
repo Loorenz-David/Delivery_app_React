@@ -16,6 +16,7 @@ import type { RouteSolutionStop } from '@/featuresV2/plan/planTypes/localDeliver
 import type { Order } from '@/featuresV2/order/types/order'
 
 import { useLocalDeliveryMapFlow } from '../flows/localDeliveryMap.flow'
+import { useLocalDeliveryCircleSelectionFlow } from '../flows/localDeliveryCircleSelection.flow'
 import { getLocalDeliveryBoundaryLocations } from '../domain/getLocalDeliveryBoundaryLocations'
 
 import { LocalDeliveryContext } from './LocalDelivery.context'
@@ -35,6 +36,8 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
   const isPopupOpen = popupManager.getOpenCount() > 0 
   const areSectionsOpen = sectionManager.getOpenCount()  > 0
   const baseControlls = useBaseControlls()
+  const isLocalDeliveryActive =
+    baseControlls.isBaseOpen && baseControlls.payload?.ordersPlanType === 'local_delivery'
 
   const { fetchLocalDeliveryOverview } = useLocalDeliveryOverviewFlow()
   const plan = usePlanByServerId(planId)
@@ -68,7 +71,14 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
     [ordersById, selectedRouteSolution, stopByOrderId],
   )
 
-  useLocalDeliveryMapFlow({ orders, stopByOrderId, selectedRouteSolution, boundaryLocations })
+  useLocalDeliveryMapFlow({
+    orders,
+    stopByOrderId,
+    selectedRouteSolution,
+    isActive: isLocalDeliveryActive,
+    boundaryLocations,
+  })
+  useLocalDeliveryCircleSelectionFlow(isLocalDeliveryActive)
 
   useEffect(() => {
     if (planId == null) return

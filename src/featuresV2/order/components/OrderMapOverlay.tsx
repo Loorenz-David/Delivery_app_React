@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { CloseIcon } from '@/assets/icons'
+import { CloseIcon, MultiSelectIcon } from '@/assets/icons'
 import { BasicButton } from '@/shared/buttons/BasicButton'
 import { useMobile } from '@/app/contexts/MobileContext'
 import { usePopupManager } from '@/shared/resource-manager/useResourceManager'
@@ -30,12 +30,18 @@ export const OrderMapOverlay = () => {
       <div className="absolute left-4 top-4 z-0 pointer-events-auto">
         <BasicButton
           params={{
-            variant: 'primary',
+            variant: 'secondary',
             onClick: enableSelectionMode,
             ariaLabel: 'Enable multi order selection',
+            className:'border-[var(--color-muted)]/50'
           }}
         >
-          Multi Select
+          <div className="flex items-center justify-center gap-2">
+            <MultiSelectIcon className="fill-[var(--color-muted)] h-5 w-5"/> 
+            <span>
+              Multi Select
+            </span>
+          </div>
         </BasicButton>
       </div>
     )

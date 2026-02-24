@@ -88,6 +88,7 @@ export const runGoogleMapAdapterCircleSelectionTests = () => {
   adapter.circleSelectionCallback = (ids: string[]) => {
     callbackIds = ids
   }
+  adapter.circleSelectionLayerId = MAP_MARKER_LAYERS.orders
 
   adapter.computeCircleSelection({
     getCenter: () => createLatLng(0, 0),
@@ -105,9 +106,26 @@ export const runGoogleMapAdapterCircleSelectionTests = () => {
     'non-orders layer markers should not get multi selected class',
   )
 
+  adapter.circleSelectionLayerId = MAP_MARKER_LAYERS.localDelivery
+  callbackIds = []
+
+  adapter.computeCircleSelection({
+    getCenter: () => createLatLng(0, 0),
+    getRadius: () => 1,
+  })
+
+  assert(
+    callbackIds.length === 1 && callbackIds[0] === 'local-delivery-1',
+    'should select local delivery marker ids when localDelivery layer is active',
+  )
+  assert(
+    localDeliveryEl.classList.contains('map-marker--multi-selected'),
+    'local delivery marker should get multi selected class',
+  )
+
   adapter.disableCircleSelection()
   assert(
-    !orderNearEl.classList.contains('map-marker--multi-selected'),
-    'disableCircleSelection should clear multi selected class',
+    !localDeliveryEl.classList.contains('map-marker--multi-selected'),
+    'disableCircleSelection should clear active layer multi selected class',
   )
 }

@@ -19,7 +19,7 @@ export type MapBridge = {
   setMarkerLayer: (layerId: string, orders: MapOrder[]) => void
   setMarkerLayerVisibility: (layerId: string, visible: boolean) => void
   clearMarkerLayer: (layerId: string) => void
-  enableCircleSelection: (callback: (ids: string[]) => void) => void
+  enableCircleSelection: (params: { layerId: string; callback: (ids: string[]) => void }) => void
   disableCircleSelection: () => void
   showRoute: (route: Route | null) => void
   selectOrder: (id: number | string ) => void
@@ -32,7 +32,7 @@ export interface MapAdapter {
   setLayerMarkers: (layerId: string, orders: MapOrder[]) => void
   setLayerVisibility: (layerId: string, visible: boolean) => void
   clearLayer: (layerId: string) => void
-  enableCircleSelection: (callback: (ids: string[]) => void) => void
+  enableCircleSelection: (params: { layerId: string; callback: (ids: string[]) => void }) => void
   disableCircleSelection: () => void
   clearMarkers: () => void
   drawRoute: (route: Route | null) => void

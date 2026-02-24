@@ -74,8 +74,8 @@ export const useMap = (options?: MapConfig): MapBridge => {
   )
 
   const enableCircleSelection = useCallback(
-    (callback: (ids: string[]) => void) => {
-      controller.enableCircleSelection(callback)
+    (params: { layerId: string; callback: (ids: string[]) => void }) => {
+      controller.enableCircleSelection(params)
     },
     [controller],
   )

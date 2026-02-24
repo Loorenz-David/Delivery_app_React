@@ -1,5 +1,6 @@
 export { useOrderActions } from './actions/order.actions'
 export { useOrderController } from './controllers/order.controller'
+export { useOrderPlanPatchController } from './controllers/orderPlanPatch.controller'
 export { useOrderStateController } from './controllers/orderState.controller'
 export { useOrderImport } from './controllers/orderImport.controller'
 export { useOrderMutations } from './controllers/orderMutations.controller'

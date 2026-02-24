@@ -34,8 +34,8 @@ export class MapController {
     this.adapter.clearLayer(layerId)
   }
 
-  enableCircleSelection(callback: (ids: string[]) => void) {
-    this.adapter.enableCircleSelection(callback)
+  enableCircleSelection(params: { layerId: string; callback: (ids: string[]) => void }) {
+    this.adapter.enableCircleSelection(params)
   }
 
   disableCircleSelection() {

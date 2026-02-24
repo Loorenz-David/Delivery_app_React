@@ -4,6 +4,7 @@ import { buildClientId } from '@/lib/utils/clientId'
 import { ApiError } from '@/lib/api/ApiClient'
 import { useMessageManager } from '@/message_manager'
 import { planApi } from '@/featuresV2/plan/api/plan.api'
+import { useOrderPlanPatchController } from '@/featuresV2/order'
 import type {
   DeliveryPlan,
   DeliveryPlanFields,
@@ -121,6 +122,7 @@ const resolveError = (error: unknown, fallback: string) => ({
 
 export function usePlanController() {
   const { showMessage } = useMessageManager()
+  const { patchOrdersPlanByServerIds } = useOrderPlanPatchController()
 
 
   const createPlan = useCallback(
@@ -165,6 +167,14 @@ export function usePlanController() {
             ...plan,
             id: planId,
           }))
+
+          if (sanitizedNewOrderLinks.length > 0) {
+            patchOrdersPlanByServerIds({
+              orderServerIds: sanitizedNewOrderLinks,
+              planId,
+              planType: planTypeKey,
+            })
+          }
         }
 
         if (typeof planTypeId === 'number') {
@@ -185,7 +195,7 @@ export function usePlanController() {
         return null
       }
     },
-    [showMessage],
+    [patchOrdersPlanByServerIds, showMessage],
   )
 
   const deletePlanInstance = useCallback(

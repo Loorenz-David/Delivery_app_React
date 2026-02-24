@@ -94,11 +94,13 @@ export class GoogleMapAdapter implements MapAdapter {
   private LatLngBoundsCtor: any = null
   private AdvancedMarkerCtor: any = null
   private layers = new Map<string, MarkerLayer>()
+  private layerSnapshots = new Map<string, MapOrder[]>()
   private routePolylines: any[] = []
   private selectedMarkerId: string | null = null
   private drawingManager: any = null
   private activeCircle: any = null
   private circleSelectionCallback: ((ids: string[]) => void) | null = null
+  private circleSelectionLayerId: string | null = null
   private multiSelectedIds = new Set<string>()
   private circleListeners: any[] = []
   private drawingCompleteListener: any = null
@@ -134,6 +136,8 @@ export class GoogleMapAdapter implements MapAdapter {
       mapId: options?.mapId,
       disableDefaultUI: options?.disableDefaultUI ?? true,
     })
+
+    this.replayLayerSnapshots()
   }
 
   setMarkers(orders: MapOrder[]) {
@@ -141,9 +145,11 @@ export class GoogleMapAdapter implements MapAdapter {
   }
 
   setLayerMarkers(layerId: string, orders: MapOrder[]) {
+    const layer = this.getOrCreateLayer(layerId)
+    this.layerSnapshots.set(layerId, orders)
+
     if (!this.AdvancedMarkerCtor) return
 
-    const layer = this.getOrCreateLayer(layerId)
     const nextIds = new Set(orders.map((order) => String(order.id)))
 
     Array.from(layer.markers.entries()).forEach(([id, entry]) => {
@@ -158,6 +164,8 @@ export class GoogleMapAdapter implements MapAdapter {
     orders.forEach((order) => {
       const id = String(order.id)
       const existing = layer.markers.get(id)
+      const isLayerActiveForMultiSelection = this.circleSelectionLayerId === layerId
+      const isMultiSelected = isLayerActiveForMultiSelection && this.multiSelectedIds.has(id)
 
       if (existing) {
         existing.order = order
@@ -167,7 +175,7 @@ export class GoogleMapAdapter implements MapAdapter {
           existing.el,
           order,
           this.selectedMarkerId === id,
-          this.multiSelectedIds.has(id),
+          isMultiSelected,
         )
         existing.el.onclick = (event: MouseEvent) => {
           this.selectMarker(id)
@@ -195,7 +203,7 @@ export class GoogleMapAdapter implements MapAdapter {
         content.classList.add(`map-marker--selected-${getInteractionVariant(order)}`)
       }
 
-      if (this.multiSelectedIds.has(id)) {
+      if (isMultiSelected) {
         content.classList.add('map-marker--multi-selected')
       }
 
@@ -212,8 +220,18 @@ export class GoogleMapAdapter implements MapAdapter {
     if (!layer) return
 
     layer.visible = visible
-    layer.markers.forEach(({ marker }) => {
+    const isLayerActiveForMultiSelection = this.circleSelectionLayerId === layerId
+    layer.markers.forEach(({ marker, el }, id) => {
       marker.map = visible ? this.map : null
+      if (!isLayerActiveForMultiSelection) {
+        el.classList.remove('map-marker--multi-selected')
+        return
+      }
+      if (this.multiSelectedIds.has(id)) {
+        el.classList.add('map-marker--multi-selected')
+      } else {
+        el.classList.remove('map-marker--multi-selected')
+      }
     })
   }
 
@@ -228,9 +246,10 @@ export class GoogleMapAdapter implements MapAdapter {
     })
     layer.markers.clear()
     this.layers.delete(layerId)
+    this.layerSnapshots.delete(layerId)
 
-    if (layerId === MAP_MARKER_LAYERS.orders) {
-      this.clearMultiSelectionStyles()
+    if (layerId === this.circleSelectionLayerId) {
+      this.clearMultiSelectionStyles(layerId)
       this.multiSelectedIds.clear()
     }
 
@@ -239,10 +258,11 @@ export class GoogleMapAdapter implements MapAdapter {
     }
   }
 
-  enableCircleSelection(callback: (ids: string[]) => void) {
+  enableCircleSelection(params: { layerId: string; callback: (ids: string[]) => void }) {
     if (!this.map) return
 
-    this.circleSelectionCallback = callback
+    this.circleSelectionCallback = params.callback
+    this.circleSelectionLayerId = params.layerId
     this.ensureDrawingManager()
 
     if (!this.drawingManager) return
@@ -263,8 +283,9 @@ export class GoogleMapAdapter implements MapAdapter {
       this.drawingManager.setDrawingMode(null)
     }
 
-    this.clearMultiSelectionStyles()
+    this.clearMultiSelectionStyles(this.circleSelectionLayerId ?? undefined)
     this.multiSelectedIds.clear()
+    this.circleSelectionLayerId = null
   }
 
   clearMarkers() {
@@ -448,10 +469,11 @@ export class GoogleMapAdapter implements MapAdapter {
   }
 
   private computeCircleSelection(circle: any) {
-    const ordersLayer = this.layers.get(MAP_MARKER_LAYERS.orders)
+    const activeLayerId = this.circleSelectionLayerId
+    const selectedLayer = activeLayerId ? this.layers.get(activeLayerId) : null
 
-    if (!ordersLayer?.visible || !this.circleSelectionCallback) {
-      this.applyMultiSelection([])
+    if (!selectedLayer?.visible || !this.circleSelectionCallback || !activeLayerId) {
+      this.applyMultiSelection(activeLayerId ?? MAP_MARKER_LAYERS.default, [])
       this.circleSelectionCallback?.([])
       return
     }
@@ -460,14 +482,14 @@ export class GoogleMapAdapter implements MapAdapter {
     const radius = circle?.getRadius?.()
 
     if (!center || typeof radius !== 'number' || !google.maps.geometry?.spherical) {
-      this.applyMultiSelection([])
+      this.applyMultiSelection(activeLayerId, [])
       this.circleSelectionCallback([])
       return
     }
 
     const selectedIds: string[] = []
 
-    ordersLayer.markers.forEach((entry, id) => {
+    selectedLayer.markers.forEach((entry, id) => {
       if (!entry.marker?.map) {
         return
       }
@@ -483,7 +505,7 @@ export class GoogleMapAdapter implements MapAdapter {
       }
     })
 
-    this.applyMultiSelection(selectedIds)
+    this.applyMultiSelection(activeLayerId, selectedIds)
     this.circleSelectionCallback(selectedIds)
   }
 
@@ -507,35 +529,35 @@ export class GoogleMapAdapter implements MapAdapter {
     return null
   }
 
-  private applyMultiSelection(ids: string[]) {
+  private applyMultiSelection(layerId: string, ids: string[]) {
     const nextIds = new Set(ids)
-    const ordersLayer = this.layers.get(MAP_MARKER_LAYERS.orders)
+    const selectedLayer = this.layers.get(layerId)
 
-    if (!ordersLayer) {
+    if (!selectedLayer) {
       this.multiSelectedIds = nextIds
       return
     }
 
     this.multiSelectedIds.forEach((id) => {
       if (!nextIds.has(id)) {
-        const marker = ordersLayer.markers.get(id)
+        const marker = selectedLayer.markers.get(id)
         marker?.el.classList.remove('map-marker--multi-selected')
       }
     })
 
     nextIds.forEach((id) => {
-      const marker = ordersLayer.markers.get(id)
+      const marker = selectedLayer.markers.get(id)
       marker?.el.classList.add('map-marker--multi-selected')
     })
 
     this.multiSelectedIds = nextIds
   }
 
-  private clearMultiSelectionStyles() {
-    const ordersLayer = this.layers.get(MAP_MARKER_LAYERS.orders)
-    if (!ordersLayer) return
+  private clearMultiSelectionStyles(layerId?: string) {
+    const selectedLayer = layerId ? this.layers.get(layerId) : null
+    if (!selectedLayer) return
 
-    ordersLayer.markers.forEach(({ el }) => {
+    selectedLayer.markers.forEach(({ el }) => {
       el.classList.remove('map-marker--multi-selected')
     })
   }
@@ -561,6 +583,18 @@ export class GoogleMapAdapter implements MapAdapter {
 
     this.layers.set(layerId, created)
     return created
+  }
+
+  private replayLayerSnapshots() {
+    if (!this.AdvancedMarkerCtor) return
+
+    this.layerSnapshots.forEach((orders, layerId) => {
+      this.setLayerMarkers(layerId, orders)
+      const layer = this.layers.get(layerId)
+      if (layer) {
+        this.setLayerVisibility(layerId, layer.visible)
+      }
+    })
   }
 
   private findMarkerEntryById(id: string): { layerId: string; entry: LayerMarkerRecord } | null {

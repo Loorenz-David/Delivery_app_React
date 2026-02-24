@@ -8,8 +8,10 @@ import { ArchiveIcon, BellIcon, ChevronDownIcon, SettingIcon } from '@/assets/ic
 import { PlanPage } from '@/featuresV2/plan/pages/Plan.page'
 import { OrderPage } from '@/featuresV2/order/pages/order.page'
 import { OrderMapOverlay } from '@/featuresV2/order/components/OrderMapOverlay'
+import { LocalDeliveryMapOverlay } from '@/featuresV2/plan/planTypes/localDelivery/components'
 import { useBaseControlls } from '@/shared/resource-manager/useResourceManager'
 import { planSectionsMap } from '@/featuresV2/plan/'
+import { useMapSelectionModeGuardFlow } from '@/featuresV2/home/flows/mapSelectionModeGuard.flow'
 
 
 import { HomeDesktopLayout } from '../layout/HomeDesktopLayout'
@@ -33,6 +35,7 @@ export function HomeDesktopView() {
   const {isMobile} = useMobile()
 
   const ordersPlanType = baseControlls.payload ? baseControlls.payload?.ordersPlanType ?? null : null
+  const isLocalDeliveryOverlayActive = baseControlls.isBaseOpen && ordersPlanType === 'local_delivery'
   let SelectedOrdersPlanType = null
   if(ordersPlanType){
     SelectedOrdersPlanType = planSectionsMap[ordersPlanType] 
@@ -41,6 +44,7 @@ export function HomeDesktopView() {
   useEffect(()=>{
     void initialize(mapContainerRef.current)
   }, [initialize])
+  useMapSelectionModeGuardFlow()
 
   const handleKeyDown = (event:KeyboardEvent)=>{
     const isPopupOpen = popupManager.getOpenCount() > 0 
@@ -84,7 +88,13 @@ export function HomeDesktopView() {
             }}
           />
         }
-        mapOverlay={<OrderMapOverlay />}
+        mapOverlay={
+          isLocalDeliveryOverlayActive ? (
+            <LocalDeliveryMapOverlay />
+          ) : (
+            <OrderMapOverlay />
+          )
+        }
         plan={
           <SectionPanel style={{ width: layout.planWidth}}
             parentParams={{ borderLeft: '#8a8a8a5b' }}

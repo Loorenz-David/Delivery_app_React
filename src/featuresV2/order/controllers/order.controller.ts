@@ -13,6 +13,7 @@ import {
 import { normalizeOrderStopResponse } from '../domain/orderStopResponse'
 
 import {
+  addVisibleOrder,
   removeOrderByClientId,
   setOrder,
   selectOrderByClientId,
@@ -56,11 +57,12 @@ export const useOrderController = () => {
           if (normalizedStops) {
             upsertRouteSolutionStops(normalizedStops)
           }
-
+          
           setOrder({
             ...baseOrder,
             ...created,
           })
+          addVisibleOrder(baseOrder.client_id)
           return true
         }
 

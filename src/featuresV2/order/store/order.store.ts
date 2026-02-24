@@ -33,6 +33,13 @@ export const setOrder = (order: Order) => useOrderStore.getState().insert(order)
 export const setVisibleOrders = (clientIds: string[] | null) =>
   useOrderStore.getState().setVisibleIds(clientIds)
 
+export const addVisibleOrder = (clientId: string) => {
+  const { visibleIds, setVisibleIds } = useOrderStore.getState()
+  if (!visibleIds) return
+  if (visibleIds.includes(clientId)) return
+  setVisibleIds([clientId, ...visibleIds])
+}
+
 export const setOrders = (table: OrderMap) => useOrderStore.getState().insertMany(table)
 
 export const updateOrderByClientId = (clientId: string, updater: (order: Order) => Order) =>
