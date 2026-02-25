@@ -1,4 +1,4 @@
-export type { Coordinates, MapConfig, MapAdapter, MapBridge } from './domain/types'
+export type { Coordinates, MapConfig, MapAdapter, MapBridge, MapViewportInsets } from './domain/types'
 export type { MapOrder, MapOrderStatus } from './domain/entities/MapOrder'
 export type { Route } from './domain/entities/Route'
 export { MAP_MARKER_LAYERS } from './domain/constants/markerLayers'

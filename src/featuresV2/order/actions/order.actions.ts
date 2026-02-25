@@ -55,10 +55,12 @@ export const useOrderActions = () => {
   const openOrderDetail = useCallback(
     (payload: openOrderDetailProps, parentParams:parentParamsProps) => {
       const key = 'order.details'
+
       const openPayload = sectionManager.getEntryPayload(key) as openOrderDetailProps | undefined
       if(openPayload && openPayload?.clientId == payload?.clientId){
         return
       }
+
       
       sectionManager.open({ key: key, payload , parentParams:parentParams})
     },

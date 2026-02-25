@@ -1,10 +1,10 @@
 import { OrderPage } from "@/featuresV2/order/pages/order.page";
-import { PlanPage } from "@/featuresV2/plan/pages/Plan.page";
 import { useSelectedPlanOrders } from "@/featuresV2/plan/hooks/useSelectedPlanOrders";
 import { useBaseControlls } from "@/shared/resource-manager/useResourceManager";
 import { SectionPanel } from "@/shared/section-panel/SectionPanel";
 import { SectionManagerHost } from "../components/SectionManagerHost";
 import { AnimatePresence, motion } from "framer-motion";
+import { PlanDesktopShell } from "@/featuresV2/plan/views/PlanDesktopShell";
 
 export const HomeMobileView = () => {
 
@@ -17,7 +17,7 @@ export const HomeMobileView = () => {
             <SectionPanel style={{width:'100%'}}
                 parentParams={{ borderLeft: '#8a8a8a5b' }}
             >
-            <PlanPage />
+            <PlanDesktopShell showCloseButton={false} />
             </SectionPanel>
             
             <AnimatePresence mode="popLayout">

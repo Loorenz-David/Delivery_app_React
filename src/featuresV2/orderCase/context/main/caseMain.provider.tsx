@@ -1,29 +1,22 @@
 import type { PropsWithChildren } from 'react'
-import { CaseMainContext } from './caseMain.context'
-import { useCaseMainActions } from '../../pages/main/main.actions'
 
 import { useOrderCaseMainFlow } from '../../flows/orderCasePages.flow'
-
+import { useCaseMainActions } from '../../pages/main/main.actions'
+import { CaseMainContext } from './caseMain.context'
 
 type CaseMainProviderProps = PropsWithChildren<{
-    
+  onClose?: () => void
 }>
 
+export const CaseMainProvider = ({ children, onClose }: CaseMainProviderProps) => {
+  const caseMainActions = useCaseMainActions({ onClose })
+  const { cases, query } = useOrderCaseMainFlow()
 
-export const CaseMainProvider = ({ children }:CaseMainProviderProps)=>{
-    const caseMainActions = useCaseMainActions()
-    const {cases, query} = useOrderCaseMainFlow()
+  const value = {
+    cases,
+    query,
+    caseMainActions,
+  }
 
-    const value = {
-        cases,
-        query,
-        caseMainActions,
-    }
-
-
-    return (
-        <CaseMainContext.Provider value={value}>
-            {children}
-        </CaseMainContext.Provider>
-    )
+  return <CaseMainContext.Provider value={value}>{children}</CaseMainContext.Provider>
 }

@@ -1,12 +1,16 @@
 import type { CSSProperties } from 'react'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'darkBlue' | 'rounded' | 'darkGray' | 'text'
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'darkBlue' | 'rounded' | 'darkGray' | 'text' | 'textInvers' | 'secondaryInvers'
 
 export const buttonBaseClass =
   'cursor-pointer transition active:scale-[0.98] duration-150 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-inherit'
 
 export const buttonVariantClasses: Record<ButtonVariant, string> = {
   text: 'bg-[var(--color-page)] border border-[var(--color-border)] hover:bg-[var(--color-accent)] inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]/90',
+  textInvers:
+    'bg-[var(--color-primary)] border border-[var(--color-page)] hover:bg-[var(--color-primary)]/85 inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-page)]',
+  secondaryInvers:
+    'bg-[var(--color-primary)] text-[var(--color-page)] border-1 border-[var(--color-page)] hover:bg-[var(--color-accent)] inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium',
   primary:
     'bg-[var(--color-primary)] text-[var(--color-secondary)] hover:bg-[#4a4a4a] inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium',
   darkGray:

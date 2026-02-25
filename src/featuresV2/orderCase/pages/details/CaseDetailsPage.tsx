@@ -1,29 +1,26 @@
 import { useEffect, useRef } from 'react'
 
-
 import type { StackComponentProps } from '@/shared/stack-manager/types'
 
 import { OrderCaseChatComposer } from '../../components/OrderCaseChatComposer'
 import { OrderCaseChatList } from '../../components/OrderCaseChatList'
 import { OrderCaseDetailsHeader } from '../../components/pageHeaders/OrderCaseDetailsHeader'
-import { CaseDetailsPageProvider } from '../../context/details/caseDetails.provider'
-
-
-
 import { useCaseDetailsContext } from '../../context/details/caseDetails.context'
+import { CaseDetailsPageProvider } from '../../context/details/caseDetails.provider'
 
 type OrderCaseDetailsPayload = {
   orderCaseClientId: string
-
 }
 
 const CaseDetailsPageContent = () => {
   const { orderCase, detailsActions, currentUserId } = useCaseDetailsContext()
 
-  const bottomRef = useRef<HTMLDivElement | null>(null)
+  const chatScrollRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    const container = chatScrollRef.current
+    if (!container) return
+    container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
   }, [orderCase?.chats.length])
 
   if (!orderCase) {
@@ -35,19 +32,16 @@ const CaseDetailsPageContent = () => {
   }
 
   return (
-    <div className="flex h-full w-full flex-col bg-[var(--color-page)]">
+    <div className="flex h-full w-full flex-col bg-[var(--color-page)] border-l-1 border-l-[var(--color-primary)]/30">
       <OrderCaseDetailsHeader
         title={orderCase.label?.trim() ? orderCase.label : `Case #${orderCase.id}`}
         state={orderCase.state}
         onChangeState={detailsActions.changeState}
+        onClose={detailsActions.closeCaseDetails}
       />
 
-      <div className="flex-1 overflow-y-auto p-3">
-        <OrderCaseChatList
-          chats={orderCase.chats}
-          currentUserId={currentUserId}
-        />
-        <div ref={bottomRef} />
+      <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-3">
+        <OrderCaseChatList chats={orderCase.chats} currentUserId={currentUserId} />
       </div>
 
       <div className="p-3 pb-5">
@@ -62,9 +56,8 @@ const CaseDetailsPageContent = () => {
   )
 }
 
-export const CaseDetailsPage = ({ payload }: StackComponentProps<OrderCaseDetailsPayload>) => {
+export const CaseDetailsPage = ({ payload, onClose }: StackComponentProps<OrderCaseDetailsPayload>) => {
   const orderCaseClientId = payload?.orderCaseClientId
-
 
   if (!orderCaseClientId) {
     return (
@@ -75,8 +68,8 @@ export const CaseDetailsPage = ({ payload }: StackComponentProps<OrderCaseDetail
   }
 
   return (
-    <CaseDetailsPageProvider orderCaseClientId={orderCaseClientId}>
-      <CaseDetailsPageContent/>
+    <CaseDetailsPageProvider orderCaseClientId={orderCaseClientId} onClose={onClose}>
+      <CaseDetailsPageContent />
     </CaseDetailsPageProvider>
   )
 }

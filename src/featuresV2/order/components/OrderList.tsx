@@ -7,9 +7,20 @@ type OrderListProps = {
   onOpenOrder?: (order: Order) => void
   onArchive?:(order:Order) => void
   onUnarchive?: (order: Order) => void
+  hoveredClientId?: string | null
+  onOrderMouseEnter?: (order: Order) => void
+  onOrderMouseLeave?: () => void
 }
 
-export const OrderList = ({ orders, onOpenOrder, onArchive, onUnarchive }: OrderListProps) => {
+export const OrderList = ({
+  orders,
+  onOpenOrder,
+  onArchive,
+  onUnarchive,
+  hoveredClientId,
+  onOrderMouseEnter,
+  onOrderMouseLeave,
+}: OrderListProps) => {
   if (orders.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -27,6 +38,9 @@ export const OrderList = ({ orders, onOpenOrder, onArchive, onUnarchive }: Order
           onOpen={onOpenOrder}
           onArchive={onArchive}
           onUnarchive={onUnarchive}
+          isHovered={hoveredClientId === order.client_id}
+          onMouseEnter={onOrderMouseEnter}
+          onMouseLeave={onOrderMouseLeave}
         />
       ))}
     </div>

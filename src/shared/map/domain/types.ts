@@ -6,6 +6,13 @@ export type Coordinates = {
   lng: number
 }
 
+export type MapViewportInsets = {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
+
 export type MapConfig = {
   center?: Coordinates
   zoom?: number
@@ -23,6 +30,10 @@ export type MapBridge = {
   disableCircleSelection: () => void
   showRoute: (route: Route | null) => void
   selectOrder: (id: number | string ) => void
+  setSelectedMarker: (id: string | null) => void
+  setHoveredMarker: (id: string | null) => void
+  setViewportInsets: (insets: MapViewportInsets) => void
+  reframeToVisibleArea: () => void
   resize: ()=>void
 }
 
@@ -38,6 +49,10 @@ export interface MapAdapter {
   drawRoute: (route: Route | null) => void
   fitBounds: (points?: Coordinates[]) => void
   selectMarker: (id:string) => void
+  setSelectedMarker: (id: string | null) => void
+  setHoveredMarker: (id: string | null) => void
+  setViewportInsets: (insets: MapViewportInsets) => void
+  reframeToVisibleArea: () => void
   destroy: () => void
   resize: ()=> void
 

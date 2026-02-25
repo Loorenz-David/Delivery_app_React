@@ -11,6 +11,9 @@ type DraggableOrderCardProps = {
   onOpen?: (order: Order) => void
   onArchive?:(order: Order)=> void
   onUnarchive?: (order: Order) => void
+  isHovered?: boolean
+  onMouseEnter?: (order: Order) => void
+  onMouseLeave?: () => void
 }
 
 export const DraggableOrderCard = ({
@@ -18,6 +21,9 @@ export const DraggableOrderCard = ({
   onOpen,
   onArchive,
   onUnarchive,
+  isHovered = false,
+  onMouseEnter,
+  onMouseLeave,
 }: DraggableOrderCardProps) => {
   const {
     attributes,
@@ -41,12 +47,20 @@ export const DraggableOrderCard = ({
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      onMouseEnter={() => onMouseEnter?.(order)}
+      onMouseLeave={() => onMouseLeave?.()}
+      {...attributes}
+      {...listeners}
+    >
       <OrderCard
         order={order}
         onOpen={onOpen}
         onArchive={onArchive}
         onUnarchive={onUnarchive}
+        isHovered={isHovered}
       />
     </div>
   )

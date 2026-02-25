@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import './shared/map/map.css';
+@import './featuresV2/plan/views/react-calendar-timeline.css';
 
 :root {
   --color-page: #ffffff;
@@ -203,4 +204,13 @@ textarea:focus {
 .animate-fill {
   width: 0%;
   animation: fillProgress 2.4s linear forwards;
+}
+.layout-animate {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layout-animate {
+    transition: none !important;
+  }
 }

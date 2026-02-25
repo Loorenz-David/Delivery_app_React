@@ -23,7 +23,7 @@ export function SectionManagerHost({ stackKey, isBaseOpen, containerClassName, w
   const sectionCount = openSections.length
 
   useEffect(()=>{
-    const allowedOpenOnce = new Set(["order.details", 'orderCases.main', 'oderCase.details', "LocalDeliveryStatsPage"])
+    const allowedOpenOnce = new Set(["order.details", 'orderCase.orderCases', 'orderCase.details', "LocalDeliveryStatsPage"])
 
     const seen= new Map<string,Section>()
     const toClose: string[] = []
@@ -45,15 +45,13 @@ export function SectionManagerHost({ stackKey, isBaseOpen, containerClassName, w
 
   },[sectionCount])
 
-  useEffect(()=>{
-    if (!isBaseOpen ){
-      sectionManager.closeAll()
-    }
+  
 
-  },[isBaseOpen])
+  console.log(sectionManager.getOpenCount())
+
 
   const stack = (
-    <AnimatePresence mode="popLayout">
+    <AnimatePresence mode="sync">
       {sectionManager.renderStack({variant:stackKey, width})}
     </AnimatePresence>
   )

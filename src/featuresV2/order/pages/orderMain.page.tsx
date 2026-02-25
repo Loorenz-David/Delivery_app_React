@@ -8,7 +8,7 @@ import { useOrderContext } from '../context/OrderContext'
 import type { Order } from '../types/order'
 
 const OrderMainContent = () => {
-  const { orders, orderActions, query } = useOrderContext()
+  const { orders, orderActions, query, orderStats, hoveredClientId, handleOrderRowMouseEnter, handleOrderRowMouseLeave } = useOrderContext()
 
   const handleOpenOrder = (order: Order) => {
     orderActions.openOrderDetail(
@@ -26,6 +26,7 @@ const OrderMainContent = () => {
         query={query}
         updateFilters={orderActions.updateFilters}
         deleteFilter={orderActions.deleteFilter}
+        orderStats={orderStats}
 
       />
       <div className="flex-1 overflow-y-auto p-2">
@@ -34,6 +35,9 @@ const OrderMainContent = () => {
           onOpenOrder={handleOpenOrder}
           onArchive={orderActions.handleArchiveOrder}
           onUnarchive={orderActions.handleUnarchiveOrder}
+          hoveredClientId={hoveredClientId}
+          onOrderMouseEnter={handleOrderRowMouseEnter}
+          onOrderMouseLeave={handleOrderRowMouseLeave}
         />
       </div>
     </div>

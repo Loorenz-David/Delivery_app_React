@@ -4,11 +4,15 @@ import type { ReactNode } from 'react'
 
 import type { Order } from '../types/order'
 import type { useOrderActions } from '../actions/order.actions'
-import type { OrderQueryFilters } from '../types/orderMeta'
+import type { OrderQueryFilters, OrderStats } from '../types/orderMeta'
 
 export type OrderContextValue = {
   orders: Order[]
   orderActions: ReturnType<typeof useOrderActions>
+  orderStats?: OrderStats
+  hoveredClientId: string | null
+  handleOrderRowMouseEnter: (order: Order) => void
+  handleOrderRowMouseLeave: () => void
   query: {
     q: string
     filters: OrderQueryFilters

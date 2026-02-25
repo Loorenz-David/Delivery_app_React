@@ -3,7 +3,7 @@ import { loadGoogleMaps } from '@/shared/google-maps/api/loadGoogleMaps'
 import { MAP_MARKER_LAYERS } from '../domain/constants/markerLayers'
 import type { MapOrder } from '../domain/entities/MapOrder'
 import type { Route } from '../domain/entities/Route'
-import type { Coordinates, MapAdapter, MapConfig } from '../domain/types'
+import type { Coordinates, MapAdapter, MapConfig, MapViewportInsets } from '../domain/types'
 
 type MapsLibrary = {
   Map: any
@@ -31,6 +31,12 @@ const getInteractionVariant = (order: MapOrder) => order.interactionVariant ?? '
 
 const createMarkerElement = (order: MapOrder) => {
   const el = document.createElement('div')
+  
+  if (order.markerColor) {
+    el.style.setProperty('--marker-bg', order.markerColor)
+  } else {
+    el.style.removeProperty('--marker-bg')
+  }
   el.className = 'map-marker'
   const interactionVariant = getInteractionVariant(order)
   el.dataset.markerVariant = interactionVariant
@@ -53,9 +59,15 @@ const applyMarkerElementAppearance = (
   order: MapOrder,
   isSelected: boolean,
   isMultiSelected: boolean,
+  isHovered: boolean,
 ) => {
   const interactionVariant = getInteractionVariant(order)
   el.className = 'map-marker'
+  if (order.markerColor) {
+    el.style.setProperty('--marker-bg', order.markerColor)
+  } else {
+    el.style.removeProperty('--marker-bg')
+  }
   el.dataset.markerVariant = interactionVariant
   el.classList.add(`map-marker--variant-${interactionVariant}`)
 
@@ -70,6 +82,10 @@ const applyMarkerElementAppearance = (
   if (isSelected) {
     el.classList.add('map-marker--selected')
     el.classList.add(`map-marker--selected-${interactionVariant}`)
+  }
+
+  if (isHovered) {
+    el.classList.add('map-marker--hovered')
   }
 
   if (isMultiSelected) {
@@ -87,6 +103,13 @@ const markerZIndex = (status?: string) => {
   return 10
 }
 
+const DEFAULT_VIEWPORT_INSETS: MapViewportInsets = {
+  top: 24,
+  right: 24,
+  bottom: 24,
+  left: 24,
+}
+
 export class GoogleMapAdapter implements MapAdapter {
   private map: any = null
   private MapCtor: any = null
@@ -97,6 +120,7 @@ export class GoogleMapAdapter implements MapAdapter {
   private layerSnapshots = new Map<string, MapOrder[]>()
   private routePolylines: any[] = []
   private selectedMarkerId: string | null = null
+  private hoveredMarkerId: string | null = null
   private drawingManager: any = null
   private activeCircle: any = null
   private circleSelectionCallback: ((ids: string[]) => void) | null = null
@@ -104,6 +128,7 @@ export class GoogleMapAdapter implements MapAdapter {
   private multiSelectedIds = new Set<string>()
   private circleListeners: any[] = []
   private drawingCompleteListener: any = null
+  private viewportInsets: MapViewportInsets = DEFAULT_VIEWPORT_INSETS
 
   async initialize(container: HTMLElement, options?: MapConfig) {
     const google = (await loadGoogleMaps()) as any
@@ -136,6 +161,7 @@ export class GoogleMapAdapter implements MapAdapter {
       mapId: options?.mapId,
       disableDefaultUI: options?.disableDefaultUI ?? true,
     })
+    this.applyViewportInsets()
 
     this.replayLayerSnapshots()
   }
@@ -156,6 +182,8 @@ export class GoogleMapAdapter implements MapAdapter {
       if (!nextIds.has(id)) {
         entry.marker.map = null
         entry.el.onclick = null
+        entry.el.onmouseenter = null
+        entry.el.onmouseleave = null
         layer.markers.delete(id)
         this.multiSelectedIds.delete(id)
       }
@@ -176,10 +204,16 @@ export class GoogleMapAdapter implements MapAdapter {
           order,
           this.selectedMarkerId === id,
           isMultiSelected,
+          this.hoveredMarkerId === id,
         )
         existing.el.onclick = (event: MouseEvent) => {
-          this.selectMarker(id)
           order.onClick?.(event)
+        }
+        existing.el.onmouseenter = (event: MouseEvent) => {
+          order.onMouseEnter?.(event)
+        }
+        existing.el.onmouseleave = (event: MouseEvent) => {
+          order.onMouseLeave?.(event)
         }
         existing.marker.map = layer.visible ? this.map : null
         return
@@ -187,8 +221,13 @@ export class GoogleMapAdapter implements MapAdapter {
 
       const content = createMarkerElement(order)
       content.onclick = (event: MouseEvent) => {
-        this.selectMarker(id)
         order.onClick?.(event)
+      }
+      content.onmouseenter = (event: MouseEvent) => {
+        order.onMouseEnter?.(event)
+      }
+      content.onmouseleave = (event: MouseEvent) => {
+        order.onMouseLeave?.(event)
       }
 
       const marker = new this.AdvancedMarkerCtor({
@@ -203,12 +242,23 @@ export class GoogleMapAdapter implements MapAdapter {
         content.classList.add(`map-marker--selected-${getInteractionVariant(order)}`)
       }
 
+      if (this.hoveredMarkerId === id) {
+        content.classList.add('map-marker--hovered')
+      }
+
       if (isMultiSelected) {
         content.classList.add('map-marker--multi-selected')
       }
 
       layer.markers.set(id, { marker, el: content, order })
     })
+
+    if (this.selectedMarkerId && !this.findMarkerEntryById(this.selectedMarkerId)) {
+      this.selectedMarkerId = null
+    }
+    if (this.hoveredMarkerId && !this.findMarkerEntryById(this.hoveredMarkerId)) {
+      this.hoveredMarkerId = null
+    }
 
     if (layer.visible && orders.length) {
       this.fitBounds(orders.map((order) => order.coordinates))
@@ -242,6 +292,8 @@ export class GoogleMapAdapter implements MapAdapter {
     layer.markers.forEach(({ marker, el }, id) => {
       marker.map = null
       el.onclick = null
+      el.onmouseenter = null
+      el.onmouseleave = null
       this.multiSelectedIds.delete(id)
     })
     layer.markers.clear()
@@ -255,6 +307,9 @@ export class GoogleMapAdapter implements MapAdapter {
 
     if (this.selectedMarkerId && !this.findMarkerEntryById(this.selectedMarkerId)) {
       this.selectedMarkerId = null
+    }
+    if (this.hoveredMarkerId && !this.findMarkerEntryById(this.hoveredMarkerId)) {
+      this.hoveredMarkerId = null
     }
   }
 
@@ -293,11 +348,17 @@ export class GoogleMapAdapter implements MapAdapter {
       this.clearLayer(layerId)
     })
     this.selectedMarkerId = null
+    this.hoveredMarkerId = null
     this.disableCircleSelection()
   }
 
   selectMarker(id: string) {
-    if (this.selectedMarkerId === id) return
+    this.setSelectedMarker(id)
+  }
+
+  setSelectedMarker(id: string | null) {
+    const normalizedId = id == null ? null : String(id)
+    if (this.selectedMarkerId === normalizedId) return
 
     if (this.selectedMarkerId) {
       const previous = this.findMarkerEntryById(this.selectedMarkerId)
@@ -308,14 +369,31 @@ export class GoogleMapAdapter implements MapAdapter {
       }
     }
 
-    const current = this.findMarkerEntryById(id)
-    if (current) {
-      const currentVariant = getInteractionVariant(current.entry.order)
-      current.entry.el.classList.add('map-marker--selected')
-      current.entry.el.classList.add(`map-marker--selected-${currentVariant}`)
+    this.selectedMarkerId = normalizedId
+    if (!this.selectedMarkerId) return
+
+    const current = this.findMarkerEntryById(this.selectedMarkerId)
+    if (!current) return
+
+    const currentVariant = getInteractionVariant(current.entry.order)
+    current.entry.el.classList.add('map-marker--selected')
+    current.entry.el.classList.add(`map-marker--selected-${currentVariant}`)
+  }
+
+  setHoveredMarker(id: string | null) {
+    const normalizedId = id == null ? null : String(id)
+    if (this.hoveredMarkerId === normalizedId) return
+
+    if (this.hoveredMarkerId) {
+      const previous = this.findMarkerEntryById(this.hoveredMarkerId)
+      previous?.entry.el.classList.remove('map-marker--hovered')
     }
 
-    this.selectedMarkerId = id
+    this.hoveredMarkerId = normalizedId
+    if (!this.hoveredMarkerId) return
+
+    const current = this.findMarkerEntryById(this.hoveredMarkerId)
+    current?.entry.el.classList.add('map-marker--hovered')
   }
 
   drawRoute(route: Route | null) {
@@ -383,17 +461,15 @@ export class GoogleMapAdapter implements MapAdapter {
         center: resolvedPoints[0],
         zoom: 14,
       })
+      const horizontalOffset = (this.viewportInsets.left - this.viewportInsets.right) / 2
+      const verticalOffset = (this.viewportInsets.top - this.viewportInsets.bottom) / 2
+      this.map.panBy?.(horizontalOffset, verticalOffset)
       return
     }
 
     const bounds = new this.LatLngBoundsCtor()
     resolvedPoints.forEach((point) => bounds.extend(point))
-    this.map.fitBounds(bounds, {
-      top: 50,
-      right: 900,
-      bottom: 50,
-      left: 50,
-    })
+    this.map.fitBounds(bounds, this.viewportInsets)
 
     const MAX_ZOOM = 10
     const MIN_ZOOM = 10
@@ -405,6 +481,20 @@ export class GoogleMapAdapter implements MapAdapter {
     if (typeof currentZoom === 'number' && currentZoom > MIN_ZOOM) {
       this.map.setZoom(MIN_ZOOM)
     }
+  }
+
+  setViewportInsets(insets: MapViewportInsets) {
+    this.viewportInsets = {
+      top: Math.max(0, insets.top),
+      right: Math.max(0, insets.right),
+      bottom: Math.max(0, insets.bottom),
+      left: Math.max(0, insets.left),
+    }
+    this.applyViewportInsets()
+  }
+
+  reframeToVisibleArea() {
+    this.fitBounds()
   }
 
   private ensureDrawingManager() {
@@ -680,6 +770,13 @@ export class GoogleMapAdapter implements MapAdapter {
 
     google.maps.event.trigger(this.map, 'resize')
 
+    this.applyViewportInsets()
     this.map.setCenter(normalizedCenter)
+  }
+
+  private applyViewportInsets() {
+  
+    if (!this.map) return
+    this.map.setOptions({ padding: this.viewportInsets })
   }
 }

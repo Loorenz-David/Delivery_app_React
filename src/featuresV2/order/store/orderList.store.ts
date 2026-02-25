@@ -2,6 +2,7 @@ import { createListStore } from '@/store/ListStoreFactory'
 import type { ListState } from '@/store/ListStoreFactory'
 
 import type { OrderPagination, OrderQueryFilters, OrderStats } from '../types/orderMeta'
+import { useShallow } from 'zustand/react/shallow'
 
 export const useOrderListStore = createListStore<OrderStats, OrderQueryFilters, OrderPagination>()
 
@@ -31,3 +32,6 @@ export const setOrderListLoading = (loading: boolean) => useOrderListStore.getSt
 export const setOrderListError = (error?: string) => useOrderListStore.getState().setError(error)
 
 export const clearOrderList = () => useOrderListStore.getState().clear()
+
+
+export const  useOrderStats = ()=> useOrderListStore(selectOrderListStats)

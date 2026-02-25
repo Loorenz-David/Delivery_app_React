@@ -11,9 +11,10 @@ type OrderCardProps = {
   onOpen?: (order: Order) => void
   onArchive?: (order:Order) => void
   onUnarchive?: (order: Order) => void
+  isHovered?: boolean
 }
 
-export const OrderCard = ({ order, onOpen, onArchive, onUnarchive }: OrderCardProps) => {
+export const OrderCard = ({ order, onOpen, onArchive, onUnarchive, isHovered = false }: OrderCardProps) => {
   const orderLabel = order.reference_number ?? order.external_order_id ?? order.client_id
   const streetAddress = order.client_address?.street_address ?? 'No address'
   const itemCount = order.total_items ?? 0
@@ -21,7 +22,11 @@ export const OrderCard = ({ order, onOpen, onArchive, onUnarchive }: OrderCardPr
   const orderState =  useOrderStateByServerId( order.order_state_id ?? 1 )
   const external_source = order.external_source 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-[var(--color-muted)]/30 bg-white p-4 relative"
+    <div className={`flex flex-col gap-3 rounded-2xl border bg-white p-4 relative transition-colors ${
+      isHovered
+        ? 'border-[rgb(var(--color-light-blue-r),0.7)] bg-[var(--color-light-blue)]/5'
+        : 'border-[var(--color-muted)]/30'
+    }`}
       onClick={() => onOpen?.(order)}
     >
       <OrderMissingInfoNotifier order={order} />

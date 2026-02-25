@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react'
-import {motion, AnimatePresence} from 'framer-motion'
 
+import type { DesktopPlanViewMode } from '../hooks/useHomeDesktopLayout'
+import { MapArea } from './MapArea'
+import { OverlayRail } from './OverlayRail'
+import { PlanArea } from './PlanArea'
 
 interface HomeDesktopLayoutProps {
   map: ReactNode
@@ -11,103 +14,96 @@ interface HomeDesktopLayoutProps {
   orderOverlay?: ReactNode
   buttonTogglePlan?: ReactNode
   isPlanVisible: boolean
-  mapResize: ()=> void
+  viewMode: DesktopPlanViewMode
+  splitMode: boolean
+  planColumnWidth: number
+  mapRowHeight: number
+  planRowHeight: number
+  overlayWidth: number
+  hasOverlay: boolean
+  onPlanLayoutChange?: () => void
+  onRailTransitionEnd?: () => void
 }
 
 export function HomeDesktopLayout({
   map,
   mapOverlay,
-  mapResize,
   plan,
   base,
   overlay,
   orderOverlay,
   buttonTogglePlan,
   isPlanVisible,
+  viewMode,
+  splitMode,
+  planColumnWidth,
+  mapRowHeight,
+  planRowHeight,
+  overlayWidth,
+  hasOverlay,
+  onPlanLayoutChange,
+  onRailTransitionEnd,
 }: HomeDesktopLayoutProps) {
 
 
-
-
   return (
-
-      <main className="flex flex-1 overflow-hidden relative justify-end">
-        {/* Map */}
-        <div className="absolute inset-0 z-0">
-          <div className="relative w-full h-full">
-            {map}
-            {mapOverlay}
-          </div>
+    <main className="flex flex-1 overflow-hidden">
+      <div className="flex h-full min-w-0 flex-1 flex-col">
+        <div
+          className={splitMode ? 'relative min-h-0 shrink-0 layout-animate' : 'relative min-h-0 flex-1'}
+          style={
+            splitMode
+              ? {
+                  height: `${mapRowHeight}%`,
+                  willChange: 'height',
+                  transition: 'height 220ms cubic-bezier(0.22, 1, 0.36, 1)',
+                }
+              : { height: '100%' }
+          }
+          onTransitionEnd={(event) => {
+            if (!splitMode) return
+            if (event.propertyName !== 'height') return
+            onRailTransitionEnd?.()
+          }}
+        >
+          <MapArea map={map} mapOverlay={mapOverlay} />
         </div>
 
+        {splitMode ? (
+          <PlanArea
+            viewMode={viewMode}
+            isPlanVisible={isPlanVisible}
+            plan={plan}
+            buttonTogglePlan={buttonTogglePlan}
+            planColumnWidth={planColumnWidth}
+            planRowHeight={planRowHeight}
+            onPlanLayoutChange={onPlanLayoutChange}
+            onRailTransitionEnd={onRailTransitionEnd}
+          />
+        ) : null}
+      </div>
 
-        
+      {!splitMode ? (
+        <PlanArea
+          viewMode={viewMode}
+          isPlanVisible={isPlanVisible}
+          plan={plan}
+          buttonTogglePlan={buttonTogglePlan}
+          planColumnWidth={planColumnWidth}
+          planRowHeight={planRowHeight}
+          onPlanLayoutChange={onPlanLayoutChange}
+          onRailTransitionEnd={onRailTransitionEnd}
+        />
+      ) : null}
 
-        {/* Delivery plan */}
-        <div className="relative z-10 h-full"> 
-          <AnimatePresence mode="popLayout">
-            {!isPlanVisible &&
-                (
-                  <motion.div className="absolute left-[-32px] top-0 z-10 flex items-center justify-center"
-                    layout
-                    initial={{x:100}}
-                    animate={{x:0}}
-
-                    transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-                  >
-                    {buttonTogglePlan}
-                  </motion.div>
-                )
-              }
-          </AnimatePresence>
-
-          <AnimatePresence mode="popLayout">
-            {isPlanVisible && (
-              <motion.div
-                layout
-                className="z-10 h-full"
-                initial={{ x: 450 }}
-                animate={{ x: 0 }}
-                exit={{ x: 450 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-              >
-                {plan}
-              </motion.div>
-            )} 
-          </AnimatePresence>
-
-         
-         
-        </div>
-
-        {/* Overlay  sections */}
-        <div className="relative z-20 h-full">{overlay}</div>
-
-        {/* Orders without plan (base layer) */}
-        
-          <div className="relative z-30 h-full">
-            {base}
-            
-            {/* Plan toggle button */}
-           
-            {/* Overlay sections */}
-            <AnimatePresence mode="popLayout">
-              {orderOverlay && (
-                <motion.div className="absolute inset-1 z-40 h-full w-full"
-                  layout
-                  key={orderOverlay ? 'with-order' : 'without-order'}
-                  initial={{ x: 450}}
-                  animate={{ x: 0 }}
-                  exit={{ x: 450 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                >
-                  {orderOverlay}
-                </motion.div>
-                )}
-            </AnimatePresence>
-
-          </div>
-      </main>
-
+      <OverlayRail
+        base={base}
+        overlay={overlay}
+        orderOverlay={orderOverlay}
+        hasOverlay={hasOverlay}
+        overlayWidth={overlayWidth}
+        onPlanLayoutChange={onPlanLayoutChange}
+      />
+    </main>
   )
 }

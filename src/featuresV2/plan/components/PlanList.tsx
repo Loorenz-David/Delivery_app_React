@@ -9,7 +9,7 @@ type PropsPlanList = {
 export const PlanList = ({plans, droppable}: PropsPlanList) => {
     return ( 
        
-        <div className="flex flex-col px-2 gap-4 pb-10">
+        <div className="flex flex-col px-5 gap-4 pb-10">
             {plans.map(plan => (
                 droppable ? 
                     <DroppablePlanCard key={plan.client_id} plan={plan} />

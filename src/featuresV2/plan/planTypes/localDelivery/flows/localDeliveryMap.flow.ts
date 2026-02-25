@@ -64,7 +64,7 @@ export const useLocalDeliveryMapFlow = ({
     }
 
     const orderMarkers = orders
-      .map((order) => {
+      .map((order): MapOrder | null => {
         const coordinates = order.client_address?.coordinates
         if (!coordinates || typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number') {
           return null
@@ -75,6 +75,8 @@ export const useLocalDeliveryMapFlow = ({
           id: orderId,
           onClick: (e: MouseEvent) => handleClickMarker(e, order),
           coordinates,
+          markerColor: '#0034c1',
+          delivery_plan_id: order.delivery_plan_id ?? null,
           ...(stop?.stop_order != null && { label: String(stop.stop_order) }),
           // status: order.order_state_id != null ? String(order.order_state_id) : undefined,
         }
@@ -98,6 +100,7 @@ export const useLocalDeliveryMapFlow = ({
     if (isActive) return
     mapManager.clearMarkerLayer(MAP_MARKER_LAYERS.localDelivery)
     mapManager.showRoute(null)
+    mapManager.reframeToVisibleArea()
   }, [isActive, mapManager])
 
   useEffect(() => {

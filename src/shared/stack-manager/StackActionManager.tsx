@@ -32,7 +32,7 @@ export interface ActionComponentProps<TPayload = ActionPayload> {
 export interface ActionManagerOptions<
   TPayloadMap extends Record<PropertyKey, any>
 > {
-  blueprint: ComponentType<any>
+  blueprint?: ComponentType<any> | null
   stackRegistry: {
     [K in keyof TPayloadMap]: ComponentType<any>
   }
@@ -62,12 +62,12 @@ export class StackActionManager <
 >{
   private stackEntries: StackEntryUnion<TPayloadMap>[] = []
   private listeners = new Set<() => void>()
-  private readonly blueprint: ComponentType<any>
+  private readonly blueprint?: ComponentType<any> | null
   private readonly stackRegistry:{[K in keyof TPayloadMap]: ComponentType<any>}
   private readonly closeDelayMs: number
 
   constructor(options: ActionManagerOptions<TPayloadMap>) {
-    this.blueprint = options.blueprint
+    this.blueprint = options?.blueprint
     this.stackRegistry = options.stackRegistry
     this.closeDelayMs = options.closeDelayMs ?? 0
   }
@@ -205,7 +205,7 @@ export class StackActionManager <
   renderStack({variant, width}:RenderStackProps): ReactNode[] | undefined {
     const Blueprint = this.blueprint
 
-   
+
     if (variant == 'dynamicSectionPanels'){
       return this.stackEntries.map((entry, index) => {
           const component = this.stackRegistry[entry.key]
@@ -214,10 +214,17 @@ export class StackActionManager <
           const baseClass = panelWidth == null
             ? 'h-full min-w-0 w-full max-w-full md:w-[400px]'
             : 'h-full min-w-0 w-full max-w-full'
+
+          const RenderComp = createElement(component, {
+                payload: entry.payload,
+                onClose: () => this.close(entry.id),
+          })
+
+         
+
           return (
             <motion.div
               key={entry.id}
-              layout
               initial={{ x: panelWidth ?? 400}}
               animate={{ x: 0 }}
               exit={{ x: panelWidth ?? 400 }}
@@ -229,16 +236,17 @@ export class StackActionManager <
               }
               style={panelWidth == null ? undefined : { width: panelWidth, maxWidth: '100%' }}
             >
-              <Blueprint
-                position={index}
-                parentParams={{...entry.parentParams, ...entry.payload}}
-                onRequestClose={() => this.close(entry.id)}
-              >
-                {createElement(component, {
-                  payload: entry.payload,
-                  onClose: () => this.close(entry.id),
-                })}
-              </Blueprint>
+              {Blueprint  
+                ? <Blueprint
+                    position={index}
+                    parentParams={entry.parentParams}
+                    payload={entry.payload}
+                    onRequestClose={() => this.close(entry.id)}
+                  >
+                    {RenderComp}
+                  </Blueprint>
+                : RenderComp
+              }
             </motion.div>
           )
         })
@@ -247,15 +255,28 @@ export class StackActionManager <
 
        return this.stackEntries.map((entry, index) => {
         const component = this.stackRegistry[entry.key]
-        
-  
-        return (
-          <Blueprint key={entry.id} id={entry.id} position={index} parentParams={{...entry.parentParams, ...entry.payload}} onRequestClose={() => this.close(entry.id)}>
-            {createElement(component, {
-              payload: entry.payload,
-              onClose: () => this.close(entry.id),
-            })}
-          </Blueprint>
+        const RenderComp = createElement(component, {
+            payload: entry.payload,
+            onClose: () => this.close(entry.id),
+          })
+        return ( 
+          <>
+            {Blueprint
+              ? <Blueprint 
+                  key={entry.id} 
+                  id={entry.id} 
+                  position={index} 
+                  parentParams={entry.parentParams}
+                  payload={entry.payload}
+                  onRequestClose={() => this.close(entry.id)}
+                >
+                    {RenderComp}
+                </Blueprint>
+            
+
+              : RenderComp
+            }
+          </>
         )
       })
     }

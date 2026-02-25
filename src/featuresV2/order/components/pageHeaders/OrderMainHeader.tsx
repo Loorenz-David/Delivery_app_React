@@ -1,9 +1,11 @@
 import {  OrderIcon, PlusIcon } from '@/assets/icons'
 import { BasicButton } from '@/shared/buttons/BasicButton'
 import { SectionHeader } from '@/shared/section-panel/SectionHeader'
-import type { OrderQueryFilters, OrderQueryStringQueries } from '../../types/orderMeta'
+import type { OrderQueryFilters, OrderQueryStringQueries, OrderStats } from '../../types/orderMeta'
 import { ActiveFilterPills, SearchFilterBar } from '@/shared/searchBars'
 import { filterConfig } from '../../domain/orderFilterConfig'
+import { useSectionPanel } from '@/shared/section-panel/SectionPanelContext'
+import { useEffect } from 'react'
 
 
 
@@ -13,13 +15,15 @@ type OrderMainHeaderProps = {
   applyFilters: (filters: OrderQueryFilters) => void
   updateFilters: (key: OrderQueryStringQueries, value: unknown) => void
   deleteFilter: (key: OrderQueryStringQueries) => void
+  orderStats?:OrderStats
   query: {
     q: string
     filters: OrderQueryFilters
   }
 }
 
-export const OrderMainHeader = ({ onCreate, applySearch, deleteFilter, updateFilters, query }: OrderMainHeaderProps) => {
+export const OrderMainHeader = ({ onCreate, applySearch, deleteFilter, updateFilters, query, orderStats }: OrderMainHeaderProps) => {
+  const { setHeader } = useSectionPanel()
   const filterLabelMap = filterConfig.reduce<Record<string, string>>((acc, filter) => {
     if (filter.type === 'option') {
       acc[filter.key] = filter.label
@@ -27,13 +31,28 @@ export const OrderMainHeader = ({ onCreate, applySearch, deleteFilter, updateFil
     return acc
   }, {})
 
+  useEffect(()=>{
+    const title = (
+            <div>
+              <span>Orders</span>
+              <span className="text-xs flex text-[var(--color-muted)] font-normal">
+                {orderStats?.orders?.total ?? 0} orders • {orderStats?.items?.total ?? 0} items  
+              </span>
+            </div>
+    )
+    setHeader({
+      title,
+      icon: <OrderIcon className="h-6 w-6 fill-[var(--color-muted)]" />,
+      closeButton:false,
+    })
+    return () => {
+            setHeader(null);
+        }
+  },[orderStats])
+
+
   return (
     <>
-      <SectionHeader
-        title="Orders"
-        icon={<OrderIcon className="h-6 w-6 fill-[var(--color-muted)]" />}
-        closeButton={false}
-      />
       <div className="flex flex-col">
         <div className="flex gap-4 p-4 pb-3">
           <SearchFilterBar

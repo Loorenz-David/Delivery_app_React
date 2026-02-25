@@ -1,27 +1,27 @@
-import { ArchiveIcon, DocumentIcon,  EditIcon } from '@/assets/icons'
+import { ArchiveIcon, CloseIcon, DocumentIcon, EditIcon } from '@/assets/icons'
 import { BasicButton } from '@/shared/buttons/BasicButton'
-import { SectionHeader } from '@/shared/section-panel/SectionHeader'
 import type { Order } from '../../types/order'
 import { DropdownButton } from '@/shared/buttons/DropdownButton'
 import { OrderStateList } from '../OrderStateList'
 import { useOrderStateRegistry } from '../../domain/useOrderStateRegistry'
-import { useOrderStateController } from '../../controllers/orderState.controller'
 import { CounterBadge } from '@/shared/layout/CounterBadge'
 
 type OrderDetailHeaderProps = {
     openOrderForm:(payload:{ clientId?: string; mode?: 'create' | 'edit'; deliveryPlanId?: number | null })=> void
     openOrderCases:(payload:{ orderId?: number, orderReference:string })=> void
+    onAdvanceOrderState: (clientId: string) => Promise<void>
+    onClose: () => void
     order: Order | null
 }
 
 export const OrderDetailHeader = ({ 
   openOrderForm,
   openOrderCases,
-
+  onAdvanceOrderState,
+  onClose,
   order 
 }: OrderDetailHeaderProps) => {
     const registry = useOrderStateRegistry()
-    const { advanceOrderState } = useOrderStateController()
 
     const currentStateName = order?.order_state_id != null
       ? (registry.getById(order.order_state_id)?.name ?? 'Unknown state')
@@ -31,13 +31,26 @@ export const OrderDetailHeader = ({
 
     return (
         <>
-        <SectionHeader
-            title={<HeaderTitle order={order}/>}
-            icon={<DocumentIcon className="h-6 w-6 text-[var(--color-muted)]" />}
-            closeButton={true}
-            actions={undefined}
-            headerButtonsBgClass="bg-[var(--color-primary)]/5"
-        />
+        <div className="flex items-center justify-between gap-3  px-4 py-4 relative bg-[var(--color-primary)] shadow-md"
+          style={{ borderRadius:'0 0 20px 20px'}}
+        >
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center justify-center rounded-xl bg-[var(--color-muted)]/30 px-3 py-3">
+              <DocumentIcon className="h-6 w-6 text-[var(--color-page)]" />
+            </div>
+            <HeaderTitle order={order}/>
+          </div>
+          <BasicButton
+            params={{
+              variant: 'textInvers',
+              onClick: onClose,
+              ariaLabel: 'Close order detail',
+            }}
+          >
+            close
+          </BasicButton>
+        </div>
+       
         <div className="flex gap-4 p-4 justify-between">
           <div className="flex w-[120px]">
             <DropdownButton
@@ -47,7 +60,7 @@ export const OrderDetailHeader = ({
                 disabled={!order}
                 onClick={() => {
                   if (!order) return
-                  void advanceOrderState(order.client_id)
+                  void onAdvanceOrderState(order.client_id)
                 }}
             >
               {order ? (
@@ -68,7 +81,7 @@ export const OrderDetailHeader = ({
                       ariaLabel: 'Edit order',
                   }}
                   >
-                  <ArchiveIcon className="mr-2 h-4 w-4 stroke-[var(--color-secondary)]" />
+                  <ArchiveIcon className="mr-2 h-4 w-4 stroke-[var(--color-primary)]" />
                   <div className="flex gap-3">
                     <span>
                       Cases
@@ -91,13 +104,13 @@ export const OrderDetailHeader = ({
                       ariaLabel: 'Edit order',
                   }}
                   >
-                  <EditIcon className="mr-2 h-4 w-4 stroke-[var(--color-secondary)]" />
+                  <EditIcon className="mr-2 h-4 w-4 stroke-[var(--color-primary)]" />
                   Edit
               </BasicButton>
 
           </div>
         </div>
-        </>
+        </ >
 
     )
 }
@@ -107,14 +120,23 @@ const HeaderTitle = ({order}:{order:Order | null})=>{
   const title = order?.reference_number ?? 'reference number missing'
   return (
     <div className="flex flex-col gap-[5px]">
-        <span className="text-md font-semibold text-[var(--color-muted)]/80">
-          {title}
-        </span>
-        {order?.external_source && 
-          <span className="inline-flex w-fit rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[0.5rem] uppercase tracking-wide text-[var(--color-muted)]">
-            {order.external_source}
+        <div className="flex gap-5">
+          <span className="text-md font-semibold text-[var(--color-page)]/80">
+            {title}
           </span>
-        }
+          {order?.external_source && 
+          <div className="flex items-center justify-center">
+            <span className="inline-flex w-fit rounded-full border border-[var(--color-page)] px-2 py-0.5 text-[0.5rem] uppercase tracking-wide text-[var(--color-page)]">
+              {order.external_source}
+            </span>
+          </div>
+          }
+        </div>
+        <div className="flex">
+          <span className="text-xs flex text-[var(--color-page)]/80 font-normal">
+             creation date
+          </span>
+        </div>
     </div>
   )
 }

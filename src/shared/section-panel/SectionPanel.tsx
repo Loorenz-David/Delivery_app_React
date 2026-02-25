@@ -25,7 +25,7 @@ export const SectionPanel = ({
     }
 
     return ( 
-        <SectionPanelContext.Provider value={{ setHeader }}>
+        <SectionPanelContext.Provider value={{ setHeader, onClose }}>
             <section className=" flex flex-col bg-[var(--color-page)] w-full h-full  flex overflow-hidden "
                 style={{borderLeft: parentParams?.borderLeft ?  `2px solid ${parentParams.borderLeft}` : undefined, ...style}}
             >
@@ -46,7 +46,7 @@ export const SectionPanel = ({
 
                                 }
                             </div>
-                            {header.closeButton &&
+                            {header.closeButton && !header.customHeaderButton && 
                                 <BasicButton 
                                     params={{
                                         variant: "text",
@@ -55,6 +55,9 @@ export const SectionPanel = ({
                                 >
                                     Close
                                 </BasicButton>
+                            }
+                            {header.customHeaderButton && 
+                                header?.customHeaderButton
                             }
                         </div>
 

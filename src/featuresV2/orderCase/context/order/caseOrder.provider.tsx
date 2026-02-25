@@ -1,30 +1,22 @@
 import type { PropsWithChildren } from 'react'
-import { CaseOrderContext } from './caseOrder.context'
-import { useCaseOrderActions } from '../../pages/order/order.actions'
+
 import { useOrderCasesByOrderFlow } from '../../flows/orderCasePages.flow'
-
-
+import { useCaseOrderActions } from '../../pages/order/order.actions'
+import { CaseOrderContext } from './caseOrder.context'
 
 type CaseOrderProviderProps = PropsWithChildren<{
-    orderId: number
+  orderId: number
+  onClose?: () => void
 }>
 
+export const CaseOrderProvider = ({ children, orderId, onClose }: CaseOrderProviderProps) => {
+  const { cases } = useOrderCasesByOrderFlow(orderId)
+  const caseOrderActions = useCaseOrderActions({ onClose })
 
-export const CaseOrderProvider = ({ children, orderId }:CaseOrderProviderProps)=>{
+  const value = {
+    cases,
+    caseOrderActions,
+  }
 
-    const {cases} = useOrderCasesByOrderFlow(orderId)
-
-    const caseOrderActions = useCaseOrderActions()
-
-    const value = {
-        cases,
-        caseOrderActions,
-    }
-
-
-    return (
-        <CaseOrderContext.Provider value={value}>
-            {children}
-        </CaseOrderContext.Provider>
-    )
+  return <CaseOrderContext.Provider value={value}>{children}</CaseOrderContext.Provider>
 }

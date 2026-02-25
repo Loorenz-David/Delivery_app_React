@@ -10,6 +10,7 @@ import { useDeliveryPlanStateByServerId } from '../../store/usePlanState.selecto
 import { planIconTypeMap } from '../../utils/planIconTypeMap'
 import { PlusIcon } from '@/assets/icons/index'
 import { coerceUtcFromOffset } from '@/shared/data-validation/timeValidation'
+import { usePlanHeaderAction } from '../../actions/usePlanActions'
 
 
 type PropsPlanCard = {
@@ -22,7 +23,7 @@ type PropsPlanCard = {
 export const PlanCard = ({ plan, isOver, isDropped }: PropsPlanCard) => {
 
    
-    const baseControlls = useBaseControlls()
+    const {openPlanSection} = usePlanHeaderAction()
 
     const PlanTypeIcon = planIconTypeMap[plan.plan_type]
     const startDate = formatPlanDate(plan.start_date)
@@ -33,13 +34,6 @@ export const PlanCard = ({ plan, isOver, isDropped }: PropsPlanCard) => {
     const totalWeight = plan.total_weight ?? 0
     const DeliveryPlanState = useDeliveryPlanStateByServerId( plan.state_id ?? 1 )
 
-    const openPlanOrders = () => {
-        if (!plan.id) return
-        baseControlls.openBase({
-            payload: { planId: plan.id, ordersPlanType: plan.plan_type },
-        })
-    }
-
     
 
     return ( 
@@ -48,7 +42,7 @@ export const PlanCard = ({ plan, isOver, isDropped }: PropsPlanCard) => {
         className="flex flex-col gap-6 rounded-2xl border border-[var(--color-border)] p-4 shadow-sm cursor-pointer"
         onClick={(e) => {
             if (e.defaultPrevented) return
-            openPlanOrders()
+            openPlanSection(plan)
         }}
         >
             <div className="flex items-start justify-between gap-3 ">

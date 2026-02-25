@@ -1,54 +1,65 @@
-import { useState } from "react"
+import { useCallback, useState } from 'react'
+
 import { useSectionManager } from '@/shared/resource-manager/useResourceManager'
-import type { OrderCaseState } from "../../types"
+import { useOrderForCase } from '@/featuresV2/order'
 
-import { useOrderCaseByClientId } from "../../store/orderCaseStore"
-import { useOrderForCase } from "@/featuresV2/order"
-import { useDetailsControllers } from "../../controllers/details.controllers"
+import { useDetailsControllers } from '../../controllers/details.controllers'
+import type { OrderCaseState } from '../../types'
+import { useOrderCaseByClientId } from '../../store/orderCaseStore'
 
-export const useDetailsActions = (orderCaseClientId:string) =>{
-    const orderCase = useOrderCaseByClientId(orderCaseClientId)
-    const [ message, setMessage ] = useState('')
-    const { updateState, sendChat } = useDetailsControllers()
-    const { changeOrderOpenCasesCount } = useOrderForCase()
-    const sectionManager = useSectionManager()
+export const useDetailsActions = (
+  orderCaseClientId: string,
+  { onClose }: { onClose?: () => void } = {},
+) => {
+  const orderCase = useOrderCaseByClientId(orderCaseClientId)
+  const [message, setMessage] = useState('')
+  const { updateState, sendChat } = useDetailsControllers()
+  const { changeOrderOpenCasesCount } = useOrderForCase()
+  const sectionManager = useSectionManager()
 
-    const changeState = async (nextState: OrderCaseState)=>{
-        if(!orderCase?.id) return
+  const closeCaseDetails = useCallback(() => {
+    if (onClose) {
+      onClose()
+      return
+    }
+    sectionManager.close()
+  }, [onClose, sectionManager])
 
-        const orderId = orderCase?.order_id
-        const isNextResolved = Boolean(nextState == 'Resolved')
+  const changeState = async (nextState: OrderCaseState) => {
+    if (!orderCase?.id) return
 
-        if( isNextResolved ){
-          changeOrderOpenCasesCount(orderId, -1)
-          sectionManager.closeByKey('orderCase.details')
-        }
-        
-        const success = await updateState(orderCase.id,nextState)
+    const orderId = orderCase?.order_id
+    const isNextResolved = nextState === 'Resolved'
 
-        if(!success && isNextResolved){
-            changeOrderOpenCasesCount(orderId, 1)
-        }
-        
+    if (isNextResolved) {
+      changeOrderOpenCasesCount(orderId, -1)
+      closeCaseDetails()
     }
 
-    const addChat = async () =>{
-        if(!orderCase?.id) return
-        const previousMessage = message
-        setMessage('')
+    const success = await updateState(orderCase.id, nextState)
 
-        const success = await sendChat(orderCase.id, message)
-
-        if(!success){
-            setMessage(prev => previousMessage + '\t' + prev )
-        }
-
+    if (!success && isNextResolved) {
+      changeOrderOpenCasesCount(orderId, 1)
     }
+  }
 
-    return {
-        changeState,
-        addChat,
-        setMessage,
-        message,
+  const addChat = async () => {
+    if (!orderCase?.id) return
+    const previousMessage = message
+    setMessage('')
+
+    const success = await sendChat(orderCase.id, message)
+
+    if (!success) {
+      setMessage((prev) => previousMessage + '\t' + prev)
     }
+  }
+
+  return {
+    closeCaseDetails,
+    changeState,
+    addChat,
+    setMessage,
+    message,
+  }
 }

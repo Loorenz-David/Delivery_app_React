@@ -1,78 +1,78 @@
-import { useCallback, useMemo } from "react"
+import { useCallback, useMemo } from 'react'
 
-import { useSectionManager } from "@/shared/resource-manager/useResourceManager"
-import { selectOrderCaseByClientId,  useOrderCaseStore } from "../../store/orderCaseStore"
+import { apiClient } from '@/lib/api/ApiClient'
+import { useSectionManager } from '@/shared/resource-manager/useResourceManager'
+import { useOrderForCase } from '@/featuresV2/order'
 
-import { useCaseOrderController } from "../../controllers/order.controllers"
-import { apiClient } from "@/lib/api/ApiClient"
-import { useOrderCaseModel } from "../../domain/orderCase.model"
-import { useOrderForCase } from "@/featuresV2/order"
+import { useCaseOrderController } from '../../controllers/order.controllers'
+import { useOrderCaseModel } from '../../domain/orderCase.model'
+import { selectOrderCaseByClientId, useOrderCaseStore } from '../../store/orderCaseStore'
 
+export const useCaseOrderActions = ({ onClose }: { onClose?: () => void } = {}) => {
+  const sectionManager = useSectionManager()
 
+  const { createCase, deleteCase } = useCaseOrderController()
+  const { buildInitialCase } = useOrderCaseModel()
+  const { changeOrderOpenCasesCount } = useOrderForCase()
 
-export const useCaseOrderActions = ()=>{
+  const sessionUserId = useMemo(() => {
+    const userId = apiClient.getSessionUserId()
+    if (typeof userId !== 'number') return null
+    return userId
+  }, [])
 
-    const sectionManager = useSectionManager()
+  const openCaseDetails = useCallback(
+    (orderCaseClientId: string) => {
+      sectionManager.open({
+        key: 'orderCase.details',
+        payload: { orderCaseClientId },
+      })
+    },
+    [sectionManager],
+  )
 
-    const { createCase, deleteCase } = useCaseOrderController()
-    const { buildInitialCase }= useOrderCaseModel()
-    const { changeOrderOpenCasesCount } = useOrderForCase()
+  const closeCaseOrder = useCallback(() => {
+    if (onClose) {
+      onClose()
+      return
+    }
+    sectionManager.close()
+  }, [onClose, sectionManager])
 
+  const createOpenCase = async (orderId: number) => {
+    const newCase = buildInitialCase(orderId, sessionUserId)
 
-    const sessionUserId = useMemo(()=>{
-        const userId =apiClient.getSessionUserId()
-        if( typeof userId !== "number" ) return null
-        return userId
-    },[])
+    changeOrderOpenCasesCount(orderId, 1)
+    const success = await createCase(newCase)
 
-
-    const openCaseDetails = useCallback(
-        (orderCaseClientId: string) => {
-          sectionManager.open({
-            key: 'orderCase.details',
-            payload: { orderCaseClientId },
-          })
-        },
-        [sectionManager],
-    )
-
-    const createOpenCase = async (orderId:number)=>{
-
-        const newCase = buildInitialCase(orderId, sessionUserId)
-
-        changeOrderOpenCasesCount(orderId, 1)
-        const success = await createCase(newCase)
-
-        if (!success ){
-            changeOrderOpenCasesCount(orderId, -1)
-            return
-        }
-
-        openCaseDetails(newCase.client_id)
-
-
+    if (!success) {
+      changeOrderOpenCasesCount(orderId, -1)
+      return
     }
 
-    const removeCase = async (caseClientId:string)=>{
-        const current = selectOrderCaseByClientId(caseClientId)(useOrderCaseStore.getState())
-        if(!current) return
+    openCaseDetails(newCase.client_id)
+  }
 
-        const isOpenCase = current.state !== 'Resolved'
+  const removeCase = async (caseClientId: string) => {
+    const current = selectOrderCaseByClientId(caseClientId)(useOrderCaseStore.getState())
+    if (!current) return
 
-        if(isOpenCase){
-            changeOrderOpenCasesCount(current.order_id, -1)
-        }
+    const isOpenCase = current.state !== 'Resolved'
 
-        const success = await deleteCase(caseClientId)
-        if (!success && isOpenCase ){
-            changeOrderOpenCasesCount(current.order_id, 1)
-        }
+    if (isOpenCase) {
+      changeOrderOpenCasesCount(current.order_id, -1)
     }
 
-
-    return {
-        openCaseDetails,
-        createOpenCase,
-        removeCase
+    const success = await deleteCase(caseClientId)
+    if (!success && isOpenCase) {
+      changeOrderOpenCasesCount(current.order_id, 1)
     }
+  }
+
+  return {
+    openCaseDetails,
+    closeCaseOrder,
+    createOpenCase,
+    removeCase,
+  }
 }

@@ -6,10 +6,14 @@ export type MapOrderInteractionVariant = 'default' | 'order'
 export type MapOrder = {
   id: string
   coordinates: Coordinates 
+  delivery_plan_id?: number | null
+  markerColor?: string
   status?: MapOrderStatus
   sequence?: number | null
   label?: string 
   onClick: (e:MouseEvent) => void
+  onMouseEnter?: (e: MouseEvent) => void
+  onMouseLeave?: (e: MouseEvent) => void
   className?: string
   interactionVariant?: MapOrderInteractionVariant
 }

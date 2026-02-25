@@ -4,7 +4,7 @@
   height: 28px;
   padding: 0 8px;
 
-  background: #0034c1;
+  background: var(--marker-bg, #0034c1);
   border-radius: 6px;
 
   color: #ffff;
@@ -33,7 +33,7 @@
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 6px solid #0034c1; /* same as background */
+  border-top: 6px solid var(--marker-bg, #0034c1); /* same as background */
 }
 .map-marker::before {
   content: "";
@@ -63,6 +63,12 @@
   box-shadow: 0 4px 10px rgba(29, 78, 216, 0.5);
 }
 
+.map-marker--variant-default.map-marker--hovered {
+  cursor: pointer;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 10px rgba(29, 78, 216, 0.5);
+}
+
 .map-marker--selected-default {
   border: 0.5px solid #1d4ed8;      
   background: #eff6ff;        
@@ -86,15 +92,13 @@
 
 .order-marker {
   position: relative;
-  width: 22px;
-  height: 22px;
-  background: #253ad9;
-  border-radius: 50% 50% 50% 0;
+  width: 15px;
+  height: 27px;
 
   transform: rotate(-45deg);
   transform-origin: 50% 50%;
   margin-top: -24px; /* anchors bottom tip to map point */
-
+  border-radius: 50% 50% 50% 0;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
   border: 1px solid #ffffff;
 }
@@ -121,6 +125,11 @@
 }
 
 .map-marker--variant-order:hover {
+  cursor: pointer;
+  filter: brightness(1.05);
+}
+
+.map-marker--variant-order.map-marker--hovered {
   cursor: pointer;
   filter: brightness(1.05);
 }

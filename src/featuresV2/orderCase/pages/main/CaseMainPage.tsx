@@ -8,31 +8,27 @@ import { CaseMainProvider } from '../../context/main/caseMain.provider'
 
 const CaseMainPageContent = () => {
   const { cases, caseMainActions, query } = useCaseMainContext()
-  
+
   return (
-    <div className="flex h-full w-full flex-col bg-[var(--color-page)]">
+    <div className="flex h-full w-full flex-col bg-[var(--color-page)] border-l-1 border-l-[var(--color-primary)]/30">
       <OrderCaseMainHeader
         applySearch={caseMainActions.applySearch}
         updateFilters={caseMainActions.updateFilters}
         deleteFilter={caseMainActions.deleteFilter}
         resetQuery={caseMainActions.resetQuery}
+        onClose={caseMainActions.closeCaseMain}
         query={query}
       />
       <div className="flex-1 overflow-y-auto p-3">
-        <OrderCaseList
-          cases={cases}
-          onOpenCase={caseMainActions.openCaseDetails}
-        />
+        <OrderCaseList cases={cases} onOpenCase={caseMainActions.openCaseDetails} />
       </div>
     </div>
   )
 }
 
-export const CaseMainPage = (_props: StackComponentProps<undefined>) => {
-  void _props
-
+export const CaseMainPage = ({ onClose }: StackComponentProps<undefined>) => {
   return (
-    <CaseMainProvider>
+    <CaseMainProvider onClose={onClose}>
       <CaseMainPageContent />
     </CaseMainProvider>
   )

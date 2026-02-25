@@ -1,86 +1,43 @@
- import { useEffect } from 'react'
-
 import type { StackComponentProps } from '@/shared/stack-manager/types'
 
 import { ItemsOrderPreview } from '../item'
 import { OrderDetailSummary } from '../components/OrderDetailSummary'
-import { OrderProvider } from '../context/OrderProvider'
-import { useOrderActions } from '../actions/order.actions'
-import { useOrderFlow } from '../flows/order.flow'
-import { useOrderByClientId, useOrderByServerId } from '../store/orderHooks.store'
-import { useOrderStateByServerId } from '../store/orderStateHooks.store'
 import { OrderDetailHeader } from '../components/pageHeaders/OrderDetailHeader'
-import { useMobile } from '@/app/contexts/MobileContext'
-import { usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
+import { OrderDetailProvider } from '../context/OrderDetailProvider'
+import { useOrderDetailContext } from '../context/OrderDetailContext'
 
-type OrderDetailPayload = {
+export type OrderDetailPayload = {
   clientId?: string
   serverId?: number
   mode?: 'view' | 'edit'
 }
 
-const OrderDetailContent = ({ payload }: { payload?: OrderDetailPayload }) => {
+const OrderDetailContent = () => {
+  const {
+    order,
+    orderState,
+    orderServerId,
+    openOrderForm,
+    openOrderCases,
+    closeOrderDetail,
+    advanceDetailOrderState,
+  } = useOrderDetailContext()
 
-  const clientId = payload?.clientId ?? null
-  const serverId = payload?.serverId ?? null
-
-  const headerActions = useOrderActions()
-  const { loadOrders } = useOrderFlow()
-  const {isMobile} = useMobile()
-
-  const orderByClient = useOrderByClientId(clientId)
-  const orderByServer = useOrderByServerId(serverId)
-  const order = orderByClient ?? orderByServer
-  const orderServerId = typeof order?.id === 'number' ? order.id : null
-  const orderState = useOrderStateByServerId(order?.order_state_id ?? null)
-  const popupManager = usePopupManager()
-  const sectionManager = useSectionManager()
-
-  useEffect(() => {
-    if (order) return
-    void loadOrders()
-  }, [ order])
-
-
-  const handleKeyDown = (event:KeyboardEvent)=>{
-    const isPopupOpen = popupManager.getOpenCount()
-    if(event.key == 'e' && clientId){
-      if(isPopupOpen) return
-      headerActions.openOrderForm({mode: 'edit', clientId: clientId})
-    }
-    if(event.key == 'c' && clientId){
-      if(isPopupOpen) return
-      const isCaseOpen = sectionManager.hasKey('orderCase.orderCases')
-      if(isCaseOpen) return
-      headerActions.openOrderCases({ orderId: order?.id, orderReference: order?.reference_number ?? '' })
-    }
-  }
-
-  useEffect(()=>{
-     if(!isMobile){
-      window.addEventListener('keydown', handleKeyDown)
-    }
-
-      return () => {
-
-          window.removeEventListener('keydown', handleKeyDown)
-      }
-  },[isMobile])
-
-  
   return (
     <div
-        className="flex min-h-0 w-full flex-1 flex-col gap-3 bg-[var(--color-page)]"
+        className="flex min-h-0 h-full w-full flex-1 flex-col gap-3 bg-[var(--color-page)] border-l-[var(--color-primary)]/30 border-l-1"
 
     >
       <OrderDetailHeader
-        openOrderForm = {headerActions.openOrderForm}
-        openOrderCases = {headerActions.openOrderCases}
+        openOrderForm={openOrderForm}
+        openOrderCases={openOrderCases}
+        onClose={closeOrderDetail}
+        onAdvanceOrderState={advanceDetailOrderState}
         order={order}
       />
 
     <div className="flex min-h-0 flex-1 flex-col gap-6 ">
-        <div className="flex flex-col gap-4 px-2">
+        <div className="flex flex-col gap-4 px-5">
           {order ? 
             <OrderDetailSummary order={order} orderState={orderState} />
             :
@@ -108,8 +65,8 @@ const OrderDetailContent = ({ payload }: { payload?: OrderDetailPayload }) => {
   )
 }
 
-export const OrderDetailPage = ({ payload }: StackComponentProps<OrderDetailPayload>) => (
-  <OrderProvider>
-    <OrderDetailContent payload={payload} />
-  </OrderProvider>
+export const OrderDetailPage = ({ payload, onClose }: StackComponentProps<OrderDetailPayload>) => (
+  <OrderDetailProvider payload={payload} onClose={onClose}>
+    <OrderDetailContent />
+  </OrderDetailProvider>
 )

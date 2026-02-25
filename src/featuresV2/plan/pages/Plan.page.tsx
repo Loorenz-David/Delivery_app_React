@@ -10,25 +10,39 @@ import { PlanList, PlanMainHeader } from "../components";
 import { usePlanHeaderAction } from "../actions/usePlanActions";
 
 
-export const PlanPage = ({}) => {
+type PlanListPage = {
+  onRequestClose?: () => void
+  showCloseButton?: boolean
+}
+
+export const PlanPage = ({
+    onRequestClose,
+    showCloseButton
+}:PlanListPage) => {
+
     const { fetchPlans }  = usePlanQueries();
     const plans = usePlans()
-
-
     const planActions = usePlanHeaderAction()
     useEffect(()=>{
         fetchPlans()
-    }, [])
+    }, [fetchPlans])
+
 
     return ( 
-        <div className="w-full h-full flex flex-col">
+        <>
             <PlanMainHeader
-                onCreate= {planActions.onCreatePlan} 
-                applySearch={() => {}} 
-                applyFilters={() => {}} 
-            />
-            <PlanList plans={plans} droppable={true}/>
-        </div>
+            onCreate={planActions.onCreatePlan}
+            onRequestClose={onRequestClose}
+            showCloseButton={showCloseButton}
+            applySearch={() => {}}
+            applyFilters={() => {}}
+        />
+            <div className="w-full h-full flex flex-col overflow-hidden">
+                <PlanList plans={plans} droppable={true}/>
+            </div>
+        </>
      );
 }
+
+
  

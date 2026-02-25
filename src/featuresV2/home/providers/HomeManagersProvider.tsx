@@ -67,7 +67,6 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
     const sectionManager = useMemo(
         () =>
         new StackActionManager({
-            blueprint: SectionPanel,
             stackRegistry: homeSectionRegistry,
         }),
         [],
@@ -97,7 +96,7 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
     },[isMobile])
 
     const { onDragStart, onDragOver, onDragEnd, onDragCancel, activeDrag, droppedInPlan, sensors }  = usePlanOrderDndController()
-
+    console.log(sectionManager.getSnapshot())
     return (
        <ResourcesManagerProvider managers={{ sectionManager, mapManager, popupManager, baseControlls, droppedInPlan }}>
             <DndContext

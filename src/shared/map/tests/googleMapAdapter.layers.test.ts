@@ -30,8 +30,36 @@ const createOrder = (id: string, lat = 10, lng = 20): MapOrder => ({
 
 const createAdapter = () => {
   const adapter = new GoogleMapAdapter() as any
-  adapter.map = { id: 'mock-map' }
+  const setOptionsCalls: any[] = []
+  const fitBoundsCalls: any[] = []
+  const panByCalls: Array<{ x: number; y: number }> = []
+
+  adapter.map = {
+    id: 'mock-map',
+    setOptions: (options: any) => {
+      setOptionsCalls.push(options)
+    },
+    fitBounds: (bounds: any, padding: any) => {
+      fitBoundsCalls.push({ bounds, padding })
+    },
+    getZoom: () => 8,
+    setZoom: () => undefined,
+    panBy: (x: number, y: number) => {
+      panByCalls.push({ x, y })
+    },
+  }
   adapter.AdvancedMarkerCtor = MockAdvancedMarker
+  adapter.LatLngBoundsCtor = class {
+    points: unknown[] = []
+    extend(point: unknown) {
+      this.points.push(point)
+    }
+  }
+  adapter.__calls = {
+    setOptionsCalls,
+    fitBoundsCalls,
+    panByCalls,
+  }
   return adapter as GoogleMapAdapter
 }
 
@@ -104,5 +132,73 @@ export const runGoogleMapAdapterLayerTests = () => {
       'setMarkers should map to default layer',
     )
   }
-}
 
+  {
+    const adapter = createAdapter() as any
+    adapter.setViewportInsets({ top: 40, right: 300, bottom: 30, left: 20 })
+    adapter.fitBounds([
+      { lat: 10, lng: 20 },
+      { lat: 11, lng: 21 },
+    ])
+
+    const { fitBoundsCalls } = adapter.__calls
+    assert(fitBoundsCalls.length === 1, 'fitBounds should be invoked for multi-point bounds')
+    assert(
+      fitBoundsCalls[0].padding?.right === 300 &&
+        fitBoundsCalls[0].padding?.top === 40 &&
+        fitBoundsCalls[0].padding?.bottom === 30 &&
+        fitBoundsCalls[0].padding?.left === 20,
+      'fitBounds should use viewport insets padding',
+    )
+  }
+
+  {
+    const adapter = createAdapter() as any
+    adapter.setViewportInsets({ top: 24, right: 224, bottom: 24, left: 24 })
+    adapter.fitBounds([{ lat: 10, lng: 20 }])
+
+    const { panByCalls } = adapter.__calls
+    assert(panByCalls.length === 1, 'single-point fit should pan to visible center')
+    assert(panByCalls[0].x === -100 && panByCalls[0].y === 0, 'single-point offset should respect inset bias')
+  }
+
+  {
+    const adapter = createAdapter() as any
+    adapter.routePolylines = [
+      {
+        getPath: () => ({
+          getArray: () => [
+            { lat: () => 1, lng: () => 1 },
+            { lat: () => 2, lng: () => 2 },
+          ],
+        }),
+      },
+    ]
+    adapter.setLayerMarkers(MAP_MARKER_LAYERS.orders, [createOrder('order-1', 10, 20), createOrder('order-2', 11, 21)])
+    adapter.__calls.fitBoundsCalls.length = 0
+
+    adapter.reframeToVisibleArea()
+
+    const { fitBoundsCalls } = adapter.__calls
+    assert(fitBoundsCalls.length === 1, 'reframe should call fitBounds when route points exist')
+    assert(fitBoundsCalls[0].bounds.points[0].lat === 1, 'reframe should prioritize route points over marker points')
+  }
+
+  {
+    const adapter = createAdapter() as any
+    adapter.setLayerMarkers(MAP_MARKER_LAYERS.orders, [createOrder('order-1', 10, 20), createOrder('order-2', 11, 21)])
+    adapter.__calls.fitBoundsCalls.length = 0
+
+    adapter.reframeToVisibleArea()
+
+    const { fitBoundsCalls } = adapter.__calls
+    assert(fitBoundsCalls.length === 1, 'reframe should fit visible marker points when route points are absent')
+    assert(fitBoundsCalls[0].bounds.points[0].lat === 10, 'reframe should fallback to marker points')
+  }
+
+  {
+    const adapter = createAdapter() as any
+    adapter.reframeToVisibleArea()
+    assert(adapter.__calls.fitBoundsCalls.length === 0, 'reframe should no-op when there are no points to frame')
+  }
+}

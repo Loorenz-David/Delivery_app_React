@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
-import type { MapBridge, MapConfig } from '../domain/types'
+import type { MapBridge, MapConfig, MapViewportInsets } from '../domain/types'
 import type { MapOrder } from '../domain/entities/MapOrder'
 import type { Route } from '../domain/entities/Route'
 import { MapController } from '../domain/services/MapController'
@@ -43,6 +43,20 @@ export const useMap = (options?: MapConfig): MapBridge => {
       controller.selectMarker(id)
     },
     [controller]
+  )
+
+  const setSelectedMarker = useCallback(
+    (id: string | null) => {
+      controller.setSelectedMarker(id)
+    },
+    [controller],
+  )
+
+  const setHoveredMarker = useCallback(
+    (id: string | null) => {
+      controller.setHoveredMarker(id)
+    },
+    [controller],
   )
 
   const showOrders = useCallback(
@@ -91,6 +105,17 @@ export const useMap = (options?: MapConfig): MapBridge => {
     [controller],
   )
 
+  const setViewportInsets = useCallback(
+    (insets: MapViewportInsets) => {
+      controller.setViewportInsets(insets)
+    },
+    [controller],
+  )
+
+  const reframeToVisibleArea = useCallback(() => {
+    controller.reframeToVisibleArea()
+  }, [controller])
+
   const getUserCoordinates = (): Promise<{ lat: number; lng: number } | null> => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
@@ -135,8 +160,12 @@ export const useMap = (options?: MapConfig): MapBridge => {
       disableCircleSelection,
       showRoute,
       selectOrder,
+      setSelectedMarker,
+      setHoveredMarker,
+      setViewportInsets,
+      reframeToVisibleArea,
       resize
     }),
-    [clearMarkerLayer, disableCircleSelection, enableCircleSelection, initialize, resize, selectOrder, setMarkerLayer, setMarkerLayerVisibility, showOrders, showRoute],
+    [clearMarkerLayer, disableCircleSelection, enableCircleSelection, initialize, reframeToVisibleArea, resize, selectOrder, setHoveredMarker, setMarkerLayer, setMarkerLayerVisibility, setSelectedMarker, setViewportInsets, showOrders, showRoute],
   )
 }

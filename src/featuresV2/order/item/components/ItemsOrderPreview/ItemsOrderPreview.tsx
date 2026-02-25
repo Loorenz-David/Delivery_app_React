@@ -69,7 +69,7 @@ export const ItemsOrderPreview = ({
     >
       {header ?? (
         <div
-          className={`flex items-center justify-between gap-3 bg-[var(--color-page)] px-3 py-5 shadow-md ${
+          className={`flex items-center justify-between gap-3 bg-[var(--color-page)] px-5 py-5 shadow-md ${
             stickyHeader ? 'sticky top-0 ' : ''
           }`}
         >
@@ -86,7 +86,7 @@ export const ItemsOrderPreview = ({
         </div>
       )}
 
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 px-3 py-5  ${scrollBody ? 'overflow-y-scroll': ''}`}>
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 px-5 py-5  ${scrollBody ? 'overflow-y-scroll': ''}`}>
         {resolvedLoading ? (
             <div className="text-xs text-[var(--color-muted)]">Loading items...</div>
           ) : resolvedItems.length ? (

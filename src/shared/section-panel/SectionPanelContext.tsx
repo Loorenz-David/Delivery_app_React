@@ -1,25 +1,27 @@
-import {useContext, createContext} from 'react'
+import {useContext, createContext, type ReactNode} from 'react'
 
 export type SectionHeaderAction = {
     label: string
     value: string
-    icon?: React.ReactNode
+    icon?: ReactNode
     action?: (item: SectionHeaderAction) => void
 }
 
 export type SectionHeaderConfig = {
-    icon?: React.ReactNode
-    title?: React.ReactNode
+    icon?: ReactNode
+    title?: ReactNode
 
     actions?: SectionHeaderAction[]
     buttons?: React.ReactNode[]
     closeButton?:boolean
+    customHeaderButton?:ReactNode
     DotMenuActions?:boolean
     headerButtonsBgClass?: string
 }
 
 type SectionPanelContextValue = {
   setHeader: (config: SectionHeaderConfig | null) => void
+  onClose:()=>void
 }
 
 export const SectionPanelContext =

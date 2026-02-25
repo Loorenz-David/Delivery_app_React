@@ -1,27 +1,39 @@
-import { FilterIcon, OrderIcon, PlusIcon } from '@/assets/icons'
+import { ChevronDownIcon, OrderIcon, PlusIcon } from '@/assets/icons'
 import { BasicButton } from '@/shared/buttons/BasicButton'
-import { SectionHeader } from '@/shared/section-panel/SectionHeader'
 import type { PlanQueryFilters } from '../../types/planMeta'
-import { useMobile } from '@/app/contexts/MobileContext'
+import { CalendarIcon } from '@mui/x-date-pickers'
+
+
 
 type PlanMainHeaderProps = {
   onCreate: () => void
   applySearch: (input: string) => void
   applyFilters: (filters: PlanQueryFilters) => void
+  onRequestClose?: () => void
+  showCloseButton?: boolean
 }
 
-export const PlanMainHeader = ({ onCreate, applySearch, applyFilters }: PlanMainHeaderProps) => {
-  const {isMobile} = useMobile()
+export const PlanMainHeader = ({
+  onCreate,
+  onRequestClose,
+  showCloseButton = true,
+}: PlanMainHeaderProps) => {
 
   return (
     <>
-      <SectionHeader
-        title="Plans"
-        icon={<OrderIcon className="h-6 w-6 fill-[var(--color-muted)]" />}
-        closeButton={ isMobile ? false : true}
-      />
-      <div className="flex gap-4 p-4">
-        
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4 relative">
+        <div className="flex items-center gap-3">
+          <div className="inline-flex items-center justify-center rounded-xl bg-[var(--color-muted)]/10 px-3 py-3">
+            <OrderIcon className="h-6 w-6 fill-[var(--color-muted)]" />
+          </div>
+          <HeaderTitle />
+        </div>
+
+        {showCloseButton ? <HeaderButtons onRequestClose={onRequestClose} /> : null}
+      </div>
+
+      <div className="flex gap-4 p-4 " >
+       
         <BasicButton
           key="order-main-create"
           params={{
@@ -33,8 +45,46 @@ export const PlanMainHeader = ({ onCreate, applySearch, applyFilters }: PlanMain
           <PlusIcon className="mr-2 h-4 w-4 stroke-[var(--color-secondary)]" />
           Plan
         </BasicButton>
+
+       
       </div>
     </>
 
+  )
+}
+
+type ButtonsProps = {
+  onRequestClose?: () => void
+}
+const HeaderButtons = ({ onRequestClose }: ButtonsProps) => {
+  return(
+
+      <div className="absolute top-0 right-0">
+        <BasicButton params = {{ onClick: onRequestClose, variant: "ghost", ariaLabel: "Toggle delivery plan" , 
+          style:{padding:'29px 6px',borderRadius:'10px 0 0 10px', } 
+          }}>
+            <div className="flex gap-1 items-center justify-center">
+              <span className="font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]/90 text-[9px]">fold </span>
+              <ChevronDownIcon className={`w-5 h-5 transition-transform rotate-270 text-[var(--color-muted)]`} />
+            </div>
+          </BasicButton>
+      </div>
+      
+
+  )
+}
+
+const HeaderTitle = ({})=>{
+  return (
+    <div className="flex gap-2">
+      <div className="flex flex-col">
+        <span className="font-semibold text-lg text-[var(--color-muted)]/80">
+          Plans
+        </span>
+        <span className="text-xs flex text-[var(--color-muted)] font-normal">
+          0 orders • 0 items 
+        </span>
+      </div>
+    </div>
   )
 }
