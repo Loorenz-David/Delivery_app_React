@@ -63,7 +63,7 @@ export const OrderDetailSummary = ({ order, orderState }: OrderDetailSummaryProp
 
   return (
     <>
-      <AccordionSection
+      {/* <AccordionSection
         title={"Details"}
         isOpen={openSection === 'details'}
         onToggle={() => toggleSection('details')}
@@ -199,8 +199,114 @@ export const OrderDetailSummary = ({ order, orderState }: OrderDetailSummaryProp
             </div>
           </>
         </SummaryCard>
-      </AccordionSection>
+      </AccordionSection> */}
+      <div className="border-1 rounded-lg border-[var(--color-muted)]/40 shadow-md px-4 py-4">
+          <SummaryCard>
+            <>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-[var(--color-muted)]">Customer</p>
+                  <p>{`${asText(order?.client_first_name)} ${asText(order?.client_last_name)}`.trim()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-[var(--color-muted)]">Email</p>
+                    {order?.client_email ? (
+                      <a
+                        href={`mailto:${order.client_email}`}
+                        className=""
+                      >
+                        {order.client_email}
+                      </a>
+                    ) : (
+                      <p>—</p>
+                    )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-[var(--color-muted)]">Phone</p>
+                  {order?.client_primary_phone ? (
+                    <a
+                      href={`tel:${order.client_primary_phone}`}
+                      className="underline text-blue-800"
+                    >
+                      {formatPhone(order.client_primary_phone)}
+                    </a>
+                  ) : (
+                    <p>—</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-[var(--color-muted)]">Second Phone</p>
+                  {order?.client_secondary_phone ? (
+                    <a
+                      href={`tel:${order.client_secondary_phone}`}
+                      className="underline text-blue-800"
+                    >
+                      {formatPhone(order.client_secondary_phone)}
+                    </a>
+                  ) : (
+                    <p>—</p>
+                  )}
+                </div>
+              </div>
+              <div className="text-sm">
+                <p className="text-xs text-[var(--color-muted)]">Address</p>
+                  {order?.client_address?.street_address ? (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        order.client_address.street_address
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className=""
+                    >
+                      {order.client_address.street_address}
+                    </a>
+                  ) : (
+                    <p>—</p>
+                  )}
+              </div>
+            </>
+          </SummaryCard>
+          <SummaryCard>
+              <>
+                <div className="grid grid-cols-2 gap-3 text-sm pt-3">
+                  <div>
+                    <p className="text-xs text-[var(--color-muted)]">Earliest Date</p>
+                    <p>{formatIsoDate(order?.earliest_delivery_date)?? '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[var(--color-muted)]">Earliest Time</p>
+                    <p>{order?.preferred_time_start ?? '—'}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-[var(--color-muted)]">Latest Date</p>
+                    <p>{formatIsoDate(order?.latest_delivery_date) ?? '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[var(--color-muted)]">Latest Time</p>
+                    <p>{order?.preferred_time_end ?? '—'}</p>
+                  </div>
+                </div>
+              </>
+          </SummaryCard>
+          <SummaryCard>
+            <>
+            <div className="grid grid-cols-1  text-sm pt-3">
+              <div className="text-sm">
+                <p className="text-xs text-[var(--color-muted)]">Tracking number</p>
+                <p>{asText(order?.tracking_number)}</p>
+              </div>
+            </div>
+            </>
+          </SummaryCard>
+          
 
+      </div>
+         
     </>
   )
 }

@@ -1,6 +1,7 @@
 import type { StackComponentProps } from '@/shared/stack-manager/types'
 
 import { ItemsOrderPreview } from '../item'
+
 import { OrderDetailSummary } from '../components/OrderDetailSummary'
 import { OrderDetailHeader } from '../components/pageHeaders/OrderDetailHeader'
 import { OrderDetailProvider } from '../context/OrderDetailProvider'
@@ -46,6 +47,7 @@ const OrderDetailContent = () => {
               Order not found.
             </div>
           }
+        
         </div>
 
         { orderServerId !== null ? 
@@ -74,3 +76,6 @@ export const OrderDetailPage = ({ payload, onClose }: StackComponentProps<OrderD
     <OrderDetailContent />
   </OrderDetailProvider>
 )
+
+
+
