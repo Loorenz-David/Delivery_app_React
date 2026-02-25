@@ -132,6 +132,7 @@
 .map-marker--variant-order.map-marker--hovered {
   cursor: pointer;
   filter: brightness(1.05);
+  transform:scale(1.2)
 }
 
 .map-marker--selected-order {

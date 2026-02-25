@@ -24,7 +24,7 @@ export const OrderCard = ({ order, onOpen, onArchive, onUnarchive, isHovered = f
   return (
     <div className={`flex flex-col gap-3 rounded-2xl border bg-white p-4 relative transition-colors ${
       isHovered
-        ? 'border-[rgb(var(--color-light-blue-r),0.7)] bg-[var(--color-light-blue)]/5'
+        ? 'border-[rgb(var(--color-light-blue-r),0.7)] border-2 bg-[var(--color-light-blue)]/10'
         : 'border-[var(--color-muted)]/30'
     }`}
       onClick={() => onOpen?.(order)}
