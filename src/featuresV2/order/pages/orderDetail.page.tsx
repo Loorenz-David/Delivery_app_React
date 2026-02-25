@@ -24,8 +24,9 @@ const OrderDetailContent = () => {
   } = useOrderDetailContext()
 
   return (
+    <div className="flex min-h-0 h-full w-full flex-1 flex-col bg-[var(--color-page)]   border-l-[var(--color-primary)]/30 border-l-1 overflow-y-auto">
     <div
-        className="flex min-h-0 h-full w-full flex-1 flex-col gap-3 bg-[var(--color-page)] border-l-[var(--color-primary)]/30 border-l-1"
+        className="flex min-h-0 h-full w-full flex-1 flex-col bg-[var(--color-muted)]/10   border-l-[var(--color-primary)]/30 border-l-1 overflow-y-auto"
 
     >
       <OrderDetailHeader
@@ -36,8 +37,8 @@ const OrderDetailContent = () => {
         order={order}
       />
 
-    <div className="flex min-h-0 flex-1 flex-col gap-6 ">
-        <div className="flex flex-col gap-4 px-5">
+    <div className="flex min-h-0 flex-1 h-full flex-col gap-6 pt-3 bg-[var(--color-page)]">
+        <div className="flex flex-col gap-4 px-5 ">
           {order ? 
             <OrderDetailSummary order={order} orderState={orderState} />
             :
@@ -48,7 +49,9 @@ const OrderDetailContent = () => {
         </div>
 
         { orderServerId !== null ? 
-          <div className="flex min-h-0 flex-1 flex-col  bg-[var(--color-muted)]/10 ">
+          <div className="flex min-h-0 flex-1 flex-col bg-[var(--color-muted)]/10"
+          
+          >
             <ItemsOrderPreview 
               orderId={orderServerId} 
               stickyHeader
@@ -61,6 +64,7 @@ const OrderDetailContent = () => {
         }
         
       </div>
+    </div>
     </div>
   )
 }

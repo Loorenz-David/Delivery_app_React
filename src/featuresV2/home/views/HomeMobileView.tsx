@@ -14,11 +14,13 @@ export const HomeMobileView = () => {
     const windowWidth = window.innerWidth
     return ( 
         <div className="flex flex-1 relative min-w-0 overflow-hidden">
-            <SectionPanel style={{width:'100%'}}
-                parentParams={{ borderLeft: '#8a8a8a5b' }}
-            >
-            <PlanDesktopShell showCloseButton={false} />
-            </SectionPanel>
+            
+
+                <PlanDesktopShell showCloseButton={false} 
+                    viewMode="rail"
+                />
+
+
             
             <AnimatePresence mode="popLayout">
                 {

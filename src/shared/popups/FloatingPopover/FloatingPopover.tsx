@@ -69,6 +69,7 @@ export const FloatingPopover = ({
             <div
                 ref={refs.setReference}
                 { ...getReferenceProps() }
+                className="h-full w-full"
             >
                 {reference}
             </div>

@@ -30,8 +30,8 @@ export const SectionPanel = ({
                 style={{borderLeft: parentParams?.borderLeft ?  `2px solid ${parentParams.borderLeft}` : undefined, ...style}}
             >
                 {header && (
-                    <header className=" flex flex-col w-full    ">
-                        <div className=" flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4">
+                    <header className=" flex flex-col w-full    shadow-sm">
+                        <div className=" flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 py-3">
                             <div className=" flex items-center gap-3 ">
                                 {header.icon &&
                                     <div className=" inline-flex items-center justify-center px-3 py-3 bg-[var(--color-muted)]/10 rounded-xl">

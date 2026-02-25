@@ -23,6 +23,7 @@ export const OrderDetailHeader = ({
 }: OrderDetailHeaderProps) => {
     const registry = useOrderStateRegistry()
 
+    const nextState = registry.getNextStateName(order?.order_state_id)
     const currentStateName = order?.order_state_id != null
       ? (registry.getById(order.order_state_id)?.name ?? 'Unknown state')
       : 'Unknown state'
@@ -31,7 +32,7 @@ export const OrderDetailHeader = ({
 
     return (
         <>
-        <div className="flex items-center justify-between gap-3  px-4 py-4 relative bg-[var(--color-primary)] shadow-md"
+        <div className="flex items-center justify-between gap-3  px-4 py-3 relative bg-[var(--color-primary)] shadow-md"
           style={{ borderRadius:'0 0 20px 20px'}}
         >
           <div className="flex items-center gap-3">
@@ -51,13 +52,14 @@ export const OrderDetailHeader = ({
           </BasicButton>
         </div>
        
-        <div className="flex gap-4 p-4 justify-between">
-          <div className="flex w-[120px]">
+        <div className="flex gap-4 p-4 justify-between bg-[var(--color-page)]">
+          <div className="flex w-[160px]">
             <DropdownButton
-                label={currentStateName}
-                variant="primary"
+                label={nextState ? `Mark as ${nextState}` : currentStateName}
+                style={{fontSize:'12px'}}
+                variant="lightBlue"
                 fullWidth={true}
-                disabled={!order}
+                disabled={!order }
                 onClick={() => {
                   if (!order) return
                   void onAdvanceOrderState(order.client_id)
@@ -119,7 +121,7 @@ export const OrderDetailHeader = ({
 const HeaderTitle = ({order}:{order:Order | null})=>{
   const title = order?.reference_number ?? 'reference number missing'
   return (
-    <div className="flex flex-col gap-[5px]">
+    <div className="flex flex-col ">
         <div className="flex gap-5">
           <span className="text-md font-semibold text-[var(--color-page)]/80">
             {title}

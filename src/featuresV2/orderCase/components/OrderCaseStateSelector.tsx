@@ -20,7 +20,7 @@ export const OrderCaseStateSelector = ({ value, onSelect }: OrderCaseStateSelect
             onClick={() => onSelect(state)}
             className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
               isActive
-                ? 'bg-[var(--color-primary)] text-[var(--color-secondary)]'
+                ? 'bg-[var(--color-green-turquess)] text-[var(--color-secondary)]'
                 : 'text-[var(--color-muted)] hover:bg-[var(--color-muted)]/10'
             }`}
           >

@@ -26,7 +26,8 @@ export const createOrderStateRegistry = (states: OrderState[]) => {
     return typeof state?.id === 'number' ? state.id : null
   }
 
-  const getNextStateId = (currentId: number) => {
+  const getNextStateId = (currentId?: number | null) => {
+    if ( !currentId ) return null
     const currentState = getById(currentId)
     if (!currentState) return null
 
@@ -36,11 +37,20 @@ export const createOrderStateRegistry = (states: OrderState[]) => {
     return getStateIdByName(nextStateName)
   }
 
+  const getNextStateName = (currentId?:number | null) =>{
+    if ( !currentId ) return null
+    const currentState = getById(currentId)
+    if (!currentState) return null
+    const nextStateName = getNextOrderStateName(currentState.name)
+    return nextStateName
+  }
+
   return {
     getById,
     getByName,
     getStateIdByName,
     getNextStateId,
+    getNextStateName
   }
 }
 

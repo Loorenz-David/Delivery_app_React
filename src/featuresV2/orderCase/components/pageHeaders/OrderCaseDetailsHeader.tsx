@@ -19,7 +19,7 @@ export const OrderCaseDetailsHeader = ({
 }: OrderCaseDetailsHeaderProps) => {
   return (
     <>
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4 bg-[var(--color-muted)] shadow-md"
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 py-3 bg-[var(--color-primary)] shadow-md"
         style={{ borderRadius:'0 0 20px 20px'}}
       >
         <div className="flex items-center gap-3">

@@ -29,7 +29,7 @@ export const PlanPage = ({
 
 
     return ( 
-        <>
+        <div className="flex flex-col w-full h-full">
             <PlanMainHeader
             onCreate={planActions.onCreatePlan}
             onRequestClose={onRequestClose}
@@ -37,10 +37,10 @@ export const PlanPage = ({
             applySearch={() => {}}
             applyFilters={() => {}}
         />
-            <div className="w-full h-full flex flex-col overflow-hidden">
+            <div className="w-full h-full flex flex-col overflow-y-auto">
                 <PlanList plans={plans} droppable={true}/>
             </div>
-        </>
+        </div>
      );
 }
 

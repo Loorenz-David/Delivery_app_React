@@ -55,10 +55,10 @@ export const DropdownButton = ({
         offSetNum={2}
         reference={
 
-           <div  className={cn(fullWidth ? 'flex w-full items-stretch' : 'inline-flex items-stretch', className, 'rounded-lg' )}
+           <div  className={cn(fullWidth ? 'flex w-full items-stretch h-full' : 'inline-flex items-stretch', className, 'rounded-lg' )}
               style={
                 borderColor ? 
-                {border: borderColor + '1px solid'}
+                {border: borderColor + '0.5px solid'}
                 : {}
               }
            >

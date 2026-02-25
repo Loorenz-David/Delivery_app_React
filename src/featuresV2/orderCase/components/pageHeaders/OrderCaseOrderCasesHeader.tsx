@@ -14,7 +14,7 @@ export const OrderCaseOrderCasesHeader = ({
 }: OrderCaseOrderCasesHeaderProps) => {
   return (
     <>
-      <div className="flex items-center justify-between gap-3  px-4 py-4 bg-[var(--color-primary)] shadow-md"
+      <div className="flex items-center justify-between gap-3  px-4 py-3 bg-[var(--color-primary)] shadow-md"
         style={{ borderRadius:'0 0 20px 20px'}}
       >
         <div className="flex items-center gap-3">
@@ -46,7 +46,7 @@ export const OrderCaseOrderCasesHeader = ({
           }}
         >
           <PlusIcon className="mr-2 h-4 w-4 stroke-[var(--color-secondary)]" />
-          Create Case
+           Case
         </BasicButton>
       </div>
     </>

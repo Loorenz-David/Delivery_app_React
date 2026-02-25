@@ -19,11 +19,13 @@
   --color-blue-500: #3B82F6;
   --color-light-blue-r: 165, 165, 255;
   --color-dark-blue:rgb(109, 133, 249);
+  --color-green-turquess:rgb(30, 152, 205);
   --radius-xl: 1.5rem;
   font-family: 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--color-text);
   background-color: var(--color-page);
-  --vh:100%
+  --vh:100%;
+
 }
 
 * {

@@ -42,7 +42,7 @@ export const OrderCaseMainHeader = ({
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="inline-flex items-center justify-center rounded-xl bg-[var(--color-muted)]/10 px-3 py-3">
             <ArchiveIcon className="h-6 w-6 text-[var(--color-muted)]" />

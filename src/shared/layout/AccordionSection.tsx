@@ -36,7 +36,7 @@ export const AccordionSection = ({
 
 
     return (
-        <section className={`w-full border border-[var(--color-border)] rounded-xl ` +
+        <section className={`w-full border border-[var(--color-muted)]/40 rounded-xl ` +
             (open ? 'shadow-md' : '')
         }
             

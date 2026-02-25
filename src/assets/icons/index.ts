@@ -65,4 +65,5 @@ export { default as ArchiveOrderIcon } from './ArchiveOrderIcon.svg?react'
 export { default as ExclamationIcon } from './ExclamationIcon.svg?react'
 export { default as SendBackIcon } from './SendBackIcon.svg?react'
 export { default as MultiSelectIcon } from './MultiSelectIcon.svg?react'
+export { default as PlanIcon } from './PlanIcon.svg?react'
 
