@@ -66,4 +66,7 @@ export { default as ExclamationIcon } from './ExclamationIcon.svg?react'
 export { default as SendBackIcon } from './SendBackIcon.svg?react'
 export { default as MultiSelectIcon } from './MultiSelectIcon.svg?react'
 export { default as PlanIcon } from './PlanIcon.svg?react'
+export { default as CsvIcon } from './CsvIcon.svg?react'
+export { default as CurrentLocationIcon } from './CurrentLocationIcon.svg?react'
+export { default as EraseIcon } from './EraseIcon.svg?react'
 

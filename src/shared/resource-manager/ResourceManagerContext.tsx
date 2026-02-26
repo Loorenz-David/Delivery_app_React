@@ -1,9 +1,8 @@
 import { createContext } from 'react'
 import type { ReactNode } from 'react'
 
-import { usePayloadBaseControlls } from '@/featuresV2/home/hooks/useBaseControlls'
-
 import type { StackActionManager } from '../stack-manager/StackActionManager'
+import type { BaseControls } from './types'
 
 
 import type { MapBridge } from '@/shared/map'
@@ -22,7 +21,7 @@ export type KnownResourceRegistry = {
   settingsPopupManager?: StackActionManager<Record<string, unknown>>
   popupConfirmationManager?: StackActionManager<Record<string, unknown>>
   isMobileObject?: isMobileObject
-  baseControlls?: ReturnType<typeof usePayloadBaseControlls>
+  baseControlls?: BaseControls<unknown>
   droppedInPlan?: string | null
 }
 

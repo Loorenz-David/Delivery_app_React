@@ -1,6 +1,6 @@
 import { io, type Socket } from 'socket.io-client'
 
-import { sessionStorage } from '@/featuresV2/auth/login/store/sessionStorage'
+import { sessionStorage } from '@/features/auth/login/store/sessionStorage'
 
 let socket: Socket | null = null
 let currentToken: string | null = null

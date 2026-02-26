@@ -1,6 +1,7 @@
 import { useContext } from 'react'
 import type { KnownResourceRegistry, ResourceRegistry } from './ResourceManagerContext'
 import { ResourcesManagerContext } from './ResourceManagerContext'
+import type { BaseControls } from './types'
 
 
 export function useResourceManager<T extends Record<string, unknown> = KnownResourceRegistry>() {
@@ -27,12 +28,12 @@ export function useSectionManager(){
   return sectionManager
 }
 
-export function useBaseControlls(){
+export function useBaseControlls<TPayload = unknown>() {
   const {baseControlls} = useResourceManager<KnownResourceRegistry>()
    if (!baseControlls){
     throw new Error("baseControlls is not available. register a popup manager to the ResourcesManagerContext")
   }
-  return baseControlls
+  return baseControlls as BaseControls<TPayload>
 }
 
 export function useMapManager() {
@@ -42,5 +43,4 @@ export function useMapManager() {
   }
   return mapManager
 }
-
 

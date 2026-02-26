@@ -28,9 +28,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "src/featuresV2/plan/popups/PlanTypes/storePickup/.hook.tsx"],
+  "include": ["src", "src/features/plan/popups/PlanTypes/storePickup/.hook.tsx"],
   "exclude": [
-    "src/features",
     "src/google_maps",
     "src/components/buttons/AddressPicker.tsx",
     "src/components/popups/Popup_1.tsx",

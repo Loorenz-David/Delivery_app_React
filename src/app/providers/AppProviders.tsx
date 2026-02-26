@@ -4,9 +4,9 @@ import { BrowserRouter, useNavigate } from 'react-router-dom'
 import { LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { apiClient } from '@/lib/api/ApiClient'
-import { MessageManagerProvider } from '@/message_manager/MessageManagerContext'
+import { MessageHandlerProvider } from '@/shared/message-handler/MessageHandlerContext'
 import { MobileProvider } from '@/app/providers/MobileProvider'
-import { useBootstrap } from '@/featuresV2/bootstrap/bootstrap.hook'
+import { useBootstrap } from '@/features/bootstrap/bootstrap.hook'
 
 function ApiAuthBridge() {
   const navigate = useNavigate()
@@ -34,10 +34,10 @@ export function AppProviders({ children }: PropsWithChildren) {
     <BrowserRouter>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <MobileProvider>
-          <MessageManagerProvider>
+          <MessageHandlerProvider>
             <ApiAuthBridge />
             {children}
-          </MessageManagerProvider>
+          </MessageHandlerProvider>
         </MobileProvider>
       </LocalizationProvider>
     </BrowserRouter>

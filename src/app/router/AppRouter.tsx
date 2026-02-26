@@ -1,12 +1,12 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactElement } from 'react'
 
-import { AuthPage } from '@/featuresV2/auth/pages/AuthPage'
-import { Home } from '../../featuresV2/home/pages/HomePage'
-import { SettingsPage } from '@/featuresV2/settings/pages/SettingsPage'
+import { AuthPage } from '@/features/auth/pages/AuthPage'
+import { Home } from '@/features/home/pages/HomePage'
+import { SettingsPage } from '@/features/settings/pages/SettingsPage'
 
-import { useAuthSession } from '../../featuresV2/auth/login/hooks/useAuthSelectors'
-import { ExternalCustomerFormPage } from '@/featuresV2/externalForm/pages/ExternalCustomerForm.page'
+import { useAuthSession } from '../../features/auth/login/hooks/useAuthSelectors'
+import { ExternalCustomerFormPage } from '@/features/externalForm/pages/ExternalCustomerForm.page'
 
 function ProtectedRoute({ children }: { children: ReactElement }) {
   const session = useAuthSession()

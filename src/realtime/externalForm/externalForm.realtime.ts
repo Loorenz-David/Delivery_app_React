@@ -1,4 +1,4 @@
-import type { ExternalFormData } from '@/featuresV2/externalForm/domain/externalForm.types'
+import type { ExternalFormData } from '@/features/externalForm/domain/externalForm.types'
 
 import { connectSocket, getSocket } from '../core/socket.manager'
 import type { RoomJoinPayload } from '../core/socket.types'

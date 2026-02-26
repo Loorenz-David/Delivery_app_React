@@ -1,8 +1,8 @@
 import { gzipPayload, serializePayload, MAX_COMPRESSED_BYTES, MAX_DECOMPRESSED_BYTES } from './compression'
 import type { ApiClientOptions, ApiEnvelope, ApiErrorPayload, ApiResult, RequestOptions } from './types'
 
-import type { SessionSnapshot, SessionUser } from '@/featuresV2/auth/login/store/sessionStorage'
-import { sessionStorage } from '@/featuresV2/auth/login/store/sessionStorage'
+import type { SessionSnapshot, SessionUser } from '@/features/auth/login/store/sessionStorage'
+import { sessionStorage } from '@/features/auth/login/store/sessionStorage'
 
 export class ApiError extends Error {
   public readonly status: number

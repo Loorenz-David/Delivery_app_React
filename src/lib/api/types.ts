@@ -1,4 +1,4 @@
-import type { SessionStorage, SessionSnapshot } from '@/featuresV2/auth/login/store/sessionStorage'
+import type { SessionStorage, SessionSnapshot } from '@/features/auth/login/store/sessionStorage'
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
