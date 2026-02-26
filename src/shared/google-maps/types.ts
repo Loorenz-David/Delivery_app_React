@@ -40,6 +40,17 @@ export interface PlaceResult {
     }
   }
 }
+
+export type AddressPayload = {
+  raw_address: string
+  country?: string
+  city?: string
+  postal_code?: string
+  coordinates: {
+    lat: number
+    lng: number
+  }
+}
 export interface PlaceSuggestion {
   description: string
   placeId: string

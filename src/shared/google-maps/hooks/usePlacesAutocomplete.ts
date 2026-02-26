@@ -15,10 +15,9 @@ import type {
   LatLngLike,
   PlacesService,
   PlacesServiceStatus,
-  PlaceSuggestion
+  PlaceSuggestion,
+  AddressPayload,
 } from '../types'
-
-import type { AddressPayload } from '@/features/home/types/backend'
 
 
 
