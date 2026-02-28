@@ -22,7 +22,7 @@ export const LocalDeliveryOrderCard = ({ order, stop, displayStopOrder, planStar
     const mapManager = useMapManager()
     const orderLabel = order.reference_number ?? 'undf'
     const streetAddress = order.client_address?.street_address ?? 'No address'
-    const expectedArrival = stop && stop.expected_arrival_time !== 'loading' ? formatRouteTime(stop.expected_arrival_time, planStartDate) : null
+    const expectedArrival = stop && stop.expected_arrival_time !== 'loading'  ? formatRouteTime(stop.expected_arrival_time, planStartDate) : null
     const itemCount = order.total_items ?? 0
     const stopOrder = typeof displayStopOrder === 'number'
         ? displayStopOrder
@@ -91,8 +91,9 @@ export const LocalDeliveryOrderCard = ({ order, stop, displayStopOrder, planStar
                                                     {expectedArrival}
                                             </span>
                                         </>
-                                        :
-                                            <LottieSpinner animation="sandClock" size={50} inline />
+                                        : streetAddress 
+                                            ? <LottieSpinner animation="sandClock" size={50} inline />
+                                            : '--'
                                     }
                                 </div>
                             </div>

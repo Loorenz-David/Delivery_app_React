@@ -3,17 +3,22 @@ import { arrayMove } from '@dnd-kit/sortable'
 
 import { ApiError } from '@/lib/api/ApiClient'
 import { useMessageHandler } from '@/shared/message-handler'
+import { optimisticTransaction } from '@/shared/optimistic'
 
 import { routeSolutionApi } from '@/features/plan/planTypes/localDelivery/api/routeSolution.api'
 import type { RouteSolutionUpdateResponse } from '@/features/plan/planTypes/localDelivery/api/routeSolution.api'
 import { normalizeByClientIdArray } from '@/features/plan/planTypes/localDelivery/api/mappers/routeSolutionPayload.mapper'
 import {
+  getRouteSolutionSnapshot,
+  restoreRouteSolutionSnapshot,
   selectRouteSolutionByServerId,
   setSelectedRouteSolution,
   upsertRouteSolution,
   useRouteSolutionStore,
 } from '@/features/plan/planTypes/localDelivery/store/routeSolution.store'
 import {
+  getRouteSolutionStopSnapshot,
+  restoreRouteSolutionStopSnapshot,
   selectRouteSolutionStopByClientId,
   selectRouteSolutionStopsBySolutionId,
   upsertRouteSolutionStop,
@@ -29,6 +34,18 @@ const resolveError = (error: unknown, fallback: string) => ({
   message: error instanceof ApiError ? error.message : fallback,
   status: error instanceof ApiError ? error.status : 500,
 })
+
+const createRouteStopOptimisticSnapshot = () => ({
+  solutions: getRouteSolutionSnapshot(),
+  stops: getRouteSolutionStopSnapshot(),
+})
+
+const restoreRouteStopOptimisticSnapshot = (
+  snapshot: any,
+) => {
+  restoreRouteSolutionSnapshot(snapshot.solutions)
+  restoreRouteSolutionStopSnapshot(snapshot.stops)
+}
 
 const applyUpdatePayload = (payload?: RouteSolutionUpdateResponse | null) => {
   if (!payload) return
@@ -119,69 +136,46 @@ export function useRouteSolutionStopMutations() {
       if (fromIndex < 0 || toIndex < 0) return null
       if (fromIndex === toIndex) return null
 
-      const previous = stops.map((stop) => ({
-        client_id: stop.client_id,
-        stop_order: stop.stop_order ?? null,
-        expected_arrival_time: stop.expected_arrival_time ?? null,
-        eta_status: stop.eta_status ?? null,
-      }))
-
       const reordered = arrayMove(stops, fromIndex, toIndex)
-      useRouteSolutionStopStore.setState((currentState) => {
-        const nextByClientId = { ...currentState.byClientId }
+      let outcome: RouteSolutionUpdateResponse | null = null
+      await optimisticTransaction({
+        snapshot: createRouteStopOptimisticSnapshot,
+        mutate: () => {
+          useRouteSolutionStopStore.setState((currentState) => {
+            const nextByClientId = { ...currentState.byClientId }
 
-        reordered.forEach((stop, index) => {
-          const existing = nextByClientId[stop.client_id]
-          if (!existing) return
+            reordered.forEach((stop, index) => {
+              const existing = nextByClientId[stop.client_id]
+              if (!existing) return
 
-          const shouldInvalidate = index >= toIndex
-          nextByClientId[stop.client_id] = {
-            ...existing,
-            stop_order: index + 1,
-            eta_status: shouldInvalidate ? 'estimated' : existing.eta_status,
-            expected_arrival_time: shouldInvalidate ? 'loading' : existing.expected_arrival_time,
-          }
-        })
+              const shouldInvalidate = index >= toIndex
+              nextByClientId[stop.client_id] = {
+                ...existing,
+                stop_order: index + 1,
+                eta_status: shouldInvalidate ? 'estimated' : existing.eta_status,
+                expected_arrival_time: shouldInvalidate ? 'loading' : existing.expected_arrival_time,
+              }
+            })
 
-        return {
-          ...currentState,
-          byClientId: nextByClientId,
-        }
-      })
-
-      try {
-        const response = await routeSolutionApi.updateStopPosition(activeStop.id, toIndex + 1)
-        applyUpdatePayload(response.data)
-
-        return response.data
-      } catch (error) {
-        const resolved = resolveError(error, 'Unable to update route stop position.')
-        console.error('Failed to update route stop position', error)
-
-        useRouteSolutionStopStore.setState((currentState) => {
-          const nextByClientId = { ...currentState.byClientId }
-
-          previous.forEach((snapshot) => {
-            const existing = nextByClientId[snapshot.client_id]
-            if (!existing) return
-
-            nextByClientId[snapshot.client_id] = {
-              ...existing,
-              stop_order: snapshot.stop_order ?? existing.stop_order,
-              expected_arrival_time: snapshot.expected_arrival_time ?? existing.expected_arrival_time,
-              eta_status: snapshot.eta_status ?? existing.eta_status,
+            return {
+              ...currentState,
+              byClientId: nextByClientId,
             }
           })
-
-          return {
-            ...currentState,
-            byClientId: nextByClientId,
-          }
-        })
-
-        showMessage({ status: resolved.status, message: resolved.message })
-        return null
-      }
+        },
+        request: () => routeSolutionApi.updateStopPosition(activeStop.id as number, toIndex + 1),
+        commit: (response) => {
+          outcome = response.data
+          applyUpdatePayload(response.data)
+        },
+        rollback: restoreRouteStopOptimisticSnapshot,
+        onError: (error) => {
+          const resolved = resolveError(error, 'Unable to update route stop position.')
+          console.error('Failed to update route stop position', error)
+          showMessage({ status: resolved.status, message: resolved.message })
+        },
+      })
+      return outcome
     },
     [showMessage],
   )
