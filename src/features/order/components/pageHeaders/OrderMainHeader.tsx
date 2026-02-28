@@ -35,7 +35,7 @@ export const OrderMainHeader = ({ onCreate, applySearch, deleteFilter, updateFil
   useEffect(()=>{
     const ordersCount = orderStats?.orders?.total ?? 0
     const itemsCount = orderStats?.items?.total ?? 0
-    console.log(itemsCount)
+
     const title = (
             <div>
               <span>Orders</span>

@@ -3,6 +3,7 @@ import type { SessionUser } from '@/features/auth/login/store/sessionStorage'
 export type LoginPayload = {
   email: string
   password: string
+  time_zone: string
 }
 
 export type LoginResponse = {

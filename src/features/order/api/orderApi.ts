@@ -50,6 +50,7 @@ export const createOrder = (
   apiClient.request<OrderCreateResponse>({
     path: '/orders/',
     method: 'PUT',
+    // Backend accepts `fields` as object or list for atomic batch create.
     data: { fields: payload },
   })
 

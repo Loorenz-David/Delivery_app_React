@@ -1,6 +1,7 @@
 import type { address } from '@/types/address'
 import type { Phone } from '@/types/phone'
 import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
+import type { Item } from '@/features/order/item'
 
 export type Order = {
   id?: number
@@ -51,12 +52,19 @@ export type OrderStopResponseMap = Record<string, RouteSolutionStop> & {
   ids_without_match?: number[]
 }
 
+export type OrderCreateBundle = {
+  order: Order
+  items?: Item[]
+  order_stops?: RouteSolutionStop[]
+}
+
 export type OrderCreateResponse = {
-  order?: Record<string, { id: number; client_id: string } & Partial<Order>>
-  order_stop?: OrderStopResponseMap
+  created: OrderCreateBundle[]
 }
 
 export type OrderPlanUpdateResponse = {
-  order?: number
-  order_stop?: OrderStopResponseMap
+  updated: Array<{
+    order: Order
+    order_stops?: RouteSolutionStop[]
+  }>
 }

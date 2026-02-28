@@ -10,6 +10,7 @@ import {
 import { useUpdateOrderDeliveryPlan as useUpdateOrderDeliveryPlanApi } from '../api/orderApi'
 import { normalizeOrderStopResponse } from '../domain/orderStopResponse'
 import {
+  setOrder,
   selectOrderByClientId,
   selectOrderByServerId,
   setOrderPlanId,
@@ -53,12 +54,19 @@ export const useOrderMutations = () => {
 
       try {
         const response = await updateOrderDeliveryPlanApi(order.id, parsedPlanId)
-        removeRouteSolutionStopsByOrderId(order.id)
-        const normalizedStops = normalizeOrderStopResponse(response.data?.order_stop)
+        const updatedBundles = response.data?.updated ?? []
+        updatedBundles.forEach((bundle) => {
+          const updatedOrder = bundle?.order
+          if (!updatedOrder?.id) return
 
-        if (normalizedStops) {
-          upsertRouteSolutionStops(normalizedStops)
-        }
+          setOrder(updatedOrder)
+          removeRouteSolutionStopsByOrderId(updatedOrder.id)
+
+          const normalizedStops = normalizeOrderStopResponse(bundle.order_stops)
+          if (normalizedStops) {
+            upsertRouteSolutionStops(normalizedStops)
+          }
+        })
 
         return response.data
       } catch (error) {

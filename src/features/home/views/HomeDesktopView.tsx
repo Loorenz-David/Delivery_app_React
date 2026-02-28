@@ -97,6 +97,7 @@ export function HomeDesktopView() {
 
   const SelectedOrdersPlanType = derivedState.SelectedOrdersPlanType
   const splitMode = layout.viewMode === 'split'
+
   return (
     <>
       <HomeDesktopHeader

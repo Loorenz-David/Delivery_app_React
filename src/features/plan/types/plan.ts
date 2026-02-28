@@ -1,6 +1,10 @@
 import type { InternationalShippingPlanInput } from '@/features/plan/types/internationalShippingPlan'
+import type { InternationalShippingPlan } from '@/features/plan/types/internationalShippingPlan'
 import type { LocalDeliveryPlanInput } from '@/features/plan/planTypes/localDelivery/types/localDeliveryPlan'
+import type { LocalDeliveryPlan } from '@/features/plan/planTypes/localDelivery/types/localDeliveryPlan'
 import type { StorePickupPlanInput } from '@/features/plan/types/storePickupPlan'
+import type { StorePickupPlan } from '@/features/plan/types/storePickupPlan'
+import type { RouteSolution } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
 
 export const PLAN_TYPE_KEYS = [
   'local_delivery',
@@ -80,18 +84,29 @@ export type PlanTypeStoreFields = {
   store_pickup_plan?: StorePickupPlanInput
 }
 
-export type PlanCreatePayload = DeliveryPlanFields &
-  Partial<PlanTypeFields & PlanTypeStoreFields> & {
-    order_ids?: number[]
-  }
+export type PlanCreatePayload = {
+  client_id?: string
+  label: string
+  plan_type: PlanTypePayloadKey
+  start_date: string
+  end_date?: string | null
+  order_ids?: number[]
+}
 
-export type PlanUpdateFields = Partial<PlanCreatePayload>
+export type PlanUpdateFields = Partial<
+  DeliveryPlanFields & PlanTypeFields & PlanTypeStoreFields & { order_ids?: number[] }
+>
 
 export type ClientIdMap = Record<string, number> & {
   ids_without_match?: number[]
 }
 
+export type PlanCreateResultBundle = {
+  delivery_plan: DeliveryPlan
+  delivery_plan_type: LocalDeliveryPlan | InternationalShippingPlan | StorePickupPlan
+  route_solution?: RouteSolution
+}
+
 export type PlanCreateResponse = {
-  delivery_plan: ClientIdMap
-  plan_type: ClientIdMap
+  created: PlanCreateResultBundle[]
 }

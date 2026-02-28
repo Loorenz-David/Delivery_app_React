@@ -114,6 +114,7 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
       localDeliveryPlanId,
       planStartDate,
       orders,
+      orderCount:orders.length,
       stopByOrderId,
       ordersById,
       selectedRouteSolution: selectedRouteSolution ?? null,

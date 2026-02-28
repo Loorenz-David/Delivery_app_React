@@ -18,7 +18,7 @@ export const usePlanHeaderAction = () => {
     const openPlanSection = (plan:DeliveryPlan)=>{
         if (!plan.id) return
 
-
+        
         if( sectionManager.getOpenCount() > 0 ){
             sectionManager.closeAll()
         }

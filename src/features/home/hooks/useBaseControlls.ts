@@ -10,6 +10,7 @@ export const useBaseControlls = <T,>(): BaseControls<T> => {
 
     const openBase =  ({payload}:{payload:T})=>{
         setIsBaseOpen(true)
+    
         setPayload(payload)
     }
     const closeBase = ()=>{

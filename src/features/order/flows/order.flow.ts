@@ -35,9 +35,7 @@ export const useOrderFlow = () => {
         const response = await getOrders(normalizedQuery)
 
         const payload = response.data
-        console.log('Debugging: ', 'payload' )
-        console.log(payload)
-        console.log('end')
+       
         if (!payload?.order) {
           setOrderListError('Missing orders response.')
           return null

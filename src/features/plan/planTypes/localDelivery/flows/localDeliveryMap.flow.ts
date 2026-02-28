@@ -87,9 +87,10 @@ export const useLocalDeliveryMapFlow = ({
 
     mapManager.setMarkerLayer(MAP_MARKER_LAYERS.localDelivery, mapOrders)
     mapManager.setMarkerLayerVisibility(MAP_MARKER_LAYERS.localDelivery, isActive)
-   
-    if(isActive && selectedRouteSolution && selectedRouteSolution.route_polyline ){
-      mapManager.showRoute( {path: selectedRouteSolution.route_polyline} )
+
+    const routeSegments = buildRouteSegments(orders, stopByOrderId, selectedRouteSolution)
+    if (isActive && routeSegments.length) {
+      mapManager.showRoute({ path: routeSegments })
     } else {
       mapManager.showRoute(null)
     }
@@ -142,4 +143,32 @@ const buildStartEndMarker = ({
     status,
     onClick,
   }
+}
+
+
+const buildRouteSegments = (
+  orders: Order[],
+  stopByOrderId: Map<number, RouteSolutionStop>,
+  selectedRouteSolution: RouteSolution | null,
+): string[] => {
+  if (!selectedRouteSolution) return []
+
+  const orderedStops = orders
+    .map((order) => (order.id != null ? stopByOrderId.get(order.id) : undefined))
+    .filter((stop): stop is RouteSolutionStop => !!stop && stop.stop_order != null)
+    .sort((a, b) => (a.stop_order ?? Number.POSITIVE_INFINITY) - (b.stop_order ?? Number.POSITIVE_INFINITY))
+
+  const path: string[] = []
+  if (selectedRouteSolution.start_leg_polyline) {
+    path.push(selectedRouteSolution.start_leg_polyline)
+  }
+  orderedStops.forEach((stop) => {
+    if (stop.to_next_polyline) {
+      path.push(stop.to_next_polyline)
+    }
+  })
+  if (selectedRouteSolution.end_leg_polyline) {
+    path.push(selectedRouteSolution.end_leg_polyline)
+  }
+  return path
 }

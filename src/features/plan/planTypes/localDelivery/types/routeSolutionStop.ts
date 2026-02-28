@@ -8,6 +8,7 @@ export type RouteSolutionStop = {
   in_range?: boolean | null
   reason_was_skipped?: string | null
   expected_arrival_time?: string | null
+  to_next_polyline?: string | null
   has_constraint_violation?: boolean
   constraint_warnings?: Array<Record<string, unknown>> | null
 }

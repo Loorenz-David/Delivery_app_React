@@ -9,7 +9,8 @@ export type RouteSolution = {
   is_selected?: boolean
   is_optimized?: string | null
   stop_count?: number | null
-  route_polyline?: string[] | null
+  start_leg_polyline?: string | null
+  end_leg_polyline?: string | null
   total_distance_meters?: number | null
   total_travel_time_seconds?: number | null
   expected_start_time?: string | null

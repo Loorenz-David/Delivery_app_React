@@ -11,15 +11,18 @@ import type { LocalDeliveryPlan } from "../../types/localDeliveryPlan"
 import { ThreeDotMenu } from "@/shared/buttons/ThreeDotMenu"
 import { OrderImportButton } from "@/features/order/components/OrderImportButton"
 import type { OrderImportControls } from "@/features/order/components/OrderImportButton"
+import type { RouteSolution } from '../../types/routeSolution'
 
 
 type HeaderProps = {
     localDeliveryActions: ReturnType<typeof useLocalDeliveryHeaderAction>
     plan:DeliveryPlan | null
     localDeliveryPlan:LocalDeliveryPlan | null
+    orderCount:number
+    selectedRouteSolution?:RouteSolution | null
 }
 
-export const MainHeaderLocalDeliveryPage = ({localDeliveryActions, plan, localDeliveryPlan}:HeaderProps)=>{
+export const MainHeaderLocalDeliveryPage = ({localDeliveryActions, plan, localDeliveryPlan, orderCount, selectedRouteSolution}:HeaderProps)=>{
     const [importControls, setImportControls] = useState<OrderImportControls>({
         triggerFileInput: () => undefined,
         loading: false,
@@ -31,6 +34,10 @@ export const MainHeaderLocalDeliveryPage = ({localDeliveryActions, plan, localDe
 
     const PlanTypeIcon = planIconTypeMap.local_delivery
     const title = plan?.label ?? 'undefined plan'
+
+    const hasRouteWarnings = selectedRouteSolution?.has_route_warnings
+    const isNotOptimize = selectedRouteSolution?.is_optimized == 'not optimize'
+    console.log(hasRouteWarnings)
     return (
         <>
            
@@ -90,14 +97,16 @@ export const MainHeaderLocalDeliveryPage = ({localDeliveryActions, plan, localDe
                         />
                         
                     </div>
-                    <div className="flex flex-1">
-                        <RouteOptimizationDropdownButton
-                        localDeliveryPlanId={localDeliveryPlan?.id}
-                        planId={plan?.id}
-                        borderColor="var(--color-blue-300)"
-                        className="w-full"
-                        />
-                    </div>
+                    {orderCount > 0 && (isNotOptimize || hasRouteWarnings) &&
+                        <div className="flex flex-1">
+                            <RouteOptimizationDropdownButton
+                            localDeliveryPlanId={localDeliveryPlan?.id}
+                            planId={plan?.id}
+                            borderColor="var(--color-blue-300)"
+                            className="w-full"
+                            />
+                        </div>
+                    }
                 </div>
             <OrderImportButton planId={plan?.id} onReady={handleImportReady} />
         </>

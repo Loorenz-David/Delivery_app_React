@@ -72,8 +72,7 @@ export function useRouteSolutionStopMutations() {
   const updateRouteStopPosition = useCallback(
     async (routeStopId: number, position: number) => {
       try {
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-        const response = await routeSolutionApi.updateStopPosition(routeStopId, position, timeZone)
+        const response = await routeSolutionApi.updateStopPosition(routeStopId, position)
         applyUpdatePayload(response.data)
         return response.data
       } catch (error) {
@@ -151,8 +150,7 @@ export function useRouteSolutionStopMutations() {
       })
 
       try {
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-        const response = await routeSolutionApi.updateStopPosition(activeStop.id, toIndex + 1, timeZone)
+        const response = await routeSolutionApi.updateStopPosition(activeStop.id, toIndex + 1)
         applyUpdatePayload(response.data)
 
         return response.data

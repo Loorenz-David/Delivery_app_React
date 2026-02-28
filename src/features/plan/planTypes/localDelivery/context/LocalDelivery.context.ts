@@ -18,6 +18,7 @@ export type LocalDeliveryContextValue = {
   localDeliveryPlanId: number | null
   planStartDate: string | null
   orders: Order[]
+  orderCount:number
   stopByOrderId: Map<number, RouteSolutionStop>
   ordersById: Map<number, Order>
   selectedRouteSolution: RouteSolution | null

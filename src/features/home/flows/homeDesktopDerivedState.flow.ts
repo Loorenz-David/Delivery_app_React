@@ -30,5 +30,5 @@ export const useHomeDesktopDerivedStateFlow = ({
       isLocalDeliveryOverlayActive,
       SelectedOrdersPlanType,
     }
-  }, [baseControlls.isBaseOpen, baseControlls.payload?.ordersPlanType, sectionEntries])
+  }, [baseControlls.isBaseOpen, baseControlls.payload?.ordersPlanType,, sectionEntries])
 }

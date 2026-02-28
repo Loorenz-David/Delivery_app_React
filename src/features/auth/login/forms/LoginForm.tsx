@@ -18,7 +18,8 @@ export function LoginForm() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
-    const response = await login({ email, password })
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    const response = await login({ email, password, time_zone: timeZone })
     if ( response ){
       navigate('/')
     }

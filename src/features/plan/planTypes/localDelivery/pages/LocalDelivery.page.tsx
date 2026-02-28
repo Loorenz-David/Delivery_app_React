@@ -13,6 +13,7 @@ type LocalDeliveryPageProps = {
 
 
 export const LocalDeliveryPage = ({ payload }: LocalDeliveryPageProps) => {
+
   const planId = payload?.planId
   if (planId == null) return null
 

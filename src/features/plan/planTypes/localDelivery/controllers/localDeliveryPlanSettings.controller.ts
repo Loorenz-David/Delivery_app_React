@@ -121,8 +121,6 @@ export function useLocalDeliveryPlanSettingsMutations() {
       }
 
       try {
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-        payload['time_zone'] = timeZone
         const response = await localDeliveryPlanSettingsApi.updateLocalDeliverySettings(payload)
 
         if(response?.data){

@@ -8,11 +8,12 @@ import { useOrderPlanPatchController } from '@/features/order'
 import type {
   DeliveryPlan,
   DeliveryPlanFields,
+  PlanCreatePayload,
   PlanTypeKey,
 } from '@/features/plan/types/plan'
-import type { InternationalShippingPlanInput } from '@/features/plan/types/internationalShippingPlan'
-import type { LocalDeliveryPlanInput } from '@/features/plan/planTypes/localDelivery/types/localDeliveryPlan'
-import type { StorePickupPlanInput } from '@/features/plan/types/storePickupPlan'
+import type { InternationalShippingPlan } from '@/features/plan/types/internationalShippingPlan'
+import type { LocalDeliveryPlan } from '@/features/plan/planTypes/localDelivery/types/localDeliveryPlan'
+import type { StorePickupPlan } from '@/features/plan/types/storePickupPlan'
 import {
   insertPlan,
   removePlan,
@@ -25,27 +26,26 @@ import {
   insertInternationalShippingPlan,
   removeInternationalShippingPlan,
   selectInternationalShippingPlanByPlanId,
-  updateInternationalShippingPlan,
+  upsertInternationalShippingPlan,
   useInternationalShippingPlanStore,
 } from '@/features/plan/planTypes/internationalShipping/store/internationalShipping.slice'
 import {
   insertLocalDeliveryPlan,
   removeLocalDeliveryPlan,
   selectLocalDeliveryPlanByPlanId,
-  updateLocalDeliveryPlan,
+  upsertLocalDeliveryPlan,
   useLocalDeliveryPlanStore,
 } from '@/features/plan/planTypes/localDelivery/store/localDelivery.slice'
 import {
   insertStorePickupPlan,
   removeStorePickupPlan,
   selectStorePickupPlanByPlanId,
-  updateStorePickupPlan,
+  upsertStorePickupPlan,
   useStorePickupPlanStore,
 } from '@/features/plan/planTypes/storePickup/store/storePickup.slice'
+import { upsertRouteSolution } from '@/features/plan/planTypes/localDelivery/store/routeSolution.store'
 
-
-
-type PlanTypeFields = LocalDeliveryPlanInput | InternationalShippingPlanInput | StorePickupPlanInput
+type PlanTypeFields = LocalDeliveryPlan | InternationalShippingPlan | StorePickupPlan
 
 
 
@@ -53,33 +53,32 @@ type PlanTypeFields = LocalDeliveryPlanInput | InternationalShippingPlanInput | 
 const insertPlanType = (planType: PlanTypeKey, planTypeFields: PlanTypeFields) => {
   switch (planType) {
     case 'local_delivery':
-      insertLocalDeliveryPlan(planTypeFields as LocalDeliveryPlanInput)
+      insertLocalDeliveryPlan(planTypeFields as LocalDeliveryPlan)
       break
     case 'international_shipping':
-      insertInternationalShippingPlan(planTypeFields as InternationalShippingPlanInput)
+      insertInternationalShippingPlan(planTypeFields as InternationalShippingPlan)
       break
     case 'store_pickup':
-      insertStorePickupPlan(planTypeFields as StorePickupPlanInput)
+      insertStorePickupPlan(planTypeFields as StorePickupPlan)
       break
     default:
       break
   }
 }
 
-const updatePlanType = (
+const upsertPlanType = (
   planType: PlanTypeKey,
-  clientId: string,
-  updater: (planTypeFields: PlanTypeFields) => PlanTypeFields,
+  payload: PlanTypeFields,
 ) => {
   switch (planType) {
     case 'local_delivery':
-      updateLocalDeliveryPlan(clientId, updater as (plan: LocalDeliveryPlanInput) => LocalDeliveryPlanInput)
+      upsertLocalDeliveryPlan(payload as LocalDeliveryPlan)
       break
     case 'international_shipping':
-      updateInternationalShippingPlan(clientId, updater as (plan: InternationalShippingPlanInput) => InternationalShippingPlanInput)
+      upsertInternationalShippingPlan(payload as InternationalShippingPlan)
       break
     case 'store_pickup':
-      updateStorePickupPlan(clientId, updater as (plan: StorePickupPlanInput) => StorePickupPlanInput)
+      upsertStorePickupPlan(payload as StorePickupPlan)
       break
     default:
       break
@@ -148,42 +147,62 @@ export function usePlanController() {
       })
 
       try {
+        const normalizedStartDate = normalizedPlanFields.start_date
+        if (!normalizedStartDate) {
+          throw new Error('start_date is required to create a plan.')
+        }
 
-        const planPayloadApi = {
-          ...normalizedPlanFields,
-          [planTypeKey]: {client_id:planTypeClientId},
+        const planPayloadApi: PlanCreatePayload = {
+          client_id: planClientId,
+          label: normalizedPlanFields.label,
+          plan_type: normalizedPlanFields.plan_type,
+          start_date: normalizedStartDate,
+          ...(typeof normalizedPlanFields.end_date !== 'undefined'
+            ? { end_date: normalizedPlanFields.end_date }
+            : {}),
           ...(sanitizedNewOrderLinks.length > 0
             ? { order_ids: sanitizedNewOrderLinks }
             : {}),
         }
 
         const response = await planApi.createPlan( planPayloadApi )
+        const created = response.data?.created?.[0]
 
-        const planId = response.data?.delivery_plan?.[planClientId]
-        const planTypeId = response.data?.plan_type?.[planTypeClientId]
+        if (!created?.delivery_plan || !created?.delivery_plan_type) {
+          throw new Error('Plan create response is missing created entities.')
+        }
 
-        if (typeof planId === 'number') {
+        const createdPlan = created.delivery_plan
+        const createdPlanType = created.delivery_plan_type
+        const createdPlanId = createdPlan.id
+
+        if (createdPlan.client_id === planClientId) {
           updatePlan(planClientId, (plan) => ({
             ...plan,
-            id: planId,
+            ...createdPlan,
           }))
+        } else {
+          removePlan(planClientId)
+          insertPlan(createdPlan)
+        }
 
+        if (typeof createdPlanId === 'number') {
           if (sanitizedNewOrderLinks.length > 0) {
             patchOrdersPlanByServerIds({
               orderServerIds: sanitizedNewOrderLinks,
-              planId,
-              planType: planTypeKey,
+              planId: createdPlanId,
+              planType: createdPlan.plan_type,
             })
           }
         }
 
-        if (typeof planTypeId === 'number') {
-          updatePlanType(planTypeKey, planTypeClientId, (planType) => ({
-            ...planType,
-            id: planTypeId,
-            delivery_plan_id: typeof planId === 'number' ? planId : planType.delivery_plan_id,
-          }))
+        removePlanType(planTypeKey, planTypeClientId)
+        upsertPlanType(createdPlan.plan_type, createdPlanType as PlanTypeFields)
+
+        if (created.route_solution) {
+          upsertRouteSolution(created.route_solution)
         }
+
         return response.data
 
       } catch (error) {

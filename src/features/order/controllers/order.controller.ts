@@ -51,18 +51,35 @@ export const useOrderController = () => {
           }
 
           const response = await createOrder(baseOrder)
-          const created = response.data?.order?.[baseOrder.client_id]
-          const normalizedStops = normalizeOrderStopResponse(response.data?.order_stop)
-
-          if (normalizedStops) {
-            upsertRouteSolutionStops(normalizedStops)
+          const createdBundles = response.data?.created ?? []
+          if (!createdBundles.length) {
+            showMessage({ status: 500, message: 'Create order response is missing created items.' })
+            return false
           }
-          
-          setOrder({
-            ...baseOrder,
-            ...created,
+
+          createdBundles.forEach((bundle) => {
+            if (!bundle?.order?.client_id) return
+
+            const normalizedStops = normalizeOrderStopResponse(bundle.order_stops)
+            if (normalizedStops) {
+              upsertRouteSolutionStops(normalizedStops)
+            }
+
+            setOrder(bundle.order)
+            addVisibleOrder(bundle.order.client_id)
           })
-          addVisibleOrder(baseOrder.client_id)
+
+          const hasBaseOrder = createdBundles.some(
+            (bundle) => bundle?.order?.client_id === baseOrder.client_id,
+          )
+          if (!hasBaseOrder) {
+            const fallback = createdBundles[0]?.order
+            if (fallback?.client_id) {
+              setOrder({ ...baseOrder, ...fallback })
+              addVisibleOrder(fallback.client_id)
+            }
+          }
+
           return true
         }
 

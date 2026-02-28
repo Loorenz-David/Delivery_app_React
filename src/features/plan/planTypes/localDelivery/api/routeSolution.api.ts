@@ -39,12 +39,10 @@ export const routeSolutionApi = {
   updateStopPosition: (
     routeStopId: number,
     position: number,
-    timeZone?: string
   ): Promise<ApiResult<RouteSolutionUpdateResponse>> =>
     apiClient.request<RouteSolutionUpdateResponse>({
       path: `/route_solutions/stops/${routeStopId}/position/${position}`,
       method: 'PATCH',
-      query: timeZone ? { time_zone: timeZone} : undefined
     }),
 
   selectRouteSolution: (

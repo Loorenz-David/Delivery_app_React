@@ -29,7 +29,6 @@ export type LocalDeliveryPlanSettingsPayload = {
     driver_id?: number | null
   }
   create_variant_on_save?: boolean
-  time_zone?:string
 }
 
 export type LocalDeliveryPlanSettingsResponse = {
