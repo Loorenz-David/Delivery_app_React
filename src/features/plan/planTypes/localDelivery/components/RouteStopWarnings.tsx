@@ -78,8 +78,9 @@ export const RouteStopWarnings = ({ stop, planStartDate }: RouteStopWarningsProp
                                     {meta.length > 0 && (
                                         <div className="mt-1 space-y-1 text-[0.7rem] text-[var(--color-muted)]">
                                             {meta.map((item) => (
-                                                <div key={item.label}>
-                                                    {item.label}: {item.value}
+                                                <div key={item.label} className="flex w-full justify-between">
+                                                    <span>{item.label}:</span>
+                                                    <span>{item.value}</span>
                                                 </div>
                                             ))}
                                         </div>

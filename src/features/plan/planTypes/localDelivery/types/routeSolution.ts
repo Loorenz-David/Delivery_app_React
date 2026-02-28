@@ -1,5 +1,21 @@
 import type { address } from '@/types/address'
 
+export type RouteSolutionWarningBase = {
+  type?: string
+  severity?: string
+  message?: string
+}
+
+export type RouteEndTimeExceededWarning = RouteSolutionWarningBase & {
+  type: 'route_end_time_exceeded'
+  route_expected_end?: string
+  route_allowed_end?: string
+}
+
+export type RouteSolutionWarning =
+  | RouteEndTimeExceededWarning
+  | RouteSolutionWarningBase
+
 export type RouteSolution = {
   id?: number
   client_id: string
@@ -24,7 +40,7 @@ export type RouteSolution = {
   driver_id?: number | null
   local_delivery_plan_id?: number | null
   has_route_warnings?: boolean
-  route_warnings?: Array<Record<string, unknown>> | null
+  route_warnings?: RouteSolutionWarning[] | null
 }
 
 export type RouteSolutionMap = {

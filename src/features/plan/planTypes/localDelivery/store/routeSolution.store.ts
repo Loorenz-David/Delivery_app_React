@@ -110,3 +110,22 @@ export const removeRouteSolution = (clientId: string) =>
 
 export const clearRouteSolutions = () =>
   useRouteSolutionStore.getState().clear()
+
+export const getRouteSolutionSnapshot = () => {
+  const state = useRouteSolutionStore.getState()
+  return structuredClone({
+    byClientId: state.byClientId,
+    idIndex: state.idIndex,
+    allIds: state.allIds,
+    visibleIds: state.visibleIds,
+  })
+}
+
+export const restoreRouteSolutionSnapshot = (
+  snapshot: {
+    byClientId: Record<string, RouteSolution>
+    idIndex: Record<number, string>
+    allIds: string[]
+    visibleIds: string[] | null
+  },
+) => useRouteSolutionStore.setState(snapshot)

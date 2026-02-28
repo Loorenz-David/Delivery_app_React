@@ -1,7 +1,10 @@
 import { useCallback } from 'react'
 
 import { useMessageHandler } from '@/shared/message-handler'
-import { upsertRouteSolutionStops } from '@/features/plan/planTypes/localDelivery/store/routeSolutionStop.store'
+import { optimisticTransaction } from '@/shared/optimistic'
+import { handlePlanOrderCreation } from '@/features/plan/bridges/orderCreation.bridge'
+import { handlePlanOrderUpdate } from '@/features/plan/bridges/orderUpdate.bridge'
+import { handlePlanOrderDelete } from '@/features/plan/bridges/orderDelete.bridge'
 
 import {
   useCreateOrder,
@@ -10,7 +13,6 @@ import {
   useArchiveOrder as useArchiveOrderApi,
   useUnarchiveOrder as useUnarchiveOrderApi,
 } from '../api/orderApi'
-import { normalizeOrderStopResponse } from '../domain/orderStopResponse'
 
 import {
   addVisibleOrder,
@@ -21,12 +23,18 @@ import {
   useOrderStore,
 } from '../store/order.store'
 import type { Order, OrderUpdateFields } from '../types/order'
+import {
+  createOrderOptimisticSnapshot,
+  restoreOrderOptimisticSnapshot,
+} from '../utils/orderOptimisticSnapshot'
 
 export type SaveOrderParams = {
   mode: 'create' | 'edit'
   action?:boolean
   clientId?: string
   fields: OrderUpdateFields
+  onRollback?: () => void
+  optimisticImmediate?: boolean
 }
 
 export const useOrderController = () => {
@@ -39,69 +47,117 @@ export const useOrderController = () => {
   const { showMessage } = useMessageHandler()
 
   const saveOrder = useCallback(
-    async ({ mode, clientId, fields }: SaveOrderParams) => {
-      
-
-      try {
-        if (mode === 'create') {
-          const baseOrder = fields as Order
-          if (!baseOrder.client_id) {
-            showMessage({ status: 400, message: 'Order client id is missing.' })
-            return false
-          }
-
-          const response = await createOrder(baseOrder)
-          const createdBundles = response.data?.created ?? []
-          if (!createdBundles.length) {
-            showMessage({ status: 500, message: 'Create order response is missing created items.' })
-            return false
-          }
-
-          createdBundles.forEach((bundle) => {
-            if (!bundle?.order?.client_id) return
-
-            const normalizedStops = normalizeOrderStopResponse(bundle.order_stops)
-            if (normalizedStops) {
-              upsertRouteSolutionStops(normalizedStops)
-            }
-
-            setOrder(bundle.order)
-            addVisibleOrder(bundle.order.client_id)
-          })
-
-          const hasBaseOrder = createdBundles.some(
-            (bundle) => bundle?.order?.client_id === baseOrder.client_id,
-          )
-          if (!hasBaseOrder) {
-            const fallback = createdBundles[0]?.order
-            if (fallback?.client_id) {
-              setOrder({ ...baseOrder, ...fallback })
-              addVisibleOrder(fallback.client_id)
-            }
-          }
-
-          return true
-        }
-
-        if (!clientId) {
+    async ({ mode, clientId, fields, onRollback, optimisticImmediate }: SaveOrderParams) => {
+      if (mode === 'create') {
+        const baseOrder = fields as Order
+        if (!baseOrder.client_id) {
           showMessage({ status: 400, message: 'Order client id is missing.' })
           return false
         }
 
-        const existing = selectOrderByClientId(clientId)(useOrderStore.getState())
-        if (!existing || !existing.id) {
-          showMessage({ status: 404, message: 'Order not found for update.' })
-          return false
-        }
+        const runCreate = optimisticTransaction({
+          snapshot: createOrderOptimisticSnapshot,
+          mutate: () => {
+            setOrder({ ...baseOrder, __optimistic: true })
+            addVisibleOrder(baseOrder.client_id)
+          },
+          request: () => createOrder(baseOrder),
+          commit: (response) => {
+            const createdBundles = response.data?.created ?? []
+            if (!createdBundles.length) {
+              throw new Error('Create order response is missing created items.')
+            }
 
-        await updateOrderApi({ target_id: existing.id, fields })
-        updateOrderByClientId(clientId, (order) => ({ ...order, ...fields }))
-        return true
-      } catch (error) {
-        console.error('Failed to save order', error)
-        showMessage({ status: 500, message: 'Unable to save order.' })
+            removeOrderByClientId(baseOrder.client_id)
+
+            createdBundles.forEach((bundle) => {
+              if (!bundle?.order?.client_id) return
+
+              handlePlanOrderCreation(bundle)
+
+              setOrder(bundle.order)
+              addVisibleOrder(bundle.order.client_id)
+            })
+
+            const hasBaseOrder = createdBundles.some(
+              (bundle) => bundle?.order?.client_id === baseOrder.client_id,
+            )
+            if (!hasBaseOrder) {
+              const fallback = createdBundles[0]?.order
+              if (fallback?.client_id) {
+                setOrder({ ...baseOrder, ...fallback })
+                addVisibleOrder(fallback.client_id)
+              }
+            }
+          },
+          rollback: restoreOrderOptimisticSnapshot,
+          onError: (error) => {
+            console.error('Failed to save order', error)
+            onRollback?.()
+            showMessage({ status: 500, message: 'Unable to save order.' })
+          },
+        })
+        if (optimisticImmediate) {
+          void runCreate
+          return true
+        }
+        return runCreate
+      }
+
+      if (!clientId) {
+        showMessage({ status: 400, message: 'Order client id is missing.' })
         return false
       }
+
+      const existing = selectOrderByClientId(clientId)(useOrderStore.getState())
+      if (!existing || !existing.id) {
+        showMessage({ status: 404, message: 'Order not found for update.' })
+        return false
+      }
+
+      const runEdit = optimisticTransaction({
+        snapshot: createOrderOptimisticSnapshot,
+        mutate: () => {
+          updateOrderByClientId(clientId, (order) => ({
+            ...order,
+            ...fields,
+            __optimistic: true,
+          }))
+        },
+        request: () =>
+          updateOrderApi({
+            target_id: existing.id as number,
+            fields,
+          }),
+        commit: (response) => {
+          const updatedBundles = response?.data?.updated ?? []
+          if (updatedBundles.length > 0) {
+            updatedBundles.forEach((bundle) => {
+              if (bundle?.order?.client_id) {
+                setOrder({ ...bundle.order, __optimistic: undefined })
+              }
+              handlePlanOrderUpdate(bundle)
+            })
+            return
+          }
+
+          updateOrderByClientId(clientId, (order) => ({
+            ...order,
+            __optimistic: undefined,
+          }))
+        },
+        rollback: restoreOrderOptimisticSnapshot,
+        onError: (error) => {
+          console.error('Failed to save order', error)
+          onRollback?.()
+          showMessage({ status: 500, message: 'Unable to save order.' })
+        },
+      })
+      if (optimisticImmediate) {
+        void runEdit
+        return true
+      }
+      return runEdit
     },
     [createOrder, showMessage, updateOrderApi],
   )
@@ -114,8 +170,25 @@ export const useOrderController = () => {
       }
 
       try {
-        await deleteOrderApi({ target_id: serverId })
-        removeOrderByClientId(clientId)
+        const response = await deleteOrderApi({ target_id: serverId })
+        const deletedClientIds = response?.data?.deleted?.order_client_ids ?? []
+        const resolvedClientIds = deletedClientIds.filter(
+          (value): value is string => typeof value === 'string' && value.length > 0,
+        )
+
+        if (resolvedClientIds.length > 0) {
+          resolvedClientIds.forEach((deletedClientId) => {
+            removeOrderByClientId(deletedClientId)
+          })
+        } else {
+          removeOrderByClientId(clientId)
+        }
+
+        const updatedBundles = response?.data?.updated ?? []
+        updatedBundles.forEach((bundle) => {
+          handlePlanOrderDelete(bundle)
+        })
+
         showMessage({ status: 200, message: 'Order deleted successfully.' })
         return true
       } catch (error) {
@@ -131,26 +204,43 @@ export const useOrderController = () => {
     async (clientId:string, orderId?:number)=>{
       if(!orderId){
         showMessage({status:"warning", message:"Order can't be archive yet"})
-      }
-      try{
-        const response = await archiveOrderApi({target_id: orderId})
-        const archiveResponse = response?.data as
-          | { archive_at?: string | null; order?: { archive_at?: string | null } }
-          | undefined
-        const archiveAt =
-          archiveResponse?.archive_at ??
-          archiveResponse?.order?.archive_at ??
-          new Date().toISOString()
-        
-        updateOrderByClientId(clientId, (order) => ({ ...order, archive_at: archiveAt }))
-        showMessage({ status: 200, message: 'Order archived successfully.' })
-      }catch(error){
-        console.error('Failed to archive order', error)
-        showMessage({ status: 500, message: 'Unable to archive order.' })
         return false
       }
+
+      const optimisticArchiveAt = new Date().toISOString()
+      return optimisticTransaction({
+        snapshot: createOrderOptimisticSnapshot,
+        mutate: () => {
+          updateOrderByClientId(clientId, (order) => ({
+            ...order,
+            archive_at: optimisticArchiveAt,
+            __optimistic: true,
+          }))
+        },
+        request: () => archiveOrderApi({ target_id: orderId }),
+        commit: (response) => {
+          const archiveResponse = response?.data as
+            | { archive_at?: string | null; order?: { archive_at?: string | null } }
+            | undefined
+          const archiveAt =
+            archiveResponse?.archive_at ??
+            archiveResponse?.order?.archive_at ??
+            optimisticArchiveAt
+          updateOrderByClientId(clientId, (order) => ({
+            ...order,
+            archive_at: archiveAt,
+            __optimistic: undefined,
+          }))
+          showMessage({ status: 200, message: 'Order archived successfully.' })
+        },
+        rollback: restoreOrderOptimisticSnapshot,
+        onError: (error) => {
+          console.error('Failed to archive order', error)
+          showMessage({ status: 500, message: 'Unable to archive order.' })
+        },
+      })
     },
-    []
+    [archiveOrderApi, showMessage]
   )
 
   const unarchiveOrder = useCallback(
@@ -160,21 +250,30 @@ export const useOrderController = () => {
         return false
       }
 
-      try {
-        await unarchiveOrderApi({ target_id: orderId })
-
-        updateOrderByClientId(clientId, (order) => ({
-          ...order,
-          archive_at: null,
-        }))
-
-        showMessage({ status: 200, message: 'Order unarchived successfully.' })
-        return true
-      } catch (error) {
-        console.error('Failed to unarchive order', error)
-        showMessage({ status: 500, message: 'Unable to unarchive order.' })
-        return false
-      }
+      return optimisticTransaction({
+        snapshot: createOrderOptimisticSnapshot,
+        mutate: () => {
+          updateOrderByClientId(clientId, (order) => ({
+            ...order,
+            archive_at: null,
+            __optimistic: true,
+          }))
+        },
+        request: () => unarchiveOrderApi({ target_id: orderId }),
+        commit: () => {
+          updateOrderByClientId(clientId, (order) => ({
+            ...order,
+            archive_at: null,
+            __optimistic: undefined,
+          }))
+          showMessage({ status: 200, message: 'Order unarchived successfully.' })
+        },
+        rollback: restoreOrderOptimisticSnapshot,
+        onError: (error) => {
+          console.error('Failed to unarchive order', error)
+          showMessage({ status: 500, message: 'Unable to unarchive order.' })
+        },
+      })
     },
     [unarchiveOrderApi, showMessage],
   )

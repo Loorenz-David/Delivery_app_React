@@ -2,6 +2,7 @@ export { LocalDeliveryOrderList } from './LocalDeliveryOrderList'
 export { RouteOptimizationDropdownButton } from './RouteOptimizationDropdownButton'
 export { RouteStopDragOverlay } from './RouteStopDragOverlay'
 export { RouteStopWarnings } from './RouteStopWarnings'
+export { RouteSolutionWarnings } from './RouteSolutionWarnings'
 export { MainHeaderLocalDeliveryPage } from './pageHeaders/localDeliveryMainHeader'
 export { LocalDeliveryMapOverlay } from './LocalDeliveryMapOverlay'
 

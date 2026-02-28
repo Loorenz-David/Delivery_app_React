@@ -32,6 +32,7 @@ export const LocalDeliveryOrderList = ({
         ordersById,
         boundaryLocations,
         selectedRouteSolution,
+        routeSolutionWarningRegistry,
     } = useLocalDeliveryContext()
 
     const { sortedEntries, missingOrders, sortableIds } = useLocalDeliveryStopOrdering(
@@ -79,7 +80,11 @@ export const LocalDeliveryOrderList = ({
                         <LocalDeliveryBoundaryLocationCard
                             label={startLocationLabel}
                             address={boundaryLocations.start.location}
-                            time={formatRouteTime(boundaryLocations.start.time) }
+                            time={formatRouteTime(boundaryLocations.start.time, 'today') }
+                            warnings={boundaryLocations.start.warnings}
+                            planStartDate={planStartDate}
+                            warningRegistry={routeSolutionWarningRegistry}
+                            localDeliveryActions={localDeliveryActions}
                         />
                     }
                     <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
@@ -106,7 +111,11 @@ export const LocalDeliveryOrderList = ({
                             <LocalDeliveryBoundaryLocationCard 
                                 label={endLocationLabel}
                                 address={boundaryLocations.end.location} 
-                                time={ formatRouteTime(boundaryLocations.end.time) }
+                                time={ formatRouteTime(boundaryLocations.end.time, 'today') }
+                                warnings={boundaryLocations.end.warnings}
+                                planStartDate={planStartDate}
+                                warningRegistry={routeSolutionWarningRegistry}
+                                localDeliveryActions={localDeliveryActions}
                             />
 
                          </div>

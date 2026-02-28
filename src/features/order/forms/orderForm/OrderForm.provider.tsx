@@ -41,6 +41,7 @@ export const OrderFormProvider = ({
       mode,
       order,
       payloadDeliveryPlanId: payload?.deliveryPlanId ?? null,
+      payloadRestoreFormState: payload?.restoreFormState ?? null,
     }),
   )
 
@@ -64,12 +65,13 @@ export const OrderFormProvider = ({
       mode,
       order,
       payloadDeliveryPlanId: payload?.deliveryPlanId ?? null,
+      payloadRestoreFormState: payload?.restoreFormState ?? null,
     })
 
     setFormState(nextState)
     makeInitialFormCopy(initialFormRef, nextState)
     previousReinitKeyRef.current = reinitKey
-  }, [mode, order, payload?.deliveryPlanId, reinitKey])
+  }, [mode, order, payload?.deliveryPlanId, payload?.restoreFormState, reinitKey])
 
   const warnings = useOrderFormWarnings()
   const formSetters = useOrderFormSetters({

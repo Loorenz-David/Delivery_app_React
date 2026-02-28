@@ -19,10 +19,11 @@ import { useLocalDeliveryMapFlow } from '../flows/localDeliveryMap.flow'
 import { useLocalDeliveryCircleSelectionFlow } from '../flows/localDeliveryCircleSelection.flow'
 import { getLocalDeliveryBoundaryLocations } from '../domain/getLocalDeliveryBoundaryLocations'
 
-import { LocalDeliveryContext } from './LocalDelivery.context'
+import { LocalDeliveryContext, type LocalDeliveryContextValue } from './LocalDelivery.context'
 import { usePlanStateRegistryFlow } from '@/features/plan/flows/planStateRegistry.flow'
 import { useMobile } from '@/app/contexts/MobileContext'
 import { useBaseControlls, usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
+import { useRouteSolutionWarningRegistry } from '@/features/plan/planTypes/localDelivery/hooks/useRouteSolutionWarningRegistry'
 
 type LocalDeliveryProviderProps = {
   planId: number
@@ -51,11 +52,14 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
   )
 
   const planStateRegistry = usePlanStateRegistryFlow()
+  const routeSolutionWarningRegistry = useRouteSolutionWarningRegistry()
   const planState = planStateRegistry.getById(plan?.state_id ?? null)
   
   const localDeliveryActions = useLocalDeliveryHeaderAction({
     localDeliveryPlanId,
     planId: plan?.id ?? planId,
+    plan: plan ?? null,
+    selectedRouteSolution: selectedRouteSolution ?? null,
   })
 
   const planStartDate = plan?.start_date ?? null
@@ -105,7 +109,7 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
       }
   },[isMobile, isPopupOpen, areSectionsOpen])
   
-  const contextValue = useMemo(
+  const contextValue = useMemo<LocalDeliveryContextValue>(
     () => ({
       planId,
       plan: plan ?? null,
@@ -121,6 +125,7 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
       routeSolutionId,
       routeSolutionStops,
       boundaryLocations,
+      routeSolutionWarningRegistry,
       localDeliveryActions,
     }),
     [
@@ -137,6 +142,7 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
       routeSolutionId,
       routeSolutionStops,
       boundaryLocations,
+      routeSolutionWarningRegistry,
       localDeliveryActions,
     ],
   )

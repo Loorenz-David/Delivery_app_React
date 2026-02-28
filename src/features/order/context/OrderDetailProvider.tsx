@@ -4,7 +4,6 @@ import { useMobile } from '@/app/contexts/MobileContext'
 import { usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 
 import { useOrderDetailActions } from '../actions/orderDetails.actions'
-import { useOrderFlow } from '../flows/order.flow'
 import { useOrderDetailKeyboardFlow } from '../flows/orderDetailKeyboard.flow'
 import { useOrderByClientId, useOrderByServerId } from '../store/orderHooks.store'
 import { useOrderStateByServerId } from '../store/orderStateHooks.store'
@@ -26,7 +25,6 @@ export const OrderDetailProvider = ({ payload, onClose, children }: OrderDetailP
   const popupManager = usePopupManager()
   const sectionManager = useSectionManager()
 
-  const { loadOrders } = useOrderFlow()
   const orderDetailActions = useOrderDetailActions({ onClose })
 
   const clientId = payload?.clientId ?? null
@@ -50,10 +48,7 @@ export const OrderDetailProvider = ({ payload, onClose, children }: OrderDetailP
     onOpenCases: orderDetailActions.handleOpenOrderCases,
   })
 
-  useEffect(() => {
-    if (order) return
-    void loadOrders()
-  }, [loadOrders, order])
+ 
 
   const value = useMemo(
     () => ({

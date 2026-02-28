@@ -3,11 +3,7 @@ import type { RefObject } from 'react'
 import { getObjectDiff } from '@/shared/utils/getObjectDiff'
 
 import type { useOrderItemDraftController } from '../../item'
-import { useCreateItem, useDeleteItem, useUpdateItem } from '../../item'
-import { useItemFlow } from '../../item'
 import type { Item, ItemUpdateFields } from '../../item'
-import { useOrderController } from '../../controllers/order.controller'
-import { useOrderValidation } from '../../domain/useOrderValidation'
 import type { Order, OrderUpdateFields } from '../../types/order'
 import type { OrderFormMode, OrderFormState } from './OrderForm.types'
 import { normalizeFormStateForSave, stripImmutableItemFields } from '../../api/mappers/orderForm.normalize'
@@ -34,15 +30,24 @@ export type OrderFormSubmitCommand = {
   initialFormRef: RefObject<OrderFormState | null>
   itemDraftController: ItemDraftControllerApi
   itemInitialByClientId: Record<string, Item>
+  onOrderRollback?: () => void
 }
 
 type OrderFormSubmitDeps = {
-  saveOrder: ReturnType<typeof useOrderController>['saveOrder']
-  createItemApi: ReturnType<typeof useCreateItem>
-  updateItemApi: ReturnType<typeof useUpdateItem>
-  deleteItemApi: ReturnType<typeof useDeleteItem>
-  loadItemsByOrderId: ReturnType<typeof useItemFlow>['loadItemsByOrderId']
-  validateOrderFields: ReturnType<typeof useOrderValidation>['validateOrderFields']
+  saveOrder: (params: {
+    mode: 'create' | 'edit'
+    clientId?: string
+    fields: OrderUpdateFields
+    onRollback?: () => void
+    optimisticImmediate?: boolean
+  }) => Promise<boolean>
+  createItemApi: (fields: Item[]) => Promise<unknown>
+  updateItemApi: (
+    payload: Array<{ target_id: number; fields: ItemUpdateFields }>,
+  ) => Promise<unknown>
+  deleteItemApi: (payload: { target_ids: number[] }) => Promise<unknown>
+  loadItemsByOrderId: (orderId: number) => Promise<unknown>
+  validateOrderFields: (payload: OrderUpdateFields) => boolean
 }
 
 export const executeOrderFormSubmit = async (
@@ -58,6 +63,7 @@ export const executeOrderFormSubmit = async (
     initialFormRef,
     itemDraftController,
     itemInitialByClientId,
+    onOrderRollback,
   } = command
   const { saveOrder, createItemApi, updateItemApi, deleteItemApi, loadItemsByOrderId, validateOrderFields } =
     deps
@@ -109,15 +115,13 @@ export const executeOrderFormSubmit = async (
         return { status: 'validation_error', message: 'Please check the form inputs.' }
       }
 
-      const saved = await saveOrder({
+      void saveOrder({
         mode,
         clientId: order?.client_id,
         fields: createPayload,
+        onRollback: onOrderRollback,
+        optimisticImmediate: true,
       })
-
-      if (!saved) {
-        return { status: 'error', message: 'Unable to save order and items.' }
-      }
 
       return { status: 'success_create' }
     }
@@ -127,14 +131,13 @@ export const executeOrderFormSubmit = async (
         return { status: 'validation_error', message: 'Please check the form inputs.' }
       }
 
-      const orderSaved = await saveOrder({
+      void saveOrder({
         mode,
         clientId: order?.client_id,
         fields: orderChanges,
+        onRollback: onOrderRollback,
+        optimisticImmediate: true,
       })
-      if (!orderSaved) {
-        return { status: 'error', message: 'Unable to save order and items.' }
-      }
     }
 
     if (hasItemChanges) {
@@ -191,31 +194,5 @@ export const executeOrderFormSubmit = async (
   } catch (error) {
     console.error('Failed to save order form transaction', error)
     return { status: 'error', message: 'Unable to save order and items.' }
-  }
-}
-
-export const useOrderFormSubmitController = () => {
-  const { saveOrder } = useOrderController()
-  const createItemApi = useCreateItem()
-  const updateItemApi = useUpdateItem()
-  const deleteItemApi = useDeleteItem()
-  const { loadItemsByOrderId } = useItemFlow()
-  const validation = useOrderValidation()
-
-  const executeSubmit = (command: OrderFormSubmitCommand) =>
-    executeOrderFormSubmit(
-      {
-        saveOrder,
-        createItemApi,
-        updateItemApi,
-        deleteItemApi,
-        loadItemsByOrderId,
-        validateOrderFields: validation.validateOrderFields,
-      },
-      command,
-    )
-
-  return {
-    executeSubmit,
   }
 }

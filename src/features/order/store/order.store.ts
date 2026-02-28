@@ -72,3 +72,22 @@ export const upsertOrders = (table: OrderMap) => {
     }
   })
 }
+
+export const getOrderSnapshot = () => {
+  const state = useOrderStore.getState()
+  return structuredClone({
+    byClientId: state.byClientId,
+    idIndex: state.idIndex,
+    allIds: state.allIds,
+    visibleIds: state.visibleIds,
+  })
+}
+
+export const restoreOrderSnapshot = (
+  snapshot: {
+    byClientId: Record<string, Order>
+    idIndex: Record<number, string>
+    allIds: string[]
+    visibleIds: string[] | null
+  },
+) => useOrderStore.setState(snapshot)

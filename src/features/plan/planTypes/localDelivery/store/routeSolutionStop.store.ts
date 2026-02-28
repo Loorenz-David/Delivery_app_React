@@ -68,10 +68,38 @@ export const upsertRouteSolutionStop = (stop: RouteSolutionStop) => {
 }
 
 export const upsertRouteSolutionStops = (table: { byClientId: Record<string, RouteSolutionStop>; allIds: string[] }) => {
-  table.allIds.forEach((clientId) => {
-    const stop = table.byClientId[clientId]
-    if (stop) {
-      upsertRouteSolutionStop(stop)
+  if (!table?.allIds?.length) return
+
+  useRouteSolutionStopStore.setState((state) => {
+    const nextByClientId = { ...state.byClientId }
+    const nextAllIds = [...state.allIds]
+    const knownIds = new Set(nextAllIds)
+
+    for (const clientId of table.allIds) {
+      const incoming = table.byClientId[clientId]
+      if (!incoming) continue
+
+      const existing = nextByClientId[clientId]
+      nextByClientId[clientId] = existing ? { ...existing, ...incoming } : incoming
+
+      if (!knownIds.has(clientId)) {
+        knownIds.add(clientId)
+        nextAllIds.push(clientId)
+      }
+    }
+
+    const nextIdIndex: Record<number, string> = {}
+    for (const clientId of nextAllIds) {
+      const stop = nextByClientId[clientId]
+      if (stop?.id !== null && stop?.id !== undefined) {
+        nextIdIndex[stop.id] = stop.client_id
+      }
+    }
+
+    return {
+      byClientId: nextByClientId,
+      allIds: nextAllIds,
+      idIndex: nextIdIndex,
     }
   })
 }
@@ -97,3 +125,22 @@ export const removeRouteSolutionStopsByOrderId = (orderId: number | null | undef
 
 export const clearRouteSolutionStops = () =>
   useRouteSolutionStopStore.getState().clear()
+
+export const getRouteSolutionStopSnapshot = () => {
+  const state = useRouteSolutionStopStore.getState()
+  return structuredClone({
+    byClientId: state.byClientId,
+    idIndex: state.idIndex,
+    allIds: state.allIds,
+    visibleIds: state.visibleIds,
+  })
+}
+
+export const restoreRouteSolutionStopSnapshot = (
+  snapshot: {
+    byClientId: Record<string, RouteSolutionStop>
+    idIndex: Record<number, string>
+    allIds: string[]
+    visibleIds: string[] | null
+  },
+) => useRouteSolutionStopStore.setState(snapshot)

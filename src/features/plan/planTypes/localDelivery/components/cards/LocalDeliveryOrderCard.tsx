@@ -8,6 +8,7 @@ import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/
 import { RouteStopWarnings } from '../RouteStopWarnings'
 import { formatRouteTime } from '@/features/plan/planTypes/localDelivery/utils/formatRouteTime'
 import { useOrderActions } from '@/features/order'
+import { LottieSpinner } from '@/shared/spiners'
 
 type LocalDeliveryOrderCardProps = {
     order: Order;
@@ -21,7 +22,7 @@ export const LocalDeliveryOrderCard = ({ order, stop, displayStopOrder, planStar
     const mapManager = useMapManager()
     const orderLabel = order.reference_number ?? 'undf'
     const streetAddress = order.client_address?.street_address ?? 'No address'
-    const expectedArrival = formatRouteTime(stop?.expected_arrival_time, planStartDate)
+    const expectedArrival = stop && stop.expected_arrival_time !== 'loading' ? formatRouteTime(stop.expected_arrival_time, planStartDate) : null
     const itemCount = order.total_items ?? 0
     const stopOrder = typeof displayStopOrder === 'number'
         ? displayStopOrder
@@ -73,18 +74,26 @@ export const LocalDeliveryOrderCard = ({ order, stop, displayStopOrder, planStar
                                 </div>
                             }
                         </div>
-                        <div className="flex justify-between w-full ">
+                        <div className="flex justify-between w-full items-center ">
                             <span className="truncate text-xs text-[var(--color-muted)] pr-1">
                                 {streetAddress}
                             </span>
-                            <div className="flex items-center justify-end gap-7 text-xs text-[var(--color-muted)]">
+                            <div className="flex items-center justify-end gap-5 text-xs text-[var(--color-muted)]">
                                 <div className="flex items-center gap-2">
                                     <ItemIcon className="h-3 w-3 app-icon" />
                                     <span>{itemCount}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <TimeIcon className="h-3 w-3 app-icon" />
-                                    <span>{expectedArrival}</span>
+                                <div className="flex items-center gap-2 ">
+                                    { expectedArrival ? 
+                                        <>
+                                            <TimeIcon className="h-3 w-3 app-icon" />
+                                            <span className="whitespace-nowrap">
+                                                    {expectedArrival}
+                                            </span>
+                                        </>
+                                        :
+                                            <LottieSpinner animation="sandClock" size={50} inline />
+                                    }
                                 </div>
                             </div>
                         </div>

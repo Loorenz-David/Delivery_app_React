@@ -5,8 +5,10 @@ import type {
   Order,
   OrderCreatePayload,
   OrderCreateResponse,
+  OrderDeleteResponse,
   OrderMap,
   OrderPlanUpdateResponse,
+  OrderUpdateResponse,
   OrderUpdateFields,
 } from '../types/order'
 import type { OrderPagination, OrderQueryFilters, OrderStats } from '../types/orderMeta'
@@ -56,8 +58,8 @@ export const createOrder = (
 
 export const updateOrder = (
   payload: OrderUpdatePayload | OrderUpdatePayload[],
-): Promise<ApiResult<Record<string, never>>> =>
-  apiClient.request<Record<string, never>>({
+): Promise<ApiResult<OrderUpdateResponse>> =>
+  apiClient.request<OrderUpdateResponse>({
     path: '/orders/',
     method: 'PATCH',
     data: { target: payload },
@@ -65,8 +67,8 @@ export const updateOrder = (
 
 export const deleteOrder = (
   payload: OrderDeletePayload,
-): Promise<ApiResult<Record<string, never>>> =>
-  apiClient.request<Record<string, never>>({
+): Promise<ApiResult<OrderDeleteResponse>> =>
+  apiClient.request<OrderDeleteResponse>({
     path: '/orders/',
     method: 'DELETE',
     data: payload,

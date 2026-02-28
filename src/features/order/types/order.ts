@@ -1,5 +1,6 @@
 import type { address } from '@/types/address'
 import type { Phone } from '@/types/phone'
+import type { RouteSolution } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
 import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
 import type { Item } from '@/features/order/item'
 
@@ -33,6 +34,7 @@ export type Order = {
   total_volume?: number | null
   open_order_cases?: number | null
   archive_at?: string | null
+  __optimistic?: boolean
 }
 
 export type OrderMap = {
@@ -56,6 +58,7 @@ export type OrderCreateBundle = {
   order: Order
   items?: Item[]
   order_stops?: RouteSolutionStop[]
+  route_solution?: RouteSolution[]
 }
 
 export type OrderCreateResponse = {
@@ -65,6 +68,26 @@ export type OrderCreateResponse = {
 export type OrderPlanUpdateResponse = {
   updated: Array<{
     order: Order
+    order_stops?: RouteSolutionStop[]
+    route_solution?: RouteSolution[]
+  }>
+}
+
+export type OrderUpdateResponse = {
+  updated: Array<{
+    order: Order
+    order_stops?: RouteSolutionStop[]
+    route_solution?: RouteSolution[]
+  }>
+}
+
+export type OrderDeleteResponse = {
+  deleted: {
+    order_ids: number[]
+    order_client_ids: string[]
+  }
+  updated: Array<{
+    route_solution?: RouteSolution[]
     order_stops?: RouteSolutionStop[]
   }>
 }

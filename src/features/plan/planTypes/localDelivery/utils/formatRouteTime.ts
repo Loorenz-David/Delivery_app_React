@@ -1,7 +1,7 @@
 export const formatRouteTime = (
   value?: string | null,
-  planStartDate?: string | null,
-  fallback: string = 'Unknown time',
+  planStartDate?: string | 'today' | null,
+  fallback: string = '--',
 ) => {
   if (!value) return fallback
   const parsed = new Date(value)
@@ -15,14 +15,23 @@ export const formatRouteTime = (
   })
 
   if (!planStartDate) return timePart
-  const planDate = new Date(planStartDate)
+
+  let planDate = new Date() 
+  if(planStartDate !== 'today'){
+    planDate = new Date(planStartDate)
+  }
+
   if (Number.isNaN(planDate.getTime())) return timePart
 
   const sameDay =
     parsed.getUTCFullYear() === planDate.getUTCFullYear() &&
     parsed.getUTCMonth() === planDate.getUTCMonth() &&
     parsed.getUTCDate() === planDate.getUTCDate()
-
+  
+  if(sameDay && planStartDate === 'today'){
+    return `Today - ${timePart}`
+  }
+  
   if (sameDay) return timePart
 
   const datePart = parsed.toLocaleDateString('en-US', {
@@ -31,5 +40,5 @@ export const formatRouteTime = (
     day: 'numeric',
   })
 
-  return `${datePart} ${timePart}`
+  return `${datePart} - ${timePart}`
 }

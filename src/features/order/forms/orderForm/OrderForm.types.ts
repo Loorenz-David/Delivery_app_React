@@ -36,6 +36,7 @@ export type OrderFormPayload = {
   mode?: OrderFormMode
   clientId?: string
   deliveryPlanId?: number | null
+  restoreFormState?: OrderFormState
 }
 
 export type OrderFormWarnings = ReturnType<typeof useOrderFormWarnings>

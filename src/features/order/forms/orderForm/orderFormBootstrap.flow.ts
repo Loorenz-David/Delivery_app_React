@@ -9,6 +9,7 @@ type BuildOrderFormInitialStateParams = {
   mode: OrderFormMode
   order?: Order | null
   payloadDeliveryPlanId?: number | null
+  payloadRestoreFormState?: OrderFormState | null
 }
 
 type BuildOrderFormReinitKeyParams = {
@@ -65,7 +66,11 @@ export const buildOrderFormInitialState = ({
   mode,
   order,
   payloadDeliveryPlanId,
+  payloadRestoreFormState,
 }: BuildOrderFormInitialStateParams): OrderFormState =>
+  payloadRestoreFormState
+    ? { ...payloadRestoreFormState }
+    :
   buildInitialOrderForm({
     mode,
     order,

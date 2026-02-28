@@ -6,9 +6,10 @@ import type { DeliveryPlan } from '@/features/plan/types/plan'
 import type { LocalDeliveryPlan } from '../types/localDeliveryPlan'
 import type { RouteSolution } from '../types/routeSolution'
 import type { RouteSolutionStop } from '../types/routeSolutionStop'
-import type { address } from '@/types/address'
 import type { useLocalDeliveryHeaderAction } from '../actions/useLocalDeliveryHeaderAction'
 import type { DeliveryPlanState } from '@/features/plan/types/planState'
+import type { BoundaryLocationMeta } from '@/features/plan/planTypes/localDelivery/domain/getLocalDeliveryBoundaryLocations'
+import type { RouteSolutionWarningRegistry } from '@/features/plan/planTypes/localDelivery/domain/routeSolutionWarningRegistry'
 
 export type LocalDeliveryContextValue = {
   planId: number
@@ -25,17 +26,10 @@ export type LocalDeliveryContextValue = {
   routeSolutionId: number | null
   routeSolutionStops: RouteSolutionStop[]
   boundaryLocations: {
-    start: {
-      label: 'Start location' | 'End location'
-      location: address | null
-      time: string | null
-    }
-    end: {
-      label: 'End location' | 'Start location' 
-      location: address | null
-      time: string | null
-    }
+    start: BoundaryLocationMeta
+    end: BoundaryLocationMeta
   }
+  routeSolutionWarningRegistry: RouteSolutionWarningRegistry
   localDeliveryActions: ReturnType<typeof useLocalDeliveryHeaderAction>
 }
 

@@ -1,12 +1,15 @@
 import type { Order } from '@/features/order/types/order'
 import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
 import type { RouteSolution } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
+import type { RouteSolutionWarning } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
 import type { address } from '@/types/address'
 
 export type BoundaryLocationMeta = {
   label: 'Start location' | 'End location'
   location: address | null
   time: string | null
+  hasWarnings: boolean
+  warnings: RouteSolutionWarning[]
 }
 
 type BoundaryLocations = {
@@ -41,12 +44,17 @@ export const getLocalDeliveryBoundaryLocations = (
     label: 'Start location',
     location: startAddress,
     time: selectedRouteSolution?.expected_start_time ?? null,
+    hasWarnings: false,
+    warnings: [],
   })
 
+  const endWarnings = normalizeRouteWarnings(selectedRouteSolution)
   const end = buildBoundaryLocation({
     label: 'End location',
     location: endAddress,
     time: selectedRouteSolution?.expected_end_time ?? null,
+    hasWarnings: endWarnings.length > 0,
+    warnings: endWarnings,
   })
 
   return { start, end }
@@ -86,14 +94,20 @@ const buildBoundaryLocation = ({
   label,
   location,
   time,
+  hasWarnings,
+  warnings,
 }: {
   label: BoundaryLocationMeta['label']
   location: address | null
   time: string | null
+  hasWarnings: boolean
+  warnings: RouteSolutionWarning[]
 }): BoundaryLocationMeta => ({
   label,
   location,
   time,
+  hasWarnings,
+  warnings,
 })
 
 const resolveEndAddress = ({
@@ -113,4 +127,12 @@ const resolveEndAddress = ({
     return endLocation ?? lastOrderAddress
   }
   return lastOrderAddress
+}
+
+const normalizeRouteWarnings = (
+  selectedRouteSolution: RouteSolution | null,
+): RouteSolutionWarning[] => {
+  return Array.isArray(selectedRouteSolution?.route_warnings)
+    ? selectedRouteSolution.route_warnings
+    : []
 }
