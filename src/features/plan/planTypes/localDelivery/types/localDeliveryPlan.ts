@@ -1,3 +1,7 @@
+
+export type LoadingScenarios = 
+  | 'isOptimizing'
+
 export type LocalDeliveryPlan = {
   id?:number
   client_id: string
@@ -7,6 +11,8 @@ export type LocalDeliveryPlan = {
   driver_id?: number | null
   delivery_plan_id?: number | null
   route_solutions_ids?: number[]
+  is_loading?: LoadingScenarios
+  optimization_started_at?: number | null
 }
 
 export type LocalDeliveryPlanMap = {

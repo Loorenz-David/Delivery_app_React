@@ -4,13 +4,13 @@ import { TriangleWarningIcon } from '@/assets/icons'
 import { FloatingPopover } from '@/shared/popups/FloatingPopover/FloatingPopover'
 import type { RouteSolutionWarning } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
 import type { RouteSolutionWarningRegistry } from '@/features/plan/planTypes/localDelivery/domain/routeSolutionWarningRegistry'
-import type { useLocalDeliveryHeaderAction } from '@/features/plan/planTypes/localDelivery/actions/useLocalDeliveryHeaderAction'
+import type { useLocalDeliveryActions } from '@/features/plan/planTypes/localDelivery/actions/useLocalDeliveryActions'
 
 type RouteSolutionWarningsProps = {
   warnings?: RouteSolutionWarning[] | null
   planStartDate?: string | null
   registry: RouteSolutionWarningRegistry
-  localDeliveryActions: ReturnType<typeof useLocalDeliveryHeaderAction>
+  localDeliveryActions: ReturnType<typeof useLocalDeliveryActions>
 }
 
 export const RouteSolutionWarnings = ({

@@ -1,29 +1,25 @@
 import type { ReactNode } from 'react'
-import { useEffect, useMemo } from 'react'
-import { useShallow } from 'zustand/react/shallow'
+import { useMemo } from 'react'
 
-import { useOrdersByPlanId } from '@/features/order/store/orderHooks.store'
-import { usePlanByServerId } from '@/features/plan/store/usePlan.selector'
-import { useLocalDeliveryPlanByPlanId } from '@/features/plan/planTypes/localDelivery/store/useLocalDeliveryPlan.selector'
-import { useSelectedRouteSolutionByLocalDeliveryPlanId } from '@/features/plan/planTypes/localDelivery/store/useRouteSolution.selector'
-import { useLocalDeliveryHeaderAction } from '@/features/plan/planTypes/localDelivery/actions/useLocalDeliveryHeaderAction'
-import { useLocalDeliveryOverviewFlow } from '@/features/plan/planTypes/localDelivery/flows/localDeliveryOverview.flow'
-import {
-  selectRouteSolutionStopsBySolutionId,
-  useRouteSolutionStopStore,
-} from '@/features/plan/planTypes/localDelivery/store/routeSolutionStop.store'
-import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
-import type { Order } from '@/features/order/types/order'
+import { useLocalDeliveryActions } from '@/features/plan/planTypes/localDelivery/actions/useLocalDeliveryActions'
 
 import { useLocalDeliveryMapFlow } from '../flows/localDeliveryMap.flow'
 import { useLocalDeliveryCircleSelectionFlow } from '../flows/localDeliveryCircleSelection.flow'
-import { getLocalDeliveryBoundaryLocations } from '../domain/getLocalDeliveryBoundaryLocations'
+import { useLocalDeliveryResourcesFlow } from '../flows/localDeliveryResources.flow'
+import { useLocalDeliveryDerivedFlow } from '../flows/localDeliveryDerived.flow'
+import { useLocalDeliveryBootstrapFlow } from '../flows/localDeliveryBootstrap.flow'
+import { useLocalDeliveryEscapeFlow } from '../flows/localDeliveryEscape.flow'
 
-import { LocalDeliveryContext, type LocalDeliveryContextValue } from './LocalDelivery.context'
-import { usePlanStateRegistryFlow } from '@/features/plan/flows/planStateRegistry.flow'
+import {
+  LocalDeliveryCommandsContext,
+  LocalDeliveryStateContext,
+  type LocalDeliveryCommandsContextValue,
+  type LocalDeliveryStateContextValue,
+} from './LocalDelivery.context'
 import { useMobile } from '@/app/contexts/MobileContext'
 import { useBaseControlls, usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 import { useRouteSolutionWarningRegistry } from '@/features/plan/planTypes/localDelivery/hooks/useRouteSolutionWarningRegistry'
+import { useLoadingController } from '../controllers/useLoadingController'
 
 type LocalDeliveryProviderProps = {
   planId: number
@@ -31,49 +27,57 @@ type LocalDeliveryProviderProps = {
 }
 
 export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProviderProps) {
-  const {isMobile} = useMobile()
+  const { isMobile } = useMobile()
   const sectionManager = useSectionManager()
   const popupManager = usePopupManager()
-  const isPopupOpen = popupManager.getOpenCount() > 0 
-  const areSectionsOpen = sectionManager.getOpenCount()  > 0
-  const baseControlls = useBaseControlls<{ ordersPlanType: string | null; planId?: number | null }>()
-  const isLocalDeliveryActive =
-    baseControlls.isBaseOpen && baseControlls.payload?.ordersPlanType === 'local_delivery'
-
-  const { fetchLocalDeliveryOverview } = useLocalDeliveryOverviewFlow()
-  const plan = usePlanByServerId(planId)
-  const localDeliveryPlan = useLocalDeliveryPlanByPlanId(planId)
-  const orders = useOrdersByPlanId(planId)
-  const localDeliveryPlanId = localDeliveryPlan?.id ?? null
-  const selectedRouteSolution = useSelectedRouteSolutionByLocalDeliveryPlanId(localDeliveryPlanId)
-  const routeSolutionId = selectedRouteSolution?.id ?? null
-  const routeSolutionStops = useRouteSolutionStopStore(
-    useShallow(selectRouteSolutionStopsBySolutionId(routeSolutionId)),
-  )
-
-  const planStateRegistry = usePlanStateRegistryFlow()
-  const routeSolutionWarningRegistry = useRouteSolutionWarningRegistry()
-  const planState = planStateRegistry.getById(plan?.state_id ?? null)
+  const baseControls = useBaseControlls<{ ordersPlanType: string | null; planId?: number | null }>()
   
-  const localDeliveryActions = useLocalDeliveryHeaderAction({
+  const isLocalDeliveryActive =
+    baseControls.isBaseOpen && baseControls.payload?.ordersPlanType === 'local_delivery'
+
+  const {
+    plan,
+    planStartDate,
+    localDeliveryPlan,
+    orders,
     localDeliveryPlanId,
-    planId: plan?.id ?? planId,
+    routeSolutions,
+    selectedRouteSolution,
+    routeSolutionId,
+    routeSolutionStops,
+  } = useLocalDeliveryResourcesFlow(planId)
+
+  const {
+    planState,
+    routeSolutionsOrdered,
+    bestRouteSolutionId,
+    isSelectedSolutionOptimized,
+    stopByOrderId,
+    ordersById,
+    boundaryLocations,
+  } = useLocalDeliveryDerivedFlow({
     plan: plan ?? null,
+    orders,
+    routeSolutions,
+    routeSolutionStops,
     selectedRouteSolution: selectedRouteSolution ?? null,
   })
 
-  const planStartDate = plan?.start_date ?? null
+  const loadingController = useLoadingController({
+    localDeliveryClientId: localDeliveryPlan?.client_id,
+  })
 
-  const {stopByOrderId, ordersById} = stopOrdersMapperById( {routeSolutionStops, orders} )
-
-  const boundaryLocations = useMemo(
-    () => getLocalDeliveryBoundaryLocations(
-      stopByOrderId,
-      ordersById,
-      selectedRouteSolution ?? null,
-    ),
-    [ordersById, selectedRouteSolution, stopByOrderId],
-  )
+  const routeSolutionWarningRegistry = useRouteSolutionWarningRegistry()
+  
+  const localDeliveryActions = useLocalDeliveryActions({
+    localDeliveryPlanId,
+    planId: plan?.id ?? planId,
+    plan: plan ?? null,
+    localDeliveryPlan: localDeliveryPlan ?? null,
+    selectedRouteSolution: selectedRouteSolution ?? null,
+    isSelectedSolutionOptimized,
+    loadingController,
+  })
 
   useLocalDeliveryMapFlow({
     orders,
@@ -84,32 +88,15 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
   })
   useLocalDeliveryCircleSelectionFlow(isLocalDeliveryActive)
 
-  useEffect(() => {
-    if (planId == null) return
-    fetchLocalDeliveryOverview(planId)
-  }, [fetchLocalDeliveryOverview, planId])
-
-  const handleKeyDown = (event:KeyboardEvent)=>{
-    if(event.key == 'Escape') {
-      if(isPopupOpen || areSectionsOpen ) return
-      baseControlls.closeBase()
-    }
-   
-  }
-
-  useEffect(()=>{
-
-    if(!isMobile){
-      window.addEventListener('keydown', handleKeyDown)
-    }
-
-      return () => {
-
-          window.removeEventListener('keydown', handleKeyDown)
-      }
-  },[isMobile, isPopupOpen, areSectionsOpen])
+  useLocalDeliveryBootstrapFlow(planId)
+  useLocalDeliveryEscapeFlow({
+    isMobile,
+    baseControls,
+    popupManager,
+    sectionManager,
+  })
   
-  const contextValue = useMemo<LocalDeliveryContextValue>(
+  const stateValue = useMemo<LocalDeliveryStateContextValue>(
     () => ({
       planId,
       plan: plan ?? null,
@@ -118,15 +105,17 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
       localDeliveryPlanId,
       planStartDate,
       orders,
-      orderCount:orders.length,
+      orderCount: orders.length,
       stopByOrderId,
       ordersById,
       selectedRouteSolution: selectedRouteSolution ?? null,
+      routeSolutionsOrdered,
+      bestRouteSolutionId,
+      isSelectedSolutionOptimized,
       routeSolutionId,
       routeSolutionStops,
       boundaryLocations,
       routeSolutionWarningRegistry,
-      localDeliveryActions,
     }),
     [
       planId,
@@ -139,42 +128,32 @@ export function LocalDeliveryProvider({ planId, children }: LocalDeliveryProvide
       stopByOrderId,
       ordersById,
       selectedRouteSolution,
+      routeSolutionsOrdered,
+      bestRouteSolutionId,
+      isSelectedSolutionOptimized,
       routeSolutionId,
       routeSolutionStops,
       boundaryLocations,
       routeSolutionWarningRegistry,
-      localDeliveryActions,
     ],
   )
 
-  return <LocalDeliveryContext.Provider value={contextValue}>{children}</LocalDeliveryContext.Provider>
-}
+  const commandsValue = useMemo<LocalDeliveryCommandsContextValue>(
+    () => ({
+      localDeliveryActions,
+      loadingController,
+    }),
+    [
+      localDeliveryActions,
+      loadingController,
+    ],
+  )
 
-
-const stopOrdersMapperById = (
-  {routeSolutionStops, orders }:
-  {routeSolutionStops:RouteSolutionStop[], orders:Order[] }
-
-) =>{
-   const stopByOrderId = useMemo(() => {
-    const stopMap = new Map<number, (typeof routeSolutionStops)[number]>()
-    routeSolutionStops.forEach((stop) => {
-      if (stop.order_id != null && stop.stop_order != null) {
-        stopMap.set(stop.order_id, stop)
-      }
-    })
-    return stopMap
-  }, [routeSolutionStops])
-  const ordersById = useMemo(() => {
-    const orderMap = new Map<number, (typeof orders)[number]>()
-    orders.forEach((order) => {
-      if (order.id != null) {
-        orderMap.set(order.id, order)
-      }
-    })
-    return orderMap
-  }, [orders])
-
-  return {stopByOrderId, ordersById}
-  
+  return (
+    <LocalDeliveryStateContext.Provider value={stateValue}>
+      <LocalDeliveryCommandsContext.Provider value={commandsValue}>
+        {children}
+      </LocalDeliveryCommandsContext.Provider>
+    </LocalDeliveryStateContext.Provider>
+  )
 }

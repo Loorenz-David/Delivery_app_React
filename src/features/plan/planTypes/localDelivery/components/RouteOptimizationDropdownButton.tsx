@@ -1,91 +1,28 @@
-import { useMemo } from 'react'
-
 import { CheckMarkIcon, ThunderIcon } from '@/assets/icons'
 import { BasicButton } from '@/shared/buttons/BasicButton'
 import { DropdownButton } from '@/shared/buttons/DropdownButton'
 
-import {
-  useRouteOptimizationMutations,
-  useRouteOptimizationPayload,
-} from '@/features/plan/planTypes/localDelivery/controllers/routeOptimization.controller'
-import { useRouteSolutionMutations } from '@/features/plan/planTypes/localDelivery/controllers/routeSolution.controller'
-import {
-  useRouteSolutionsByLocalDeliveryPlanId,
-  useSelectedRouteSolutionByLocalDeliveryPlanId,
-
-} from '@/features/plan/planTypes/localDelivery/store/useRouteSolution.selector'
-import type { RouteSolution } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
+import { useLocalDeliveryCommands, useLocalDeliveryState } from '../context/useLocalDeliveryContext'
 
 type Props = {
-  localDeliveryPlanId?: number | null
-  planId?: number | null
   className?: string
   borderColor?:string
 }
 
-const isOptimized = (solution?: RouteSolution | null) =>
-  solution?.is_optimized === 'optimize' || solution?.is_optimized === 'partial optimize'
-
 export const RouteOptimizationDropdownButton = ({
-  localDeliveryPlanId,
-  planId,
   className,
   borderColor,
 }: Props) => {
-  const solutions = useRouteSolutionsByLocalDeliveryPlanId(localDeliveryPlanId)
+  const {
+    routeSolutionsOrdered,
+    bestRouteSolutionId,
+    isSelectedSolutionOptimized,
+  } = useLocalDeliveryState()
+  const {
+    localDeliveryActions,
+  } = useLocalDeliveryCommands()
 
-  const selectedSolution = useSelectedRouteSolutionByLocalDeliveryPlanId(localDeliveryPlanId)
-  const { createOptimization, updateOptimization } = useRouteOptimizationMutations()
-  const buildOptimizationPayload = useRouteOptimizationPayload({
-    planId,
-    localDeliveryPlanId,
-    selectedSolution,
-  })
-  const { selectRouteSolution } = useRouteSolutionMutations()
-  const bestSolutionId = useMemo(() => {
-    const scored = solutions.filter((solution) => typeof solution.score === 'number')
-    if (!scored.length) return null
-    return scored.reduce((best, current) =>
-      (current.score ?? Infinity) < (best.score ?? Infinity) ? current : best,
-    ).id
-  }, [solutions])
- 
-
-  const orderedSolutions = useMemo(
-    () =>
-      [...solutions].sort((a, b) => {
-        const aLabel = (a.label || '').toLowerCase()
-        const bLabel = (b.label || '').toLowerCase()
-        if (aLabel && bLabel) return aLabel.localeCompare(bLabel)
-        return (a.id ?? 0) - (b.id ?? 0)
-      }),
-    [solutions],
-  )
-
-  const selectedOptimized = isOptimized(selectedSolution)
-
-  const handleOptimize = () => {
-    const payload = buildOptimizationPayload()
-    if (!payload) return
-    if (selectedOptimized) {
-      updateOptimization(payload)
-      return
-    }
-    createOptimization(payload)
-  }
-
-  const handleReOptimize = () => {
-    const payload = buildOptimizationPayload()
-    if (!payload) return
-    createOptimization(payload)
-  }
-
-  const handleSelectVariant = (solution: RouteSolution) => {
-    if (!solution?.id) return
-    selectRouteSolution(solution.id, localDeliveryPlanId)
-  }
-
-  const primaryLabel = selectedOptimized ? 'Update optimization' : 'Optimize route'
+  const primaryLabel = isSelectedSolutionOptimized ? 'Update optimization' : 'Optimize route'
 
   return (
     <DropdownButton
@@ -100,21 +37,21 @@ export const RouteOptimizationDropdownButton = ({
       }
 
       variant="secondary"
-      onClick={handleOptimize}
+      onClick={localDeliveryActions.optimizeRoute}
     >
       <div className="w-full">
         <div className="max-h-[300px] overflow-y-auto">
-          {orderedSolutions.length ? (
-            orderedSolutions.map((solution, index) => {
+          {routeSolutionsOrdered.length ? (
+            routeSolutionsOrdered.map((solution, index) => {
               const label = solution.label || `variant ${index + 1}`
               const isSelected = solution.is_selected
-              const isBest = solution.id === bestSolutionId
+              const isBest = solution.id === bestRouteSolutionId
               return (
                 <button
                   key={solution.client_id}
                   type="button"
                   className="w-full flex items-center justify-between px-2 py-2 rounded-md hover:bg-[var(--color-muted)]/10"
-                  onClick={() => handleSelectVariant(solution)}
+                  onClick={() => solution.id && localDeliveryActions.selectRouteSolution(solution.id)}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-left">{label}</span>
@@ -137,12 +74,12 @@ export const RouteOptimizationDropdownButton = ({
           )}
         </div>
 
-        {selectedOptimized ? (
+        {isSelectedSolutionOptimized ? (
           <div className="pt-2 mt-2 border-t border-[var(--color-border)]">
             <BasicButton
               params={{
                 variant: 'secondary',
-                onClick: handleReOptimize,
+                onClick: localDeliveryActions.reOptimizeRoute,
                 className: 'w-full',
               }}
             >

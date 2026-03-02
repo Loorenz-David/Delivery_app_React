@@ -1,9 +1,9 @@
 import type { address } from '@/types/address'
 import {  TimeIcon } from '@/assets/icons'
 import type { RouteSolutionWarning } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
-import { RouteSolutionWarnings } from '@/features/plan/planTypes/localDelivery/components/RouteSolutionWarnings'
+import { RouteSolutionWarnings } from '@/features/plan/planTypes/localDelivery/components/warnings/RouteSolutionWarnings'
 import type { RouteSolutionWarningRegistry } from '@/features/plan/planTypes/localDelivery/domain/routeSolutionWarningRegistry'
-import type { useLocalDeliveryHeaderAction } from '@/features/plan/planTypes/localDelivery/actions/useLocalDeliveryHeaderAction'
+import type { useLocalDeliveryActions } from '@/features/plan/planTypes/localDelivery/actions/useLocalDeliveryActions'
 
 type LocalDeliveryBoundaryLocationCardProps = {
   label: string
@@ -12,7 +12,7 @@ type LocalDeliveryBoundaryLocationCardProps = {
   warnings?: RouteSolutionWarning[] | null
   planStartDate?: string | null
   warningRegistry: RouteSolutionWarningRegistry
-  localDeliveryActions: ReturnType<typeof useLocalDeliveryHeaderAction>
+  localDeliveryActions: ReturnType<typeof useLocalDeliveryActions>
 }
 
 export const LocalDeliveryBoundaryLocationCard = ({

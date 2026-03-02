@@ -1,28 +1,19 @@
-import { useMemo } from 'react'
-import { useDndContext } from '@dnd-kit/core'
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 import { LocalDeliveryOrderCard } from './cards/LocalDeliveryOrderCard'
 import { DraggableLocalDeliveryOrderCard } from './cards/DraggableLocalDeliveryOrderCard'
 import { LocalDeliveryBoundaryLocationCard } from './cards/LocalDeliveryBoundaryLocationCard'
 import { useLocalDeliveryContext } from '../context/useLocalDeliveryContext'
 import { useLocalDeliveryStopOrdering } from '../hooks/useLocalDeliveryStopOrdering'
+import { useLocalDeliveryDndProjectionFlow } from '../flows/localDeliveryDndProjection.flow'
 import { formatRouteTime } from '@/features/plan/planTypes/localDelivery/utils/formatRouteTime'
 import { BasicButton } from '@/shared/buttons'
-import type { useLocalDeliveryHeaderAction } from '../actions/useLocalDeliveryHeaderAction'
 import { DeliveryReadyIcon } from '@/assets/icons'
 
 
-type LocalDeliveryListProps = {
-    localDeliveryActions: ReturnType<typeof useLocalDeliveryHeaderAction>
-}
 
-export const LocalDeliveryOrderList = ({
-    localDeliveryActions
-}:LocalDeliveryListProps) => {
-    const { active, over } = useDndContext()
-    const activeType = active?.data.current?.type
-    const overType = over?.data.current?.type
+
+export const LocalDeliveryOrderList = () => {
     const {
         orders,
         planStartDate,
@@ -33,6 +24,7 @@ export const LocalDeliveryOrderList = ({
         boundaryLocations,
         selectedRouteSolution,
         routeSolutionWarningRegistry,
+        localDeliveryActions
     } = useLocalDeliveryContext()
 
     const { sortedEntries, missingOrders, sortableIds } = useLocalDeliveryStopOrdering(
@@ -41,32 +33,7 @@ export const LocalDeliveryOrderList = ({
         stopByOrderId,
         ordersById,
     )
-
-    const projectedStopOrderByClientId = useMemo(() => {
-        const activeIsRouteStop = activeType === 'route_stop'
-        const overIsRouteStop = overType === 'route_stop'
-        if (!activeIsRouteStop || !overIsRouteStop) {
-            return null
-        }
-        if (!active || !over) {
-            return null
-        }
-
-        const fromIndex = sortedEntries.findIndex((entry) => entry.stop.client_id === active.id.toString())
-        const toIndex = sortedEntries.findIndex((entry) => entry.stop.client_id === over.id.toString())
-
-        if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
-            return null
-        }
-
-        const projectedEntries = arrayMove(sortedEntries, fromIndex, toIndex)
-        const nextOrderMap = new Map<string, number>()
-        projectedEntries.forEach((entry, index) => {
-            nextOrderMap.set(entry.stop.client_id, index + 1)
-        })
-
-        return nextOrderMap
-    }, [active?.id, activeType, over?.id, overType, sortedEntries])
+    const { projectedStopOrderByClientId } = useLocalDeliveryDndProjectionFlow(sortedEntries)
 
     const strategyLabel = getRouteStrategyLabel(selectedRouteSolution?.route_end_strategy)
     const startLocationLabel = `${strategyLabel} · ${boundaryLocations.start.label}`

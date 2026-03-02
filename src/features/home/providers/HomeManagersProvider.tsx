@@ -19,11 +19,11 @@ import { SectionPanel } from '@/shared/section-panel/SectionPanel'
 import { MainPopup } from '@/shared/popups/MainPopup/MainPopup'
 
 import { OrderCard } from '@/features/order/components/OrderCard'
-import { RouteStopDragOverlay } from '@/features/plan/planTypes/localDelivery/components/RouteStopDragOverlay'
+import { RouteStopDragOverlay } from '@/features/plan/planTypes/localDelivery/components/overlays/RouteStopDragOverlay'
 
 import type{ PayloadBase } from '../types/types'
 import { useBaseControlls } from '../hooks/useBaseControlls'
-import { homePopupRegistry } from '../registry/homePopups'
+import { homePopupRegistry, loadingPopupRegistry } from '../registry/homePopups'
 import { homeSectionRegistry } from '../registry/homeSections'
 import { LoadingPopup } from '@/shared/popups/loadingPopup/loadingPopup'
 import { useMobile } from '@/app/contexts/MobileContext'
@@ -63,7 +63,8 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
         }),
         [],
     )
-  
+
+
     const sectionManager = useMemo(
         () =>
         new StackActionManager({

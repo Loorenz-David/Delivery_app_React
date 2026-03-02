@@ -1,17 +1,22 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMobile } from "@/app/contexts/MobileContext";
+import { useState } from 'react';
 
 
 
 type PropsPopupRoot = {
   children: React.ReactNode
+  isOpen: boolean
 }
 
 export const LoadingPopup = ({
     children,
+    isOpen,
 }: PropsPopupRoot) => {
     const {isMobile} = useMobile()
 
+
+    if(!isOpen) return null
     return ( 
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
             {/* Overlay */}
@@ -25,7 +30,7 @@ export const LoadingPopup = ({
                 />
             }
             <motion.div
-                className={`relative z-10 pointer-events-auto flex h-full  max-h-[100px] max-w-[100px] min-w-[100px] bg-[var(--color-page)]  flex-col rounded-none   text-[var(--color-text)] md:rounded-3xl`}
+                className={` z-10 pointer-events-auto `}
                 initial={{ opacity: 0, y: 100 }}
                     animate={{
                     opacity: 1,
@@ -45,8 +50,8 @@ export const LoadingPopup = ({
                     },
                 }}
             >
-            {children}
-        </motion.div>
+                {children}
+            </motion.div>
         </div>
     );
 }

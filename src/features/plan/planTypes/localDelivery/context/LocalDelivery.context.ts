@@ -6,12 +6,13 @@ import type { DeliveryPlan } from '@/features/plan/types/plan'
 import type { LocalDeliveryPlan } from '../types/localDeliveryPlan'
 import type { RouteSolution } from '../types/routeSolution'
 import type { RouteSolutionStop } from '../types/routeSolutionStop'
-import type { useLocalDeliveryHeaderAction } from '../actions/useLocalDeliveryHeaderAction'
+import type { useLocalDeliveryActions } from '../actions/useLocalDeliveryActions'
 import type { DeliveryPlanState } from '@/features/plan/types/planState'
 import type { BoundaryLocationMeta } from '@/features/plan/planTypes/localDelivery/domain/getLocalDeliveryBoundaryLocations'
 import type { RouteSolutionWarningRegistry } from '@/features/plan/planTypes/localDelivery/domain/routeSolutionWarningRegistry'
+import type { useLoadingController } from '../controllers/useLoadingController'
 
-export type LocalDeliveryContextValue = {
+export type LocalDeliveryStateContextValue = {
   planId: number
   plan: DeliveryPlan | null
   planState: DeliveryPlanState | null
@@ -23,6 +24,9 @@ export type LocalDeliveryContextValue = {
   stopByOrderId: Map<number, RouteSolutionStop>
   ordersById: Map<number, Order>
   selectedRouteSolution: RouteSolution | null
+  routeSolutionsOrdered: RouteSolution[]
+  bestRouteSolutionId: number | null
+  isSelectedSolutionOptimized: boolean
   routeSolutionId: number | null
   routeSolutionStops: RouteSolutionStop[]
   boundaryLocations: {
@@ -30,7 +34,14 @@ export type LocalDeliveryContextValue = {
     end: BoundaryLocationMeta
   }
   routeSolutionWarningRegistry: RouteSolutionWarningRegistry
-  localDeliveryActions: ReturnType<typeof useLocalDeliveryHeaderAction>
 }
 
-export const LocalDeliveryContext = createContext<LocalDeliveryContextValue | null>(null)
+export type LocalDeliveryCommandsContextValue = {
+  localDeliveryActions: ReturnType<typeof useLocalDeliveryActions>
+  loadingController: ReturnType<typeof useLoadingController>
+}
+
+export type LocalDeliveryContextValue = LocalDeliveryStateContextValue & LocalDeliveryCommandsContextValue
+
+export const LocalDeliveryStateContext = createContext<LocalDeliveryStateContextValue | null>(null)
+export const LocalDeliveryCommandsContext = createContext<LocalDeliveryCommandsContextValue | null>(null)

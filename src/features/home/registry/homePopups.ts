@@ -7,3 +7,7 @@ export const homePopupRegistry = {
   ...orderPopupRegistry,
   // ...itemPopupRegistry
 }
+
+export const loadingPopupRegistry = {
+  
+}
