@@ -11,6 +11,7 @@ import type { useOrderFormSetters } from './orderForm.setters'
 import type { useOrderFormItemEditorActions } from './orderFormItemEditor.actions'
 
 export type OrderFormMode = 'create' | 'edit'
+export type OrderFormCloseState = 'idle' | 'confirming'
 
 export type OrderFormState = {
   client_id: string
@@ -54,6 +55,14 @@ export type OrderFormMeta = {
   isLoadingInitialItems: boolean
 }
 
+export type OrderFormCloseController = {
+  closeState: OrderFormCloseState
+  hasUnsavedChanges: boolean
+  requestClose: () => void
+  confirmClose: () => void
+  cancelClose: () => void
+}
+
 export type OrderFormContextValue = {
   formState: OrderFormState
   warnings: OrderFormWarnings
@@ -61,4 +70,5 @@ export type OrderFormContextValue = {
   actions: OrderFormActions
   itemEditor: OrderFormItemEditorState
   meta: OrderFormMeta
+  closeController: OrderFormCloseController
 }

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { useMobile } from '@/app/contexts/MobileContext'
+import { hasFormChanges } from '@/shared/data-validation/compareChanges'
 import { makeInitialFormCopy } from '@/shared/data-validation/initialFormSnapshot'
 
 import { useOrderItemDraftController } from '../../item'
@@ -23,11 +25,14 @@ import { useOrderFormSetters } from './orderForm.setters'
 
 export const OrderFormProvider = ({
   payload,
+  onClose,
   children,
 }: {
   payload?: OrderFormPayload
+  onClose?: () => void
   children: ReactNode
 }) => {
+  const { isMobile } = useMobile()
   const mode = payload?.mode ?? 'create'
   const order = useOrderByClientId(payload?.clientId ?? null)
   const orderServerId = order?.id ?? null
@@ -35,6 +40,7 @@ export const OrderFormProvider = ({
 
   const initialFormRef = useRef<OrderFormState | null>(null)
   const previousReinitKeyRef = useRef<string | null>(null)
+  const [closeState, setCloseState] = useState<'idle' | 'confirming'>('idle')
 
   const [formState, setFormState] = useState<OrderFormState>(() =>
     buildOrderFormInitialState({
@@ -130,6 +136,45 @@ export const OrderFormProvider = ({
     itemInitialByClientId,
   })
 
+  const hasUnsavedChanges = useMemo(
+    () => hasFormChanges(formState, initialFormRef),
+    [formState],
+  )
+
+  const finalizeClose = useCallback(() => {
+    onClose?.()
+  }, [onClose])
+
+  const requestClose = useCallback(() => {
+    if (hasUnsavedChanges) {
+      setCloseState('confirming')
+      return
+    }
+    finalizeClose()
+  }, [finalizeClose, hasUnsavedChanges])
+
+  const cancelClose = useCallback(() => {
+    setCloseState('idle')
+  }, [])
+
+  const confirmClose = useCallback(() => {
+    setCloseState('idle')
+    finalizeClose()
+  }, [finalizeClose])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      requestClose()
+    }
+    if (!isMobile) {
+      window.addEventListener('keydown', handleKeyDown)
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isMobile, requestClose])
+
   const value = useMemo(
     () => ({
       formState,
@@ -146,17 +191,29 @@ export const OrderFormProvider = ({
         itemInitialByClientId,
         isLoadingInitialItems,
       },
+      closeController: {
+        closeState,
+        hasUnsavedChanges,
+        requestClose,
+        confirmClose,
+        cancelClose,
+      },
     }),
     [
       actions,
+      cancelClose,
+      closeState,
+      confirmClose,
       creationDate,
       formSetters,
       formState,
+      hasUnsavedChanges,
       isLoadingInitialItems,
       itemEditor,
       itemInitialByClientId,
       mode,
       order,
+      requestClose,
       visibleItemDrafts,
       warnings,
     ],
