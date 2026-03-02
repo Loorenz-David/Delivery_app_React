@@ -58,7 +58,7 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
     const popupManager = useMemo(
         () =>
         new StackActionManager<HomePopupPayloads>({
-            blueprint: MainPopup,
+            //blueprint: MainPopup,
             stackRegistry: homePopupRegistry,
         }),
         [],
