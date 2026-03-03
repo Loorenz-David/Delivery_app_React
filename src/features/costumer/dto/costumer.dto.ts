@@ -74,6 +74,7 @@ export type CostumerPagination = {
 
 export type CostumerQueryFilters = {
   q?: string
+  email?:string
   sort?: 'created_at_desc' | 'created_at_asc' | 'last_name_asc'
   after_date?: string
   after_id?: number

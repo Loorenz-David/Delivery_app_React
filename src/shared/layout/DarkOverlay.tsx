@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 
 type Props = {
-    onTapAction: ()=>void
+    onTapAction?: ()=>void
 }
 
 export const DarkOverlay = ({

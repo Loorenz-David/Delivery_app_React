@@ -2,16 +2,23 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 import { BasicButton } from '@/shared/buttons/BasicButton'
 
-import { ItemFormLayout, ItemFormProvider, ItemsOrderPreview } from '../../item'
+import { ItemFormLayout, ItemFormProvider, ItemsOrderPreview } from '../../../item'
 
-import type { OrderFormLayoutModel } from './OrderForm.layout.model'
+import type { OrderFormLayoutModel } from '../OrderForm.layout.model'
 
 type OrderFormItemsPanelProps = {
   model: OrderFormLayoutModel
   compact?: boolean
+  onHoverStart?: () => void
+  onHoverEnd?: () => void
 }
 
-export const OrderFormItemsPanel = ({ model, compact = false }: OrderFormItemsPanelProps) => {
+export const OrderFormItemsPanel = ({
+  model,
+  compact = false,
+  onHoverStart,
+  onHoverEnd,
+}: OrderFormItemsPanelProps) => {
   const {
     isItemEditorOpen,
     itemEditorPayload,
@@ -29,6 +36,8 @@ export const OrderFormItemsPanel = ({ model, compact = false }: OrderFormItemsPa
           ? 'mt-2 h-[420px] w-full shrink-0 rounded-xl border border-[var(--color-border)]/60'
           : 'h-full min-w-0 flex-1 rounded-xl border border-[var(--color-border)]/60'
       }`}
+      onHoverStart={onHoverStart}
+      onHoverEnd={onHoverEnd}
       initial={{ x: 120, opacity: 0 }}
       animate={{
         opacity: 1,

@@ -19,9 +19,11 @@ import {
   buildOrderFormReinitKey,
   shouldReinitializeForm,
 } from './orderFormBootstrap.flow'
+import { useOrderFormCostumerFlow } from './orderFormCostumerFlow.flow'
 import { useOrderFormItemsFlow } from './orderFormItems.flow'
 import { useOrderFormItemEditorActions } from './orderFormItemEditor.actions'
 import { useOrderFormSetters } from './orderForm.setters'
+import type{  Costumer } from '@/features/costumer'
 
 export const OrderFormProvider = ({
   payload,
@@ -41,6 +43,9 @@ export const OrderFormProvider = ({
   const initialFormRef = useRef<OrderFormState | null>(null)
   const previousReinitKeyRef = useRef<string | null>(null)
   const [closeState, setCloseState] = useState<'idle' | 'confirming'>('idle')
+  const [selectedCostumer, setSelectedCostumer] = useState<Costumer | null>(null)
+
+  
 
   const [formState, setFormState] = useState<OrderFormState>(() =>
     buildOrderFormInitialState({
@@ -50,6 +55,8 @@ export const OrderFormProvider = ({
       payloadRestoreFormState: payload?.restoreFormState ?? null,
     }),
   )
+
+
 
   const reinitKey = useMemo(
     () =>
@@ -175,6 +182,13 @@ export const OrderFormProvider = ({
     }
   }, [isMobile, requestClose])
 
+  useOrderFormCostumerFlow({
+    selectedCostumer,
+    email:formState.client_email,
+    setSelectedCostumer,
+    setFormState,
+  })
+
   const value = useMemo(
     () => ({
       formState,
@@ -182,9 +196,11 @@ export const OrderFormProvider = ({
       formSetters,
       actions,
       itemEditor,
+      setSelectedCostumer,
       meta: {
         mode,
         order,
+        selectedCostumer,
         creationDate,
         initialFormRef,
         visibleItemDrafts,
@@ -204,6 +220,7 @@ export const OrderFormProvider = ({
       cancelClose,
       closeState,
       confirmClose,
+      selectedCostumer,
       creationDate,
       formSetters,
       formState,

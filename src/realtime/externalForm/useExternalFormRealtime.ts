@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { connectSocket } from '../core/socket.manager'
 import {
@@ -21,28 +21,39 @@ export const useExternalFormRealtime = ({
   onReceived?: (payload: ExternalFormReceivedPayload) => void
   onRequested?: (payload: ExternalFormRequestedPayload) => void
 }) => {
+  const onReceivedRef = useRef<typeof onReceived>(onReceived)
+  const onRequestedRef = useRef<typeof onRequested>(onRequested)
+
+  useEffect(() => {
+    onReceivedRef.current = onReceived
+  }, [onReceived])
+
+  useEffect(() => {
+    onRequestedRef.current = onRequested
+  }, [onRequested])
+
   useEffect(() => {
     if (!Number.isFinite(userId) || userId <= 0) {
       return
     }
 
+    const handleReceived = (payload: ExternalFormReceivedPayload) => {
+      onReceivedRef.current?.(payload)
+    }
+
+    const handleRequested = (payload: ExternalFormRequestedPayload) => {
+      onRequestedRef.current?.(payload)
+    }
+
     connectSocket()
     joinExternalFormUserRoom(userId)
-    if (onReceived) {
-      subscribeToExternalFormReceived(onReceived)
-    }
-    if (onRequested) {
-      subscribeToExternalFormRequested(onRequested)
-    }
+    subscribeToExternalFormReceived(handleReceived)
+    subscribeToExternalFormRequested(handleRequested)
 
     return () => {
       leaveExternalFormUserRoom(userId)
-      if (onReceived) {
-        unsubscribeFromExternalFormReceived(onReceived)
-      }
-      if (onRequested) {
-        unsubscribeFromExternalFormRequested(onRequested)
-      }
+      unsubscribeFromExternalFormReceived(handleReceived)
+      unsubscribeFromExternalFormRequested(handleRequested)
     }
-  }, [onReceived, onRequested, userId])
+  }, [userId])
 }

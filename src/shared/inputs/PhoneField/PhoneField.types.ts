@@ -1,10 +1,12 @@
-import type { ChangeEvent, RefObject } from 'react'
+import type { ChangeEvent, CSSProperties, RefObject } from 'react'
 import type { Phone } from '@/types/phone'
 import type { PhonePrefixOption } from './phonePrefixes'
 
 export type PhoneFieldProps = {
   phoneNumber: Phone 
   onChange: (value: Phone) => void
+  containerClassName?: string
+  containerStyle?: CSSProperties
 }
 
 export type PhoneFieldContextValue = {

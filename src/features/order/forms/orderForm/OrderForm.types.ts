@@ -9,6 +9,7 @@ import type { useOrderFormWarnings } from './OrderForm.warnings'
 import type { useOrderFormActions } from './orderForm.actions'
 import type { useOrderFormSetters } from './orderForm.setters'
 import type { useOrderFormItemEditorActions } from './orderFormItemEditor.actions'
+import type { Costumer } from '@/features/costumer'
 
 export type OrderFormMode = 'create' | 'edit'
 export type OrderFormCloseState = 'idle' | 'confirming'
@@ -49,6 +50,7 @@ export type OrderFormMeta = {
   mode: OrderFormMode
   order: Order | null
   creationDate: string | null
+  selectedCostumer: Costumer | null
   initialFormRef: RefObject<OrderFormState | null>
   visibleItemDrafts: Item[]
   itemInitialByClientId: Record<string, Item>
@@ -68,6 +70,7 @@ export type OrderFormContextValue = {
   warnings: OrderFormWarnings
   formSetters: OrderFormSetters
   actions: OrderFormActions
+  setSelectedCostumer: (value:Costumer | null) => void
   itemEditor: OrderFormItemEditorState
   meta: OrderFormMeta
   closeController: OrderFormCloseController

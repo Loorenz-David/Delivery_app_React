@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { FloatingPopover }  from '@/shared/popups/FloatingPopover/FloatingPopover'
 import { InputField } from '@/shared/inputs/InputField'
 
@@ -5,7 +6,17 @@ import {  SuggestionsSelector } from './SuggestionSelector'
 import { useAddressAutocompleteContext } from './AddressAutocomplete.context'
 
 
-export const AddressAutocompleteLayout = () => {
+type AddressAutocompleteLayoutProps = {
+    fieldClassName?: string
+    inputClassName?: string
+    inputStyle?: CSSProperties
+}
+
+export const AddressAutocompleteLayout = ({
+    fieldClassName,
+    inputClassName,
+    inputStyle,
+}: AddressAutocompleteLayoutProps) => {
 
     const { isOpen,
          handleToogle,
@@ -25,7 +36,9 @@ export const AddressAutocompleteLayout = () => {
                     <InputField value={ inputValue } 
                         onChange={ handleInputChange }
                         onFocus={ ()=> handleToogle({ value: true }) }
-                        
+                        fieldClassName={fieldClassName}
+                        inputClassName={inputClassName}
+                        style={inputStyle}
                     />
                 </div>
             }
@@ -36,4 +49,3 @@ export const AddressAutocompleteLayout = () => {
         </FloatingPopover>
     );
 }
-

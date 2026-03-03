@@ -1,5 +1,11 @@
 export { costumerApi } from './api/costumerApi'
-export { useCostumerController } from './controllers/costumer.controller'
+export { useCostumerController } from './controllers/costumerMutations.controller'
+export { CostumerSearchBar } from './components'
+export type { CostumerSearchBarProps } from './components'
+export {
+  runCostumerQueryFlow,
+} from './flows/costumerQuery.flow'
+export { normalizeCostumerPayload } from './domain/normalizeCostumerPayload'
 
 export type {
   Costumer,

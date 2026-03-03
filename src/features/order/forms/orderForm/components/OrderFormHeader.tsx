@@ -1,7 +1,7 @@
 import { CloseIcon, SingleOrderIcon } from '@/assets/icons'
 import { BasicButton } from '@/shared/buttons/BasicButton'
 
-import type { OrderFormMode } from './OrderForm.types'
+import type { OrderFormMode } from '../OrderForm.types'
 
 type OrderFormHeaderProps = {
   label: string

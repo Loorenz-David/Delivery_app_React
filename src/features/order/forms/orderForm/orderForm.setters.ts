@@ -5,6 +5,7 @@ import type { Phone } from '@/types/phone'
 import type { ExternalFormData } from '@/features/externalForm/domain/externalForm.types'
 
 import type { OrderFormState, OrderFormWarnings } from './OrderForm.types'
+import { runCostumerQueryFlow } from '@/features/costumer'
 
 const normalizeTime = (value: string | null | undefined) => {
   if (!value) return ''
@@ -55,6 +56,10 @@ export const useOrderFormSetters = ({
   setFormState: Dispatch<SetStateAction<OrderFormState>>
   warnings: OrderFormWarnings
 }) => {
+
+  
+
+
   const validateDateRange = (state: OrderFormState) => {
     warnings.dateRangeWarning.validate({
       earliest_delivery_date: state.earliest_delivery_date,
@@ -114,6 +119,7 @@ export const useOrderFormSetters = ({
     const value = event.target.value
     updateFormState((prev) => ({ ...prev, client_email: value }))
     warnings.emailWarning.validate(value)
+
   }
 
   const handlePrimaryPhone = (value: Phone) => {
@@ -161,6 +167,7 @@ export const useOrderFormSetters = ({
       client_address: data.client_address ?? prev.client_address,
     }))
   }
+
 
   return {
     handleOrderPlanObjective,

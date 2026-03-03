@@ -2,10 +2,10 @@ import { OrderFormFooter } from './OrderFormFooter'
 import { OrderFormFields } from './OrderFormFields'
 import { OrderFormHeader } from './OrderFormHeader'
 import { OrderFormItemsPanel } from './OrderFormItemsPanel'
-import type { OrderFormLayoutModel } from './OrderForm.layout.model'
-import type { OrderFormExternalFlow } from './useOrderFormExternalFlow'
+import type { OrderFormLayoutModel } from '../OrderForm.layout.model'
+import type { OrderFormExternalFlow } from '../useOrderFormExternalFlow'
 
-export const OrderFormDesktopLayout = ({
+export const OrderFormMobileLayout = ({
   model,
   externalFlow,
 }: {
@@ -13,18 +13,22 @@ export const OrderFormDesktopLayout = ({
   externalFlow: OrderFormExternalFlow
 }) => {
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 gap-6">
-      <div className="relative flex h-full w-[560px] min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--color-border)]/60 bg-[var(--color-page)]">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-y-auto overflow-x-hidden pb-28">
+      <div className="relative flex w-full min-h-0 flex-col bg-[var(--color-page)]">
         <OrderFormHeader
           label={model.label}
           mode={model.mode}
           creationDate={model.creationDate}
-          isMobile={false}
+          isMobile={true}
           onClose={model.closeController.requestClose}
         />
 
-        <OrderFormFields model={model} />
+        <OrderFormFields model={model} compact={true} />
+      </div>
 
+      <OrderFormItemsPanel model={model} compact={true} />
+
+      {!model.isItemEditorOpen ? (
         <OrderFormFooter
           onSendForm={externalFlow.handleSendForm}
           onSaveOrder={model.handleSave}
@@ -36,10 +40,9 @@ export const OrderFormDesktopLayout = ({
               : undefined
           }
           sendDisabled={externalFlow.employeeUserId <= 0}
+          isMobile={true}
         />
-      </div>
-
-      <OrderFormItemsPanel model={model} />
+      ) : null}
     </div>
   )
 }
