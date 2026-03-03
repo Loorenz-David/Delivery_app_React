@@ -1,4 +1,4 @@
-import { mapSubmitResultToFeedback } from '../orderForm.actions'
+import { mapSubmitResultToFeedback } from '../controllers/orderFormSubmitFeedback.presenter'
 
 const assert = (condition: boolean, message: string) => {
   if (!condition) {

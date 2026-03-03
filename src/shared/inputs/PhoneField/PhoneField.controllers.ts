@@ -68,6 +68,8 @@ export const usePhoneFieldControllers = ({
 
     if (phoneNumber.prefix !== DEFAULT_PREFIX) return
     if (storedPrefix === phoneNumber.prefix) return
+    // Avoid mutating pristine create forms on mount when no number exists yet.
+    if (!String(phoneNumber.number ?? '').trim()) return
 
     onChange({ ...phoneNumber, prefix: storedPrefix })
   }, [onChange, phoneNumber])

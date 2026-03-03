@@ -1,6 +1,6 @@
 import type { Item, ItemUpdateFields } from '@/features/order/item'
 import type { OrderUpdateFields } from '@/features/order/types/order'
-import type { OrderFormState } from '@/features/order/forms/orderForm/OrderForm.types'
+import type { OrderFormState } from '@/features/order/forms/orderForm/state/OrderForm.types'
 
 const toNullableString = (value: string | null) => {
   const trimmed = (value ?? '').trim()

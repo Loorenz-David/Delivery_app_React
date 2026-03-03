@@ -33,7 +33,7 @@ export const PhoneFieldLayout = ({
 
   return (
     <div className={rootClassName} style={containerStyle}>
-      <div className="flex flex-1">
+      <div className="flex ">
         <FloatingPopover
           open={isOpen}
           onOpenChange={handleOpenChange}

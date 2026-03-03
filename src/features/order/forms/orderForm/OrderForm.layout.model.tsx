@@ -1,6 +1,10 @@
 import type { PopoverSelectOption } from '@/shared/inputs/OptionPopoverSelect'
 
-import { useOrderForm } from './OrderForm.context'
+import { useOrderFormActionsSlice } from './context/OrderFormActions.context'
+import { useOrderFormCloseSlice } from './context/OrderFormClose.context'
+import { useOrderFormFormSlice } from './context/OrderFormForm.context'
+import { useOrderFormItemEditorSlice } from './context/OrderFormItemEditor.context'
+import { useOrderFormMetaSlice } from './context/OrderFormMeta.context'
 
 export const ORDER_PLAN_OBJECTIVE_OPTIONS: Array<PopoverSelectOption<string>> = [
   { label: 'Local delivery', value: 'local_delivery' },
@@ -16,13 +20,33 @@ export const toDateValue = (value: string | null) => {
 }
 
 export const useOrderFormLayoutModel = () => {
-  const { formState, warnings, formSetters, actions, itemEditor, meta, closeController } = useOrderForm()
-  const { mode, creationDate, visibleItemDrafts, isLoadingInitialItems } = meta
+  const { formState, warnings, formSetters } = useOrderFormFormSlice()
+  const { actions } = useOrderFormActionsSlice()
+  const { itemEditor } = useOrderFormItemEditorSlice()
+  const {
+    meta,
+    requestSelectCostumer,
+    confirmReplaceWithPendingCostumer,
+    confirmKeepSnapshotWithPendingCostumer,
+    cancelPendingCostumerChange,
+  } = useOrderFormMetaSlice()
+  const { closeController } = useOrderFormCloseSlice()
+
+  const {
+    mode,
+    creationDate,
+    visibleItemDrafts,
+    isLoadingInitialItems,
+    selectedCostumer,
+    isCostumerChangePromptOpen,
+    pendingCostumerChange,
+  } = meta
   const { handleSave, handleDelete } = actions
   const { isItemEditorOpen, itemEditorPayload, openItemCreateForm, openItemEditForm, closeItemEditor } = itemEditor
+  const labelMode =  mode === 'create' ? 'Creating Order' : 'Editing Order'
 
   return {
-    label: mode === 'create' ? 'Create Order' : 'Edit Order',
+    label:labelMode,
     mode,
     creationDate,
     formState,
@@ -38,6 +62,13 @@ export const useOrderFormLayoutModel = () => {
     visibleItemDrafts,
     isLoadingInitialItems,
     closeController,
+    selectedCostumer,
+    isCostumerChangePromptOpen,
+    pendingCostumerChange,
+    requestSelectCostumer,
+    confirmReplaceWithPendingCostumer,
+    confirmKeepSnapshotWithPendingCostumer,
+    cancelPendingCostumerChange,
   }
 }
 

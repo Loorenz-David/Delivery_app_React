@@ -3,16 +3,18 @@ import type { RefObject } from 'react'
 import type { address } from '@/types/address'
 import type { Phone } from '@/types/phone'
 
-import type { Item } from '../../item'
-import type { Order } from '../../types/order'
+import type { Item } from '../../../item'
+import type { Order } from '../../../types/order'
 import type { useOrderFormWarnings } from './OrderForm.warnings'
-import type { useOrderFormActions } from './orderForm.actions'
+import type { useOrderFormActions } from '../controllers/useOrderFormSubmit.actions'
 import type { useOrderFormSetters } from './orderForm.setters'
-import type { useOrderFormItemEditorActions } from './orderFormItemEditor.actions'
+import type { useOrderFormItemEditorActions } from '../orderFormItemEditor.actions'
 import type { Costumer } from '@/features/costumer'
 
 export type OrderFormMode = 'create' | 'edit'
 export type OrderFormCloseState = 'idle' | 'confirming'
+export type CostumerSelectionSource = 'lookup' | 'panel' | 'embedded'
+export type CostumerSelectionRequestResult = 'applied' | 'prompted' | 'ignored'
 
 export type OrderFormState = {
   client_id: string
@@ -51,6 +53,9 @@ export type OrderFormMeta = {
   order: Order | null
   creationDate: string | null
   selectedCostumer: Costumer | null
+  selectedCostumerSource: CostumerSelectionSource | null
+  pendingCostumerChange: Costumer | null
+  isCostumerChangePromptOpen: boolean
   initialFormRef: RefObject<OrderFormState | null>
   visibleItemDrafts: Item[]
   itemInitialByClientId: Record<string, Item>
@@ -70,8 +75,27 @@ export type OrderFormContextValue = {
   warnings: OrderFormWarnings
   formSetters: OrderFormSetters
   actions: OrderFormActions
-  setSelectedCostumer: (value:Costumer | null) => void
+  requestSelectCostumer: (
+    value: Costumer,
+    source: CostumerSelectionSource,
+  ) => CostumerSelectionRequestResult
+  confirmReplaceWithPendingCostumer: () => void
+  confirmKeepSnapshotWithPendingCostumer: () => void
+  cancelPendingCostumerChange: () => void
   itemEditor: OrderFormItemEditorState
   meta: OrderFormMeta
   closeController: OrderFormCloseController
 }
+
+export type OrderFormFormSlice = Pick<OrderFormContextValue, 'formState' | 'warnings' | 'formSetters'>
+export type OrderFormActionsSlice = Pick<OrderFormContextValue, 'actions'>
+export type OrderFormItemEditorSlice = Pick<OrderFormContextValue, 'itemEditor'>
+export type OrderFormMetaSlice = Pick<
+  OrderFormContextValue,
+  | 'meta'
+  | 'requestSelectCostumer'
+  | 'confirmReplaceWithPendingCostumer'
+  | 'confirmKeepSnapshotWithPendingCostumer'
+  | 'cancelPendingCostumerChange'
+>
+export type OrderFormCloseSlice = Pick<OrderFormContextValue, 'closeController'>

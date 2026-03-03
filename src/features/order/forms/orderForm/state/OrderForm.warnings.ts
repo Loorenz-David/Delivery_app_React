@@ -5,7 +5,7 @@ import { validateDateComparison, validateDateTimeComparison, toDateOnly } from '
 import type { address } from '@/types/address'
 import type { Phone } from '@/types/phone'
 
-import { useOrderValidation } from '../../domain/useOrderValidation'
+import { useOrderValidation } from '../../../domain/useOrderValidation'
 
 export const useOrderFormWarnings = () => {
   const validation = useOrderValidation()

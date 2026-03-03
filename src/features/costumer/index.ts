@@ -2,10 +2,18 @@ export { costumerApi } from './api/costumerApi'
 export { useCostumerController } from './controllers/costumerMutations.controller'
 export { CostumerSearchBar } from './components'
 export type { CostumerSearchBarProps } from './components'
+export { CostumerFormEmbedded } from './forms/costumerForm/CostumerFormEmbedded'
 export {
   runCostumerQueryFlow,
 } from './flows/costumerQuery.flow'
 export { normalizeCostumerPayload } from './domain/normalizeCostumerPayload'
+export {
+  costumerPopupRegistry,
+} from './registry/costumerPopups.registry'
+export type {
+  CostumerPopupKey,
+  CostumerPopupPayloads,
+} from './registry/costumerPopups.registry'
 
 export type {
   Costumer,

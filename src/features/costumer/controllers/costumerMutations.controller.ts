@@ -64,7 +64,6 @@ export const useCostumerController = () => {
       try {
         const response = await updateCostumerApi(payload)
         const updated = response.data?.updated ?? []
-
         updated.forEach((bundle) => {
           if (bundle?.costumer?.client_id) {
             upsertCostumer(bundle.costumer)

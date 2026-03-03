@@ -12,6 +12,7 @@ import {
   type OrderFormLayoutModel,
 } from '../OrderForm.layout.model'
 import { OrderFormDeliveryWindowCalendar } from './OrderFormDeliveryWindowCalendar'
+import { Cell, SplitRow } from '@/shared/layout/cells'
 
 type OrderFormFieldsProps = {
   model: OrderFormLayoutModel
@@ -25,22 +26,8 @@ const PLAIN_INPUT_CLASS =
 const createCellClass = (compact: boolean) =>
   `py-2 px-4`
 
-const createSplitRowClass = (compact: boolean) =>
-  compact
-    ? 'grid grid-cols-1 divide-y divide-[var(--color-border-accent)]'
-    : 'grid grid-cols-2 divide-x divide-[var(--color-border-accent)]'
 
-const Cell = ({ cellClass, children }: { cellClass: string; children: ReactNode }) => (
-  <div className={cellClass}>{children}</div>
-)
 
-const SplitRow = ({
-  splitRowClass,
-  children,
-}: {
-  splitRowClass: string
-  children: ReactNode
-}) => <div className={`border-t border-[var(--color-border-accent)] ${splitRowClass}`}>{children}</div>
 
 export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps) => {
   const {
@@ -51,17 +38,15 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
 
   const [showMore, setShowMore] = useState(false)
 
-  const cellClass = useMemo(() => createCellClass(compact), [compact])
-  const splitRowClass = useMemo(() => createSplitRowClass(compact), [compact])
-
+ 
   return (
     <form
-      className={`flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-2 pt-4 scroll-thin ${
+      className={`flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pt-4 scroll-thin ${
         compact ? 'pb-5' : 'h-full pb-[100px]'
       }`}
     >
       <div className=" rounded-2xl border border-[var(--color-border-accent)] bg-[var(--color-page)]">
-        <Cell cellClass={cellClass}>
+        <Cell>
           <Field  warningPlacement ='besidesLabel' label="Email:" required={true} warningController={warnings.emailWarning}>
             <InputField
               value={formState.client_email}
@@ -73,8 +58,8 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
           </Field>
         </Cell>
 
-        <SplitRow splitRowClass={splitRowClass}>
-          <Cell cellClass={cellClass}>
+        <SplitRow splitRowClass={'grid grid-cols-2 divide-x divide-[var(--color-border-accent)]'}>
+          <Cell>
             <Field  warningPlacement ='besidesLabel'
               label="Phone:"
               required={true}
@@ -87,7 +72,7 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
             </Field>
           </Cell>
 
-          <Cell cellClass={cellClass}>
+          <Cell>
             <Field  warningPlacement ='besidesLabel' label="Secondary Phone:">
               <PhoneField
                 phoneNumber={formState.client_secondary_phone}
@@ -97,8 +82,8 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
           </Cell>
         </SplitRow>
 
-        <SplitRow splitRowClass={splitRowClass}>
-          <Cell cellClass={cellClass}>
+        <SplitRow splitRowClass={'grid grid-cols-2 divide-x divide-[var(--color-border-accent)]'}>
+          <Cell>
             <Field  warningPlacement ='besidesLabel'
               label="Name:"
               required={true}
@@ -114,7 +99,7 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
             </Field>
           </Cell>
 
-          <Cell cellClass={cellClass}>
+          <Cell>
             <Field  warningPlacement ='besidesLabel'
               label="Last Name:"
               required={true}
@@ -131,19 +116,19 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
           </Cell>
         </SplitRow>
 
-        <div className={`border-t border-[var(--color-border-accent)] ${cellClass}`}>
+        <div className={`border-t border-[var(--color-border-accent)] cell-default`}>
           <Field  warningPlacement ='besidesLabel' label="Address:" required={true} warning={warnings.addressWarning.warning}>
             <AddressAutocomplete
               onSelectedAddress={formSetters.handleAddress}
               selectedAddress={formState.client_address}
-              fieldClassName={' '}
+              fieldClassName={' w-full pl-1 pb-1'}
             />
           </Field>
         </div>
 
         {showMore ? (
           <>
-            <div className={`border-t border-[var(--color-border-accent)] ${cellClass}`}>
+            <div className={`border-t border-[var(--color-border-accent)] cell-default`}>
               <Field  warningPlacement ='besidesLabel'
                 label="Reference number:"
                 required={true}
@@ -159,8 +144,8 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
               </Field>
             </div>
 
-            <SplitRow splitRowClass={splitRowClass}>
-              <Cell cellClass={cellClass}>
+            <SplitRow splitRowClass={'grid grid-cols-2 divide-x divide-[var(--color-border-accent)]'}>
+              <Cell>
                 <Field  warningPlacement ='besidesLabel' label="External source:">
                   <InputField
                     value={formState.external_source}
@@ -171,7 +156,7 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
                 </Field>
               </Cell>
 
-              <Cell cellClass={cellClass}>
+              <Cell>
                 <Field  warningPlacement ='besidesLabel' label="Tracking number:">
                   <InputField
                     value={formState.tracking_number}
@@ -183,7 +168,7 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
               </Cell>
             </SplitRow>
 
-            <div className={`border-t border-[var(--color-border-accent)] ${cellClass}`}>
+            <div className={`border-t border-[var(--color-border-accent)] `}>
               <Field  warningPlacement ='besidesLabel' label="Tracking link:">
                 <InputField
                   value={formState.tracking_link}
@@ -195,7 +180,7 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
             </div>
 
             {formState.delivery_plan_id == null ? (
-              <div className={`border-t border-[var(--color-border-accent)] ${cellClass}`}>
+              <div className={`border-t border-[var(--color-border-accent)] `}>
                 <Field  warningPlacement ='besidesLabel' label="Order plan objective:">
                   <OptionPopoverSelect
                     options={ORDER_PLAN_OBJECTIVE_OPTIONS}

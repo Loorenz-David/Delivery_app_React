@@ -1,42 +1,66 @@
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 
 import type { OrderFormLayoutModel } from '../OrderForm.layout.model'
 import { OrderFormCustomerPanel } from './OrderFormCustomerPanel'
 import { OrderFormItemsPanel } from './OrderFormItemsPanel'
-import { useOrderForm } from '../OrderForm.context'
+import type { DesktopLayoutMode } from './OrderFormDesktop.layout'
 
 type OrderFormDesktopRightColumnProps = {
   model: OrderFormLayoutModel
+  layoutMode: DesktopLayoutMode
+  setLayoutMode: (value:DesktopLayoutMode) => void
 }
 
-export const OrderFormDesktopRightColumn = ({ model }: OrderFormDesktopRightColumnProps) => {
-  const [isItemsHovered, setIsItemsHovered] = useState(false)
-  const {meta, setSelectedCostumer} = useOrderForm()
-
-  const shouldCollapseCustomer = Boolean(meta.selectedCostumer) && isItemsHovered
+export const OrderFormDesktopRightColumn = ({ 
+  model ,
+  layoutMode,
+  setLayoutMode
+}: OrderFormDesktopRightColumnProps) => {
+  const isCustomerExpanded = layoutMode === 'customer-expanded'
 
   return (
-    <div className="flex min-w-[300px] max-w-[350px] min-h-0 flex-1 flex-col gap-4">
-      <motion.div
-        className="min-h-0 shrink-0"
-        animate={{ height: shouldCollapseCustomer ? 100 : 'auto' }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
+    <motion.div
+      layout
+      className={`relative flex min-h-0 flex-1 flex-col gap-4 items-stretch ${
+        isCustomerExpanded ? 'justify-start' : 'justify-center'
+      }`}
+    >
+      <div
+        className={`min-h-0 w-full self-center overflow-hidden transition-[max-width] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          isCustomerExpanded ? 'h-full max-w-[600px]' : 'h-auto max-w-[350px]'
+        }`}
       >
         <OrderFormCustomerPanel
-          costumer={meta.selectedCostumer}
-          isCollapsed={shouldCollapseCustomer}
-          onSelectCostumer={setSelectedCostumer}
-        />
-      </motion.div>
-
-      <div className="min-h-0 flex-1" onMouseEnter={() => setIsItemsHovered(true)} onMouseLeave={() => setIsItemsHovered(false)}>
-        <OrderFormItemsPanel
-          model={model}
-          onHoverStart={() => setIsItemsHovered(true)}
-          onHoverEnd={() => setIsItemsHovered(false)}
+          setLayoutMode={setLayoutMode}
+          layoutMode={layoutMode}
+          costumer={model.selectedCostumer}
+          onSelectCostumer={(costumer, source = 'panel') =>
+            model.requestSelectCostumer(costumer, source)
+          }
         />
       </div>
-    </div>
+
+      <motion.div
+        className={`min-h-0 w-full overflow-hidden ${isCustomerExpanded ? 'max-h-0' : 'flex-1'} max-w-[350px] self-center`}
+        layout
+        style={{
+          width: '350px',
+          pointerEvents: isCustomerExpanded ? 'none' : 'auto',
+        }}
+        animate={{
+          opacity: isCustomerExpanded ? 0 : 1,
+          x: isCustomerExpanded ? 80 : 0,
+        }}
+        transition={{
+          opacity: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+          x: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+          layout: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+        }}
+      >
+        <OrderFormItemsPanel
+          model={model}
+        />
+      </motion.div>
+    </motion.div>
   )
 }

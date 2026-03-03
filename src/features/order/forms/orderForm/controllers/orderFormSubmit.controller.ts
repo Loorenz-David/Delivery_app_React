@@ -2,11 +2,12 @@ import type { RefObject } from 'react'
 
 import { getObjectDiff } from '@/shared/utils/getObjectDiff'
 
-import type { useOrderItemDraftController } from '../../item'
-import type { Item, ItemUpdateFields } from '../../item'
-import type { Order, OrderUpdateFields } from '../../types/order'
-import type { OrderFormMode, OrderFormState } from './OrderForm.types'
-import { normalizeFormStateForSave, stripImmutableItemFields } from '../../api/mappers/orderForm.normalize'
+import type { useOrderItemDraftController } from '../../../item'
+import type { Item, ItemUpdateFields } from '../../../item'
+import type { Order, OrderUpdateFields } from '../../../types/order'
+import type { OrderFormMode, OrderFormState } from '../state/OrderForm.types'
+import { normalizeFormStateForSave, stripImmutableItemFields } from '../../../api/mappers/orderForm.normalize'
+import type { Costumer } from '@/features/costumer'
 
 type ItemDraftControllerApi = Pick<
   ReturnType<typeof useOrderItemDraftController>,
@@ -26,6 +27,7 @@ export type OrderFormSubmitCommand = {
   order: Order | null
   orderServerId: number | null
   formState: OrderFormState
+  selectedCostumer?: Costumer | null
   validateForm: () => boolean
   initialFormRef: RefObject<OrderFormState | null>
   itemDraftController: ItemDraftControllerApi
@@ -59,6 +61,7 @@ export const executeOrderFormSubmit = async (
     order,
     orderServerId,
     formState,
+    selectedCostumer,
     validateForm,
     initialFormRef,
     itemDraftController,
@@ -94,9 +97,18 @@ export const executeOrderFormSubmit = async (
     updatedItems.length > 0 ||
     deletedItemClientIds.length > 0
 
-  if (mode === 'edit' && !Object.keys(orderChanges).length && !hasItemChanges) {
+  const nextCostumerId = typeof selectedCostumer?.id === 'number' ? selectedCostumer.id : null
+  const currentOrderCostumerId = typeof order?.costumer_id === 'number' ? order.costumer_id : null
+  const hasCostumerAssociationChange =
+    mode === 'edit' &&
+    nextCostumerId !== null &&
+    nextCostumerId !== currentOrderCostumerId
+
+  if (mode === 'edit' && !Object.keys(orderChanges).length && !hasItemChanges && !hasCostumerAssociationChange) {
     return { status: 'no_changes' }
   }
+
+  const costumerPayload = nextCostumerId !== null ? { costumer_id: nextCostumerId } : null
 
   try {
     if (mode === 'create') {
@@ -109,7 +121,11 @@ export const executeOrderFormSubmit = async (
       const createPayload = {
         ...orderChanges,
         items: createItemsPayload,
+        ...(costumerPayload ? { costumer: costumerPayload } : {}),
       } as OrderUpdateFields
+
+
+
 
       if (!validateOrderFields(createPayload)) {
         return { status: 'validation_error', message: 'Please check the form inputs.' }
@@ -126,15 +142,19 @@ export const executeOrderFormSubmit = async (
       return { status: 'success_create' }
     }
 
-    if (Object.keys(orderChanges).length > 0) {
-      if (!validateOrderFields(orderChanges)) {
+    const editPayload = hasCostumerAssociationChange
+      ? ({ ...orderChanges, costumer: costumerPayload } as OrderUpdateFields)
+      : orderChanges
+
+    if (Object.keys(editPayload).length > 0) {
+      if (!validateOrderFields(editPayload)) {
         return { status: 'validation_error', message: 'Please check the form inputs.' }
       }
 
       void saveOrder({
         mode,
         clientId: order?.client_id,
-        fields: orderChanges,
+        fields: editPayload,
         onRollback: onOrderRollback,
         optimisticImmediate: true,
       })

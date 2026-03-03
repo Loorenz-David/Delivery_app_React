@@ -3,10 +3,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { ApiError } from '@/lib/api/ApiClient'
 import { useMessageHandler } from '@/shared/message-handler'
 
-import { useGetOrderItems } from '../../item'
-import type { Item } from '../../item'
-import type { OrderFormMode } from './OrderForm.types'
-import { mapItemsFromTable } from '../../api/mappers/orderForm.mappers'
+import { useGetOrderItems } from '../../../item'
+import type { Item } from '../../../item'
+import type { OrderFormMode } from '../state/OrderForm.types'
+import { mapItemsFromTable } from '../../../api/mappers/orderForm.mappers'
 
 export const useOrderFormItemsFlow = ({
   mode,

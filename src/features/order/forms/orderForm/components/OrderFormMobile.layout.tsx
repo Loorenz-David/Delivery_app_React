@@ -3,7 +3,7 @@ import { OrderFormFields } from './OrderFormFields'
 import { OrderFormHeader } from './OrderFormHeader'
 import { OrderFormItemsPanel } from './OrderFormItemsPanel'
 import type { OrderFormLayoutModel } from '../OrderForm.layout.model'
-import type { OrderFormExternalFlow } from '../useOrderFormExternalFlow'
+import type { OrderFormExternalFlow } from '../flows/orderFormExternalRealtime.flow'
 
 export const OrderFormMobileLayout = ({
   model,
@@ -17,8 +17,6 @@ export const OrderFormMobileLayout = ({
       <div className="relative flex w-full min-h-0 flex-col bg-[var(--color-page)]">
         <OrderFormHeader
           label={model.label}
-          mode={model.mode}
-          creationDate={model.creationDate}
           isMobile={true}
           onClose={model.closeController.requestClose}
         />

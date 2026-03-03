@@ -3,16 +3,17 @@ import { AnimatePresence } from 'framer-motion'
 
 import { OrderFormFeature } from '@/features/order/forms/orderForm/OrderForm'
 import { OrderFormDesktopLayout } from '@/features/order/forms/orderForm/components/OrderFormDesktop.layout'
+import { OrderFormCostumerChangePrompt } from '@/features/order/forms/orderForm/components/OrderFormCostumerChangePrompt'
 import {
   useOrderFormLayoutModel,
   type OrderFormLayoutModel,
 } from '@/features/order/forms/orderForm/OrderForm.layout.model'
 import { OrderFormMobileLayout } from '@/features/order/forms/orderForm/components/OrderFormMobile.layout'
-import type { OrderFormPayload } from '@/features/order/forms/orderForm/OrderForm.types'
+import type { OrderFormPayload } from '@/features/order/forms/orderForm/state/OrderForm.types'
 import {
   useOrderFormExternalFlow,
   type OrderFormExternalFlow,
-} from '@/features/order/forms/orderForm/useOrderFormExternalFlow'
+} from '@/features/order/forms/orderForm/flows/orderFormExternalRealtime.flow'
 import { ConfirmActionPopup } from '@/shared/popups/ConfirmActionPopup'
 
 import { OrderFormShell } from './OrderFormShell'
@@ -25,6 +26,7 @@ type OrderFormPopupViewProps = {
 const OrderFormPopupBody = () => {
   const model = useOrderFormLayoutModel()
   const externalFlow = useOrderFormExternalFlow()
+  const pendingCostumerName = `${model.pendingCostumerChange?.first_name ?? ''} ${model.pendingCostumerChange?.last_name ?? ''}`.trim()
 
   return (
     <>
@@ -34,6 +36,18 @@ const OrderFormPopupBody = () => {
         mobileView={OrderFormMobileLayout}
         viewProps={{ model, externalFlow }}
       />
+      <AnimatePresence>
+        {model.isCostumerChangePromptOpen ? (
+          <div className="fixed inset-0 z-[125]">
+            <OrderFormCostumerChangePrompt
+              pendingCostumerName={pendingCostumerName}
+              onReplace={model.confirmReplaceWithPendingCostumer}
+              onKeep={model.confirmKeepSnapshotWithPendingCostumer}
+              onCancel={model.cancelPendingCostumerChange}
+            />
+          </div>
+        ) : null}
+      </AnimatePresence>
       <AnimatePresence>
         {model.closeController.closeState === 'confirming' ? (
           <div className="fixed inset-0 z-[120]">

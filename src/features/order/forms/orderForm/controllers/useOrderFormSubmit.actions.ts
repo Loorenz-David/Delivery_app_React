@@ -1,24 +1,21 @@
 import type { RefObject } from 'react'
 import { useCallback } from 'react'
 
+import { useDownloadTemplateByEventFlow } from '@/features/templates/printDocument/flows'
 import { useMessageHandler } from '@/shared/message-handler'
 import { usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 
-import type { useOrderItemDraftController } from '../../item'
-import type { Item } from '../../item'
-import { useCreateItem, useDeleteItem, useUpdateItem } from '../../item'
-import { useItemFlow } from '../../item'
-import { useOrderController } from '../../controllers/order.controller'
-import { useOrderValidation } from '../../domain/useOrderValidation'
-import { useDownloadTemplateByEventFlow } from '@/features/templates/printDocument/flows'
-import { itemsForDownloading } from '../../item'
-import type { Order } from '../../types/order'
-import type { OrderFormMode, OrderFormState } from './OrderForm.types'
-import { normalizeFormStateForSave } from '../../api/mappers/orderForm.normalize'
-import {
-  executeOrderFormSubmit,
-  type OrderFormSubmitResult,
-} from './orderFormSubmit.controller'
+import type { useOrderItemDraftController } from '../../../item'
+import type { Item } from '../../../item'
+import { useCreateItem, useDeleteItem, useItemFlow, useUpdateItem } from '../../../item'
+import { useOrderController } from '../../../controllers/order.controller'
+import { useOrderValidation } from '../../../domain/useOrderValidation'
+import { normalizeFormStateForSave } from '../../../api/mappers/orderForm.normalize'
+import type { Order } from '../../../types/order'
+import type { OrderFormMode, OrderFormState } from '../state/OrderForm.types'
+
+import { executeOrderFormSubmit } from './orderFormSubmit.controller'
+import { presentOrderFormSubmitOutcome } from './orderFormSubmitFeedback.presenter'
 import type { Costumer } from '@/features/costumer'
 
 type ItemDraftControllerApi = Pick<
@@ -58,82 +55,6 @@ const reopenOrderFormOnRollback = ({
   })
 }
 
-export const mapSubmitResultToFeedback = (result: OrderFormSubmitResult) => {
-  if (result.status === 'success_create') {
-    return {
-      status: 200,
-      message: 'Order successfully created.',
-      shouldClosePopup: true,
-    } as const
-  }
-
-  if (result.status === 'success_edit') {
-    return {
-      status: 200,
-      message: 'Order successfully updated.',
-      shouldClosePopup: true,
-    } as const
-  }
-
-  if (result.status === 'no_changes') {
-    return {
-      status: 400,
-      message: 'No changes to save.',
-      shouldClosePopup: false,
-    } as const
-  }
-
-  if (result.status === 'validation_error' || result.status === 'dependency_error') {
-    return {
-      status: 400,
-      message: result.message,
-      shouldClosePopup: false,
-    } as const
-  }
-
-  return {
-    status: 500,
-    message: result.message,
-    shouldClosePopup: false,
-  } as const
-}
-
-const presentSubmitOutcome = ({
-  result,
-  createdItems,
-  normalizedCurrent,
-  downloadByEvent,
-  showMessage,
-  popupManager,
-}: {
-  result: OrderFormSubmitResult
-  createdItems: Item[]
-  normalizedCurrent: ReturnType<typeof normalizeFormStateForSave>
-  downloadByEvent: ReturnType<typeof useDownloadTemplateByEventFlow>['downloadByEvent']
-  showMessage: ReturnType<typeof useMessageHandler>['showMessage']
-  popupManager: ReturnType<typeof usePopupManager>
-}) => {
-  const feedback = mapSubmitResultToFeedback(result)
-
-  if (result.status === 'success_create' && createdItems.length > 0) {
-    downloadByEvent({
-      channel: 'item',
-      event: 'item_created',
-      data: itemsForDownloading(
-        createdItems,
-        normalizedCurrent?.reference_number,
-        normalizedCurrent?.delivery_plan_id,
-      ),
-      fileName: 'first test',
-    })
-  }
-
-  showMessage({ status: feedback.status, message: feedback.message })
-  if (feedback.shouldClosePopup) {
-    closeOrderPopup(popupManager)
-  }
-}
-
 export const useOrderFormActions = ({
   mode,
   order,
@@ -143,6 +64,7 @@ export const useOrderFormActions = ({
   initialFormRef,
   itemDraftController,
   itemInitialByClientId,
+  selectedCostumer
 }: {
   mode: OrderFormMode
   order: Order | null
@@ -152,6 +74,7 @@ export const useOrderFormActions = ({
   initialFormRef: RefObject<OrderFormState | null>
   itemDraftController: ItemDraftControllerApi
   itemInitialByClientId: Record<string, Item>
+  selectedCostumer: Costumer | null
 }) => {
   const { showMessage } = useMessageHandler()
   const { deleteOrderByServerId, saveOrder } = useOrderController()
@@ -167,6 +90,7 @@ export const useOrderFormActions = ({
   const handleSave = useCallback(() => {
     const createdItems = itemDraftController.getCreatedItems()
     const normalizedCurrent = normalizeFormStateForSave(formState)
+
     void executeOrderFormSubmit(
       {
         saveOrder,
@@ -185,6 +109,7 @@ export const useOrderFormActions = ({
         initialFormRef,
         itemDraftController,
         itemInitialByClientId,
+        selectedCostumer,
         onOrderRollback: () =>
           reopenOrderFormOnRollback({
             popupManager,
@@ -194,31 +119,33 @@ export const useOrderFormActions = ({
           }),
       },
     ).then((result) => {
-      presentSubmitOutcome({
+      presentOrderFormSubmitOutcome({
         result,
         createdItems,
         normalizedCurrent,
-        downloadByEvent,
+        closePopup: () => closeOrderPopup(popupManager),
         showMessage,
-        popupManager,
+        downloadByEvent,
       })
     })
   }, [
     createItemApi,
     deleteItemApi,
     downloadByEvent,
-    loadItemsByOrderId,
     formState,
     initialFormRef,
     itemDraftController,
     itemInitialByClientId,
+    loadItemsByOrderId,
     mode,
     order,
     orderServerId,
     popupManager,
     saveOrder,
+    selectedCostumer,
     showMessage,
     updateItemApi,
+    validateForm,
     validation.validateOrderFields,
   ])
 
@@ -226,17 +153,12 @@ export const useOrderFormActions = ({
     if (mode !== 'edit') return
     if (!order?.id || !order?.client_id) return
 
-    const success =  await deleteOrderByServerId(order.id, order.client_id)
-    if(success){
-      closeOrderPopup(popupManager)
-      sectionManager.closeByKey('order.details')
-    }
-    
-    
+    const success = await deleteOrderByServerId(order.id, order.client_id)
+    if (!success) return
+
+    closeOrderPopup(popupManager)
+    sectionManager.closeByKey('order.details')
   }, [deleteOrderByServerId, mode, order?.client_id, order?.id, popupManager, sectionManager])
-
-  
-
 
   return {
     handleSave,

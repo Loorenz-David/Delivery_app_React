@@ -1,9 +1,8 @@
-import { useEffect, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, type Dispatch, type RefObject, type SetStateAction } from 'react'
 
 import type { Costumer } from '@/features/costumer'
-import type { OrderFormState } from './OrderForm.types'
-import { useCostumerQueries } from '@/features/costumer/controllers/costumerQueries.controller'
-import { validateEmail } from '@/shared/data-validation/stringValidation'
+
+import type { OrderFormState } from '../state/OrderForm.types'
 
 const mapCostumerPhone = (
   value: Costumer['default_primary_phone'] | Costumer['default_secondary_phone'],
@@ -41,22 +40,16 @@ export const applySelectedCostumerToOrderForm = ({
   }
 }
 
-export const useOrderFormCostumerFlow = ({
+export const useApplySelectedCostumerFlow = ({
   selectedCostumer,
-  email,
-  setSelectedCostumer,
   setFormState,
 }: {
   selectedCostumer: Costumer | null
-  email:string
-  setSelectedCostumer:Dispatch<SetStateAction<Costumer | null>>
   setFormState: Dispatch<SetStateAction<OrderFormState>>
 }) => {
-
-  const { queryCostumerByEmail } = useCostumerQueries()
-
   useEffect(() => {
     if (!selectedCostumer) return
+    
 
     setFormState((previousState) =>
       applySelectedCostumerToOrderForm({
@@ -65,29 +58,4 @@ export const useOrderFormCostumerFlow = ({
       }),
     )
   }, [selectedCostumer, setFormState])
-
-  useEffect(() => {
-    if (!validateEmail(email)) return
-
-    let cancelled = false
-
-    const run = async () => {
-      const result = await queryCostumerByEmail( email )
-
-      if (cancelled || !result) return
-
-      const firstMatch = Object.values(result.byClientId)[0]
-      if (!firstMatch) return
-
-      setSelectedCostumer(prev => firstMatch ?? null)
-      
-    }
-
-    run()
-
-    return () => {
-      cancelled = true
-    }
-  }, [email, queryCostumerByEmail, setSelectedCostumer])
-
 }

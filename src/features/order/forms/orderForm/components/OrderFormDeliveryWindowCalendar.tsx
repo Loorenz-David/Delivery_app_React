@@ -5,10 +5,12 @@ import {
   CalendarRoot,
   getCalendarDayKey,
   type CalendarRangeValue,
-  type CalendarValue,
   type CalendarSelectionMode,
+  type CalendarValue,
   useCalendarModel,
 } from '@/shared/calendar'
+
+import { useOrderFormFormSlice } from '../context/OrderFormForm.context'
 
 type ActiveMode = Exclude<CalendarSelectionMode, 'readonly'>
 
@@ -20,8 +22,51 @@ const MODE_OPTIONS: Array<{ label: string; value: ActiveMode }> = [
 
 const isDate = (value: unknown): value is Date => value instanceof Date && !Number.isNaN(value.getTime())
 
-const isRange = (value: CalendarValue): value is CalendarRangeValue => {
-  return !!value && typeof value === 'object' && !Array.isArray(value) && 'start' in value && 'end' in value
+const toDate = (value: string | null) => {
+  if (!value) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+const toDateInputValue = (value: Date | null) => {
+  if (!value) return null
+  const year = value.getUTCFullYear()
+  const month = String(value.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(value.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export const resolveCalendarSelectionToBoundaryValues = ({
+  mode,
+  nextValue,
+}: {
+  mode: ActiveMode
+  nextValue: CalendarValue
+}) => {
+  if (mode === 'single') {
+    const date = isDate(nextValue) ? nextValue : null
+    const nextBoundary = toDateInputValue(date)
+    return { earliest: nextBoundary, latest: nextBoundary }
+  }
+
+  if (mode === 'multiple') {
+    const dates = Array.isArray(nextValue) ? nextValue.filter(isDate) : []
+    const sorted = dates.sort((a, b) => a.getTime() - b.getTime())
+    return {
+      earliest: toDateInputValue(sorted[0] ?? null),
+      latest: toDateInputValue(sorted.at(-1) ?? null),
+    }
+  }
+
+  const rangeCandidate =
+    nextValue && typeof nextValue === 'object' && !Array.isArray(nextValue) && 'start' in nextValue
+      ? (nextValue as CalendarRangeValue)
+      : { start: null, end: null }
+
+  return {
+    earliest: toDateInputValue(rangeCandidate.start),
+    latest: toDateInputValue(rangeCandidate.end),
+  }
 }
 
 const formatRange = (range: CalendarRangeValue) => {
@@ -32,54 +77,60 @@ const formatRange = (range: CalendarRangeValue) => {
 }
 
 export const OrderFormDeliveryWindowCalendar = ({ compact = false }: { compact?: boolean }) => {
-  const [mode, setMode] = useState<ActiveMode>('single')
-  const [singleValue, setSingleValue] = useState<Date | null>(null)
-  const [multipleValue, setMultipleValue] = useState<Date[]>([])
-  const [rangeValue, setRangeValue] = useState<CalendarRangeValue>({ start: null, end: null })
+  const [mode, setMode] = useState<ActiveMode>('range')
+  const { formState, formSetters } = useOrderFormFormSlice()
+
+  const earliestDate = useMemo(() => toDate(formState.earliest_delivery_date), [formState.earliest_delivery_date])
+  const latestDate = useMemo(() => toDate(formState.latest_delivery_date), [formState.latest_delivery_date])
 
   const calendarValue = useMemo<CalendarValue>(() => {
     if (mode === 'single') {
-      return singleValue
+      return earliestDate
     }
 
     if (mode === 'multiple') {
-      return multipleValue
+      return [earliestDate, latestDate].filter((entry): entry is Date => entry instanceof Date)
     }
 
-    return rangeValue
-  }, [mode, singleValue, multipleValue, rangeValue])
+    return {
+      start: earliestDate,
+      end: latestDate,
+    }
+  }, [earliestDate, latestDate, mode])
 
   const model = useCalendarModel({
     selectionMode: mode,
     value: calendarValue,
     onChange: (nextValue) => {
-      if (mode === 'single') {
-        setSingleValue(isDate(nextValue) ? nextValue : null)
-        return
-      }
+      const boundaries = resolveCalendarSelectionToBoundaryValues({
+        mode,
+        nextValue,
+      })
 
-      if (mode === 'multiple') {
-        setMultipleValue(Array.isArray(nextValue) ? nextValue.filter(isDate) : [])
-        return
-      }
-
-      setRangeValue(isRange(nextValue) ? nextValue : { start: null, end: null })
+      formSetters.handleEarliestDate(boundaries.earliest)
+      formSetters.handleLatestDate(boundaries.latest)
     },
   })
 
   const helperText = useMemo(() => {
     if (mode === 'single') {
-      return singleValue ? `Selected date: ${getCalendarDayKey(singleValue)}` : 'Select one date.'
+      return earliestDate ? `Selected date: ${getCalendarDayKey(earliestDate)}` : 'Select one date.'
     }
 
     if (mode === 'multiple') {
-      return multipleValue.length > 0
-        ? `Selected dates: ${multipleValue.map((date) => getCalendarDayKey(date)).join(', ')}`
-        : 'Select one or more dates.'
+      if (!earliestDate && !latestDate) {
+        return 'Select one or more dates.'
+      }
+
+      const labels = [earliestDate, latestDate]
+        .filter((entry): entry is Date => Boolean(entry))
+        .map((entry) => getCalendarDayKey(entry))
+
+      return `Selected dates: ${labels.join(', ')}`
     }
 
-    return `Selected range: ${formatRange(rangeValue)}`
-  }, [mode, singleValue, multipleValue, rangeValue])
+    return `Selected range: ${formatRange({ start: earliestDate, end: latestDate })}`
+  }, [earliestDate, latestDate, mode])
 
   return (
     <div className="flex flex-col gap-3">
@@ -104,7 +155,7 @@ export const OrderFormDeliveryWindowCalendar = ({ compact = false }: { compact?:
         })}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-page)]">
+      <div className="overflow-hidden rounded-md border border-[var(--color-border-accent)] bg-[var(--color-page)]">
         <CalendarRoot
           model={model}
           renderHeader={(calendarModel) => {

@@ -7,4 +7,5 @@ export type CostumerSearchBarProps = {
   debounceMs?: number
   limit?: number
   initialQuery?: string
+  handleStartCreate: () => void
 }

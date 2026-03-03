@@ -3,7 +3,7 @@ import type { Phone } from '@/types/phone'
 
 export type CostumerAddress = {
   id?: number
-  client_id: string
+  client_id?: string
   label?: string | null
   address?: address | null
   is_default?: boolean
@@ -11,7 +11,7 @@ export type CostumerAddress = {
 
 export type CostumerPhone = {
   id?: number
-  client_id: string
+  client_id?: string
   label?: string | null
   phone?: Phone | null
   phone_type?: string | null
@@ -21,7 +21,7 @@ export type CostumerPhone = {
 
 export type CostumerOperatingHours = {
   id?: number
-  client_id: string
+  client_id?: string
   weekday: number
   open_time?: string | null
   close_time?: string | null

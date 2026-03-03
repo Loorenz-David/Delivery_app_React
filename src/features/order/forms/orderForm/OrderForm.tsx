@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react'
 
-import { OrderProvider } from '../../context/OrderProvider'
-import type { OrderFormPayload } from './OrderForm.types'
-import { OrderFormProvider } from './OrderForm.provider'
+import type { OrderFormPayload } from './state/OrderForm.types'
+import { OrderFormProvider } from './providers/OrderForm.provider'
 
 export const OrderFormFeature = ({
   payload,
@@ -13,9 +12,7 @@ export const OrderFormFeature = ({
   onClose?: () => void
   children: ReactNode
 }) => (
-  <OrderProvider>
-    <OrderFormProvider payload={payload} onClose={onClose}>
-      {children}
-    </OrderFormProvider>
-  </OrderProvider>
+  <OrderFormProvider payload={payload} onClose={onClose}>
+    {children}
+  </OrderFormProvider>
 )

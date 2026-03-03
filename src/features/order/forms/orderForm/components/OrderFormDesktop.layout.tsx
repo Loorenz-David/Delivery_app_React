@@ -1,9 +1,14 @@
+import { motion } from 'framer-motion'
 import { OrderFormFooter } from './OrderFormFooter'
 import { OrderFormFields } from './OrderFormFields'
 import { OrderFormHeader } from './OrderFormHeader'
 import type { OrderFormLayoutModel } from '../OrderForm.layout.model'
-import type { OrderFormExternalFlow } from '../useOrderFormExternalFlow'
+import type { OrderFormExternalFlow } from '../flows/orderFormExternalRealtime.flow'
 import { OrderFormDesktopRightColumn } from './OrderFormDesktopRightColumn'
+import { useState } from 'react'
+
+
+export type DesktopLayoutMode = 'default' | 'customer-expanded'
 
 export const OrderFormDesktopLayout = ({
   model,
@@ -12,13 +17,25 @@ export const OrderFormDesktopLayout = ({
   model: OrderFormLayoutModel
   externalFlow: OrderFormExternalFlow
 }) => {
+  const [layoutMode, setLayoutMode] = useState<DesktopLayoutMode>('default')
+
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 gap-6">
-      <div className="relative flex h-full w-[560px] min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--color-border)]/60 bg-[var(--color-page)]">
+      <div
+        className="flex h-full min-h-0 w-full min-w-0 gap-6 max-w-[950px] overflow-hidden"
+
+      >
+      <motion.div className="relative flex h-full w-[560px] min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--color-border)]/60 bg-[var(--color-page)]"
+        layout
+        animate={{
+          opacity: layoutMode === 'customer-expanded' ? 0 : 1,
+          x: layoutMode === 'customer-expanded' ? -400 : 0,
+          width:layoutMode ==='customer-expanded' ? 60 : 560
+        }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }} 
+      >
         <OrderFormHeader
           label={model.label}
-          mode={model.mode}
-          creationDate={model.creationDate}
+          orderReference={model.formState.reference_number}
           isMobile={false}
           onClose={model.closeController.requestClose}
         />
@@ -37,8 +54,12 @@ export const OrderFormDesktopLayout = ({
           }
           sendDisabled={externalFlow.employeeUserId <= 0}
         />
-      </div>
-      <OrderFormDesktopRightColumn model={model} />
+      </motion.div>
+      <OrderFormDesktopRightColumn 
+        model={model}
+        layoutMode={layoutMode}
+        setLayoutMode={setLayoutMode}
+      />
     </div>
   )
 }

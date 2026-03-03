@@ -1,9 +1,9 @@
-import { DEFAULT_PREFIX } from '@/constants/dropDownOptions'
+import { DEFAULT_PREFIX, getRememberedPhonePrefix } from '@/constants/dropDownOptions'
 import { buildClientId } from '@/lib/utils/clientId'
 import type { Phone } from '@/types/phone'
 
-import type { Order } from '../../types/order'
-import type { OrderFormMode, OrderFormState } from './OrderForm.types'
+import type { Order } from '../../../types/order'
+import type { OrderFormMode, OrderFormState } from '../state/OrderForm.types'
 
 type BuildOrderFormInitialStateParams = {
   mode: OrderFormMode
@@ -30,7 +30,7 @@ const buildReferenceNumber = (date: Date = new Date()) => {
 }
 
 const normalizePhone = (value: Phone | null | undefined): Phone => ({
-  prefix: value?.prefix ?? DEFAULT_PREFIX,
+  prefix: value?.prefix ?? getRememberedPhonePrefix() ?? DEFAULT_PREFIX,
   number: value?.number ?? '',
 })
 

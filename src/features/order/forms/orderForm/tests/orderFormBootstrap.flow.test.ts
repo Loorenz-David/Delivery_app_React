@@ -2,7 +2,7 @@ import {
   buildOrderFormInitialState,
   buildOrderFormReinitKey,
   shouldReinitializeForm,
-} from '../orderFormBootstrap.flow'
+} from '../flows/orderFormBootstrap.flow'
 
 const assert = (condition: boolean, message: string) => {
   if (!condition) {
