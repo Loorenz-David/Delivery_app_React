@@ -117,3 +117,21 @@ export const phonePrefixOptions: Array<{
     countryCode: 'US',
   },
 ]
+
+export const getRememberedPhonePrefix = (): string => {
+  if (typeof window === 'undefined') {
+    return DEFAULT_PREFIX
+  }
+
+  try {
+    const stored = window.localStorage.getItem(PHONE_PREFIX_STORAGE_KEY)
+    if (!stored) {
+      return DEFAULT_PREFIX
+    }
+
+    const exists = phonePrefixOptions.some((option) => option.value === stored)
+    return exists ? stored : DEFAULT_PREFIX
+  } catch {
+    return DEFAULT_PREFIX
+  }
+}

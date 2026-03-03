@@ -24,8 +24,9 @@ const isDateRangeFilter = (filter: FilterConfig): filter is Extract<FilterConfig
 export const SearchFilterBar = ({
   applySearch,
   updateFilter,
-  filters,
-  config,
+  filters = {},
+  config = [],
+  hideFilterIcon = false,
   placeholder,
 }: SearchFilterBarProps) => {
   const [open, setOpen] = useState(false)
@@ -52,6 +53,8 @@ export const SearchFilterBar = ({
   }
 
   const applyDateRange = (filter: Extract<FilterConfig, { type: 'date-range' }>) => {
+    if (!updateFilter) return
+
     const [start, end] = tempRange
 
     if (start) {
@@ -93,16 +96,18 @@ export const SearchFilterBar = ({
 
               />
             </div>
-            <BasicButton
-              params={{
-                variant: 'ghost',
-                ariaLabel: 'Open filters',
-                onClick: () => setOpen( prev => !prev),
-                className:'pr-3'
-              }}
-            >
-              <FilterIcon className="h-4 w-4" />
-            </BasicButton>
+            {!hideFilterIcon ? (
+              <BasicButton
+                params={{
+                  variant: 'ghost',
+                  ariaLabel: 'Open filters',
+                  onClick: () => setOpen(prev => !prev),
+                  className: 'pr-3',
+                }}
+              >
+                <FilterIcon className="h-4 w-4" />
+              </BasicButton>
+            ) : null}
           </div>
         )}
       >
@@ -121,7 +126,7 @@ export const SearchFilterBar = ({
                   key={`${filter.type}-${filter.key}-${String(filter.value)}-${index}`}
                   type="button"
                   data-popover-close="true"
-                  onClick={() => updateFilter(filter.key, filter.value)}
+                  onClick={() => updateFilter?.(filter.key, filter.value)}
                   className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-[var(--color-muted)]/10"
                 >
                   <span>{filter.label}</span>

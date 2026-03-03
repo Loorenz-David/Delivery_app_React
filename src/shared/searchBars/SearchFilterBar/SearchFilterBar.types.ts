@@ -14,8 +14,9 @@ export type FilterConfig =
 
 export type SearchFilterBarProps = {
   applySearch: (input: string) => void
-  updateFilter: (key: string, value: unknown) => void
-  filters: Record<string, unknown>
-  config: FilterConfig[]
+  updateFilter?: (key: string, value: unknown) => void
+  filters?: Record<string, unknown>
+  config?: FilterConfig[]
+  hideFilterIcon?: boolean
   placeholder?: string
 }

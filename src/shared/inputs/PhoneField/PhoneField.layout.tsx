@@ -4,8 +4,17 @@ import { BoldArrowIcon } from '@/assets/icons'
 import { usePhoneFieldContext } from './PhoneField.context'
 import { PhonePrefixList } from './PhonePrefixList'
 import { getFlagEmoji } from './phonePrefixes'
+import type { CSSProperties } from 'react'
 
-export const PhoneFieldLayout = () => {
+type PhoneFieldLayoutProps = {
+  containerClassName?: string
+  containerStyle?: CSSProperties
+}
+
+export const PhoneFieldLayout = ({
+  containerClassName,
+  containerStyle,
+}: PhoneFieldLayoutProps) => {
   const {
     isOpen,
     inputValue,
@@ -18,9 +27,13 @@ export const PhoneFieldLayout = () => {
     handleNumberChange,
   } = usePhoneFieldContext()
 
+  const rootClassName = ['flex w-full items-center gap-2 ', containerClassName]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <div className="flex w-full items-center gap-2 custom-field-container">
-      <div className="flex flex-1">
+    <div className={rootClassName} style={containerStyle}>
+      <div className="flex ">
         <FloatingPopover
           open={isOpen}
           onOpenChange={handleOpenChange}
@@ -28,8 +41,8 @@ export const PhoneFieldLayout = () => {
           crossOffSetNum={-20}
           offSetNum={15}
           reference={
-            <div className="flex justify-between border-r border-[var(--color-border)]" onClick={handleInputFocus}
-              style={{width:'100px'}}
+            <div className="flex justify-between " onClick={handleInputFocus}
+              style={{width:'80px'}}
             >
               <div className="flex items-center pr-1 text-base" aria-hidden>
                 {selectedPrefix ? getFlagEmoji(selectedPrefix.countryCode) : ''}
@@ -43,7 +56,7 @@ export const PhoneFieldLayout = () => {
                 fieldClassName="w-[100px]"
               />
               <div
-                className="flex items-center content-center pr-4"
+                className="flex items-center content-center pr-2"
 
                 onClick={() => {
                   requestAnimationFrame(() => {

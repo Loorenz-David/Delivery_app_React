@@ -21,6 +21,7 @@ export type Order = {
   client_secondary_phone?: Phone | null
 
   client_address?: address | null
+  costumer_id?: number | null
   
   earliest_delivery_date?: string | null
   latest_delivery_date?: string | null

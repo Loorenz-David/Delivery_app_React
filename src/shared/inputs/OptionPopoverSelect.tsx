@@ -20,6 +20,7 @@ export type OptionPopoverSelectProps<TValue = unknown> = {
   disabled?: boolean
   className?: string
   dropdownClassName?: string
+  inputFieldClassName?:string
   optionClassName?: string
   offset?: number
   matchReferenceWidth?: boolean
@@ -40,6 +41,7 @@ export const OptionPopoverSelect = <TValue,>({
   className,
   dropdownClassName,
   optionClassName,
+  inputFieldClassName,
   offset = 8,
   matchReferenceWidth = true,
   isOptionEqual = defaultIsOptionEqual,
@@ -67,7 +69,7 @@ export const OptionPopoverSelect = <TValue,>({
 
   const resolveOptionKey = (option: PopoverSelectOption<TValue>, index: number) =>
     getOptionKey ? getOptionKey(option, index) : `${option.label}-${index}`
-
+  console.log(inputFieldClassName,'container')
   return (
     <FloatingPopover
       open={open}
@@ -79,7 +81,10 @@ export const OptionPopoverSelect = <TValue,>({
       reference={
         <button
           type="button"
-          className="custom-field-container flex w-full items-center justify-between gap-2 rounded-xl text-left disabled:cursor-not-allowed disabled:opacity-60"
+          className={ inputFieldClassName 
+            ? inputFieldClassName 
+            : "custom-field-container flex w-full items-center justify-between gap-2 rounded-xl text-left disabled:cursor-not-allowed disabled:opacity-60"
+          }
           onClick={() => {
             if (disabled) return
             setOpen((current) => !current)

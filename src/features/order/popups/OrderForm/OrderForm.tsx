@@ -1,20 +1,70 @@
 import type { StackComponentProps } from '@/shared/stack-manager/types'
+import { AnimatePresence } from 'framer-motion'
 
 import { OrderFormFeature } from '@/features/order/forms/orderForm/OrderForm'
-import { useOrderForm } from '@/features/order/forms/orderForm/OrderForm.context'
-import type { OrderFormPayload } from '@/features/order/forms/orderForm/OrderForm.types'
+import { OrderFormDesktopLayout } from '@/features/order/forms/orderForm/components/OrderFormDesktop.layout'
+import { OrderFormCostumerChangePrompt } from '@/features/order/forms/orderForm/components/OrderFormCostumerChangePrompt'
+import {
+  useOrderFormLayoutModel,
+  type OrderFormLayoutModel,
+} from '@/features/order/forms/orderForm/OrderForm.layout.model'
+import { OrderFormMobileLayout } from '@/features/order/forms/orderForm/components/OrderFormMobile.layout'
+import type { OrderFormPayload } from '@/features/order/forms/orderForm/state/OrderForm.types'
+import {
+  useOrderFormExternalFlow,
+  type OrderFormExternalFlow,
+} from '@/features/order/forms/orderForm/flows/orderFormExternalRealtime.flow'
+import { ConfirmActionPopup } from '@/shared/popups/ConfirmActionPopup'
 
-import { useOrderFormPopupConfig } from './OrderFormPopupConfig.hook'
+import { OrderFormShell } from './OrderFormShell'
 
-const OrderFormPopupConfigBridge = () => {
-  const { formState, meta } = useOrderForm()
-  const { mode, initialFormRef } = meta
-  useOrderFormPopupConfig({ mode, formState, initialFormRef })
-  return null
+type OrderFormPopupViewProps = {
+  model: OrderFormLayoutModel
+  externalFlow: OrderFormExternalFlow
 }
 
-export const OrderForm = ({ payload }: StackComponentProps<OrderFormPayload>) => (
-  <OrderFormFeature payload={payload}>
-    <OrderFormPopupConfigBridge />
+const OrderFormPopupBody = () => {
+  const model = useOrderFormLayoutModel()
+  const externalFlow = useOrderFormExternalFlow()
+  const pendingCostumerName = `${model.pendingCostumerChange?.first_name ?? ''} ${model.pendingCostumerChange?.last_name ?? ''}`.trim()
+
+  return (
+    <>
+      <OrderFormShell<OrderFormPopupViewProps>
+        onRequestClose={model.closeController.requestClose}
+        desktopView={OrderFormDesktopLayout}
+        mobileView={OrderFormMobileLayout}
+        viewProps={{ model, externalFlow }}
+      />
+      <AnimatePresence>
+        {model.isCostumerChangePromptOpen ? (
+          <div className="fixed inset-0 z-[125]">
+            <OrderFormCostumerChangePrompt
+              pendingCostumerName={pendingCostumerName}
+              onReplace={model.confirmReplaceWithPendingCostumer}
+              onKeep={model.confirmKeepSnapshotWithPendingCostumer}
+              onCancel={model.cancelPendingCostumerChange}
+            />
+          </div>
+        ) : null}
+      </AnimatePresence>
+      <AnimatePresence>
+        {model.closeController.closeState === 'confirming' ? (
+          <div className="fixed inset-0 z-[120]">
+            <ConfirmActionPopup
+              onConfirm={model.closeController.confirmClose}
+              onCancel={model.closeController.cancelClose}
+              message="You have unsaved changes. Close without saving?"
+            />
+          </div>
+        ) : null}
+      </AnimatePresence>
+    </>
+  )
+}
+
+export const OrderForm = ({ payload, onClose }: StackComponentProps<OrderFormPayload>) => (
+  <OrderFormFeature payload={payload} onClose={onClose}>
+    <OrderFormPopupBody />
   </OrderFormFeature>
 )

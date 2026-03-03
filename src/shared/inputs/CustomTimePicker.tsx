@@ -28,11 +28,11 @@ export const CustomTimePicker = ({
 
     return (
         <div
-            className="custom-field-container rounded-xl relative text-sm "
+            className="custom-field-container rounded-xl relative text-xm "
             onClick={() => setIsOpen(true)}
         >
-            <TimeIcon className="h-4 w-4 app-icon absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]/70" />
-            <div className="w-full pl-10">
+            <TimeIcon className="h-3 w-3 app-icon absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]/70" />
+            <div className="w-full pl-5">
                 <DesktopTimePicker
                     enableAccessibleFieldDOMStructure={false}
                     open={isOpen}
