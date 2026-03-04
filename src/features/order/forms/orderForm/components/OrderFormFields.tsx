@@ -11,7 +11,7 @@ import {
   ORDER_PLAN_OBJECTIVE_OPTIONS,
   type OrderFormLayoutModel,
 } from '../OrderForm.layout.model'
-import { OrderFormDeliveryWindowCalendar } from './OrderFormDeliveryWindowCalendar'
+import { OrderFormDeliveryWindowCalendar } from './DeliveryWindowCalendar'
 import { Cell, SplitRow } from '@/shared/layout/cells'
 
 type OrderFormFieldsProps = {
