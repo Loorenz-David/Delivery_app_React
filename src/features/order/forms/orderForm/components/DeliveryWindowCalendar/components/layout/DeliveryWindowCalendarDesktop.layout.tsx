@@ -1,34 +1,32 @@
 import type { ReactNode } from 'react'
-import type { DeliveryWindowCalendarDensity } from '../../DeliveryWindowCalendarDensity.flow'
+import { useDeliveryWindowCalendarShellScale } from '../shell/DeliveryWindowCalendarShell.context'
 
 type DeliveryWindowCalendarDesktopLayoutProps = {
   calendar: ReactNode
   editor: ReactNode
-  selectedDatesCard: ReactNode
-  selectedWindowsCard: ReactNode
-  density: DeliveryWindowCalendarDensity
+  windowsPanel: ReactNode
 }
 
 export const DeliveryWindowCalendarDesktopLayout = ({
   calendar,
   editor,
-  selectedDatesCard,
-  selectedWindowsCard,
-  density,
+  windowsPanel,
 }: DeliveryWindowCalendarDesktopLayoutProps) => {
-  const rightColumn = density === 'compact' ? 'minmax(132px,34%)' : 'minmax(150px,36%)'
-  const gap = density === 'compact' ? 'gap-2' : 'gap-3'
+  const shellScale = useDeliveryWindowCalendarShellScale()
+  const { layout } = shellScale
 
   return (
-    <div className={`grid ${gap}`} style={{ gridTemplateColumns: `minmax(0,1fr) ${rightColumn}` }}>
-      <div className="flex min-w-0 flex-col gap-3">
+    <div
+      className={`grid min-w-0 ${layout.desktopGapClassName}`}
+      style={{ gridTemplateColumns: layout.desktopColumns }}
+    >
+      <div className={`flex min-w-0 flex-col ${layout.desktopLeftGapClassName}`}>
         {calendar}
         {editor}
       </div>
 
-      <div className="flex min-w-0 flex-col gap-3">
-        {selectedDatesCard}
-        {selectedWindowsCard}
+      <div className={`flex min-w-0 flex-col ${layout.desktopRightGapClassName}`}>
+        {windowsPanel}
       </div>
     </div>
   )

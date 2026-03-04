@@ -1,5 +1,6 @@
 import { CalendarDayCell } from '@/shared/calendar'
 import type { CalendarDay } from '@/shared/calendar'
+import { useDeliveryWindowCalendarShellScale } from '../shell/DeliveryWindowCalendarShell.context'
 
 type DeliveryWindowCalendarDayCellProps = {
   day: CalendarDay
@@ -30,15 +31,20 @@ export const DeliveryWindowCalendarDayCell = ({
   onMouseEnter,
   onMouseLeave,
 }: DeliveryWindowCalendarDayCellProps) => {
+  const shellScale = useDeliveryWindowCalendarShellScale()
+  const { calendar } = shellScale
+
   const toneClass = !isCurrentMonth
-    ? 'bg-[var(--color-muted)]/10 text-[var(--color-muted)]/60'
-    : isClosed
-      ? 'bg-[var(--color-muted)]/10 text-[var(--color-muted)]'
-      : isSelected
-        ? 'bg-[var(--color-dark-blue)] text-[var(--color-page)]'
+    ? 'text-[var(--color-muted)]/45'
+    : isSelected
+      ? 'bg-[var(--color-dark-blue)] text-[var(--color-page)] '
+      : isToday
+        ? 'bg-transparent  shadow-[inset_0_0_0_1px_var(--color-dark-blue)]'
         : isInRange
           ? 'bg-[var(--color-primary)]/10 text-[var(--color-text)]'
-          : 'bg-transparent text-[var(--color-text)]'
+          : isClosed
+            ? 'bg-[var(--color-muted)]/2 text-[var(--color-border-accent)]'
+            : 'bg-transparent text-[var(--color-text)]'
 
   return (
     <CalendarDayCell
@@ -51,20 +57,26 @@ export const DeliveryWindowCalendarDayCell = ({
       onMouseLeave={onMouseLeave}
       ariaLabel={ariaLabel}
       isToday={isToday}
-      className={`relative flex h-14 flex-col items-start border-t border-r border-[var(--color-border-accent)] p-1 text-xs outline-none transition-colors ${toneClass}`}
+      className={`relative flex flex-col items-center justify-center rounded-3xl border border-transparent outline-none transition-colors ${calendar.dayCellClassName} ${toneClass}`}
     >
-      <span className="text-[11px] font-semibold">{day.date.getDate()}</span>
+      <span className={calendar.dayNumberClassName}>
+        {isCurrentMonth ? day.date.getDate() : ''}
+      </span>
 
-      <div className="flex w-full flex-1 items-center justify-center">
-        {windowCount > 0 ? (
-          <span className="rounded-full bg-[var(--color-dark-blue)]/10 px-1.5 py-0.5 text-[9px] font-semibold text-[var(--color-dark-blue)]">
+      <div className="pointer-events-none ">
+        {isCurrentMonth && windowCount > 0 ? (
+          <span
+            className={`${calendar.dayWindowCountClassName} ${isSelected ? calendar.dayWindowSelectedCountClassName : ''}`}
+          >
             {windowCount}
           </span>
         ) : null}
       </div>
 
-      {isClosed ? (
-        <span className="self-end text-[9px] font-semibold uppercase tracking-wide">Closed</span>
+      {isCurrentMonth && isClosed ? (
+        <span className={`pointer-events-none ${calendar.dayClosedClassName}`}>
+          {calendar.dayClosedLabel}
+        </span>
       ) : null}
     </CalendarDayCell>
   )

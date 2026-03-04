@@ -7,7 +7,7 @@ type PickerFooterProps = {
 
 export const PickerFooter = ({ onCancel, onDone }: PickerFooterProps) => {
   return (
-    <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border)]/60 p-3">
+    <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-accent)]/60 p-3">
       <BasicButton
         params={{
           variant: 'ghost',

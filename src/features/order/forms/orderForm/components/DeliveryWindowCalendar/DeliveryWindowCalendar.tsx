@@ -16,6 +16,8 @@ import {
   toDeliveryWindowDisplayRows,
 } from '../../flows/orderFormDeliveryWindows.flow'
 import { doesDeliveryWindowMatchRow, useDeliveryWindowCalendarActions } from './DeliveryWindowCalendar.action'
+import { DeliveryWindowCalendarDesktopLayout } from './components/layout/DeliveryWindowCalendarDesktop.layout'
+import { DeliveryWindowCalendarMobileLayout } from './components/layout/DeliveryWindowCalendarMobile.layout'
 import {
   formatSelectionRange,
   isDeliveryWindowSelectionInProgress,
@@ -25,15 +27,34 @@ import { DeliveryWindowCalendarCalendar } from './components/calendar/DeliveryWi
 import { useDeliveryWindowCalendarDayPopoverActions, type DeliveryWindowCalendarDayPopoverState } from './DeliveryWindowCalendarDayPopover.action'
 import { groupDeliveryWindowsByLocalDate } from './DeliveryWindowCalendarDayWindows.flow'
 import { DeliveryWindowCalendarEditor } from './components/editor/DeliveryWindowCalendarEditor'
+import { DeliveryWindowCalendarEditorPlaceholder } from './components/editor/DeliveryWindowCalendarEditorPlaceholder'
 import { DeliveryWindowCalendarModeSelector } from './components/controls/DeliveryWindowCalendarModeSelector'
+import { DeliveryWindowCalendarWarningNotice } from './components/controls/DeliveryWindowCalendarWarningNotice'
+import { DeliveryWindowCalendarShell } from './components/shell/DeliveryWindowCalendarShell'
 import type { DeliveryWindowCalendarMode } from './DeliveryWindowCalendar.types'
 import { DeliveryWindowCalendarWindowsList } from './components/list/DeliveryWindowCalendarWindowsList'
+import {
+  type DeliveryWindowCalendarShellScaleOverrides,
+  type DeliveryWindowCalendarShellSizePreset,
+  type DeliveryWindowCalendarShellViewMode,
+} from './DeliveryWindowCalendarShell.flow'
 import { MAX_ORDER_DELIVERY_WINDOWS } from '../../flows/orderFormDeliveryWindows.flow'
 
 const isDate = (value: unknown): value is Date =>
   value instanceof Date && !Number.isNaN(value.getTime())
+type OrderFormDeliveryWindowCalendarProps = {
+  compact?: boolean
+  viewMode?: DeliveryWindowCalendarShellViewMode
+  sizePreset?: DeliveryWindowCalendarShellSizePreset
+  sizeOverrides?: DeliveryWindowCalendarShellScaleOverrides
+}
 
-export const OrderFormDeliveryWindowCalendar = ({ compact = false }: { compact?: boolean }) => {
+export const OrderFormDeliveryWindowCalendar = ({
+  compact = false,
+  viewMode = 'auto',
+  sizePreset,
+  sizeOverrides,
+}: OrderFormDeliveryWindowCalendarProps) => {
   const [mode, setMode] = useState<DeliveryWindowCalendarMode>('range')
   const [selectionValue, setSelectionValue] = useState<CalendarValue>(null)
   const [manualEditorDates, setManualEditorDates] = useState<string[] | null>(null)
@@ -60,9 +81,11 @@ export const OrderFormDeliveryWindowCalendar = ({ compact = false }: { compact?:
   )
 
   const editorLocalDates = manualEditorDates ?? selectedLocalDates
+  const resolvedSizePreset = sizePreset ?? (compact ? 'desktopPopup550' : 'desktopRegular')
 
   const calendarModel = useCalendarModel({
     selectionMode: mode,
+    weekStartsOn: 0,
     value: selectionValue,
     onChange: (nextValue) => {
       setSelectionValue(nextValue)
@@ -83,6 +106,7 @@ export const OrderFormDeliveryWindowCalendar = ({ compact = false }: { compact?:
       const defaults = resolveDefaultTimesForSelection({
         localDates: nextSelectedDates,
         operatingHours,
+        existingRows: displayRows,
       })
 
       setStartTime(defaults.startTime)
@@ -110,6 +134,7 @@ export const OrderFormDeliveryWindowCalendar = ({ compact = false }: { compact?:
     scheduleClose,
     clearCloseTimer,
     closePopoverNow,
+    markSelectionInteraction,
   } = useDeliveryWindowCalendarDayPopoverActions({
     isBlocked: isPopoverBlocked,
     setActivePopover,
@@ -174,6 +199,7 @@ export const OrderFormDeliveryWindowCalendar = ({ compact = false }: { compact?:
     const defaults = resolveDefaultTimesForSelection({
       localDates: [localDate],
       operatingHours,
+      existingRows: displayRows,
     })
     setStartTime(defaults.startTime)
     setEndTime(defaults.endTime)
@@ -191,60 +217,92 @@ export const OrderFormDeliveryWindowCalendar = ({ compact = false }: { compact?:
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <DeliveryWindowCalendarModeSelector
-        mode={mode}
-        onChangeMode={(nextMode) => {
-          setMode(nextMode)
-          setSelectionValue(null)
-          setManualEditorDates(null)
-          setActivePopover(null)
-        }}
-      />
+    <DeliveryWindowCalendarShell
+      viewMode={viewMode}
+      sizePreset={resolvedSizePreset}
+      sizeOverrides={sizeOverrides}
+    >
+      {({ resolvedViewMode }) => {
+        const calendarNode = (
+          <DeliveryWindowCalendarCalendar
+            model={calendarModel}
+            operatingHours={operatingHours}
+            timeZone={timeZone}
+            windowsByDate={windowsByDate}
+            activePopover={activePopover}
+            onOpenWindowsPopover={openWindowsPopover}
+            onOpenClosedWarningPopover={openClosedWarningPopover}
+            onScheduleClosePopover={scheduleClose}
+            onKeepPopoverOpen={clearCloseTimer}
+            onClosePopoverNow={closePopoverNow}
+            onMarkSelectionInteraction={markSelectionInteraction}
+            onAddWindowForDate={handleAddWindowForDate}
+            onRemoveWindow={removeWindow}
+            onEditWindow={handleEditWindow}
+            isPopoverBlocked={isPopoverBlocked}
+            disableAddWindow={formState.delivery_windows.length >= MAX_ORDER_DELIVERY_WINDOWS}
+          />
+        )
 
-      <DeliveryWindowCalendarCalendar
-        model={calendarModel}
-        operatingHours={operatingHours}
-        timeZone={timeZone}
-        windowsByDate={windowsByDate}
-        activePopover={activePopover}
-        onOpenWindowsPopover={openWindowsPopover}
-        onOpenClosedWarningPopover={openClosedWarningPopover}
-        onScheduleClosePopover={scheduleClose}
-        onKeepPopoverOpen={clearCloseTimer}
-        onClosePopoverNow={closePopoverNow}
-        onAddWindowForDate={handleAddWindowForDate}
-        onRemoveWindow={removeWindow}
-        onEditWindow={handleEditWindow}
-        isPopoverBlocked={isPopoverBlocked}
-        disableAddWindow={formState.delivery_windows.length >= MAX_ORDER_DELIVERY_WINDOWS}
-      />
+        const editorNode = (
+          <DeliveryWindowCalendarEditor
+            isOpen={isEditorOpen}
+            startTime={startTime}
+            endTime={endTime}
+            onChangeStartTime={setStartTime}
+            onChangeEndTime={setEndTime}
+            onCancel={() => {
+              setIsEditorOpen(false)
+              setManualEditorDates(null)
+              setEditingWindow(null)
+            }}
+            onApply={applySelection}
+          />
+        )
+        const desktopEditorNode = isEditorOpen ? editorNode : <DeliveryWindowCalendarEditorPlaceholder />
 
-      <DeliveryWindowCalendarEditor
-        isOpen={isEditorOpen}
-        selectedLocalDates={editorLocalDates}
-        startTime={startTime}
-        endTime={endTime}
-        onChangeStartTime={setStartTime}
-        onChangeEndTime={setEndTime}
-        onCancel={() => {
-          setIsEditorOpen(false)
-          setManualEditorDates(null)
-          setEditingWindow(null)
-        }}
-        onApply={applySelection}
-      />
+        const windowsPanel = (
+          <DeliveryWindowCalendarWindowsList
+            rows={displayRows}
+            onClearAll={clearAllWindows}
+            onRemove={removeWindow}
+            onEdit={handleEditWindow}
+          />
+        )
 
-      <DeliveryWindowCalendarWindowsList
-        rows={displayRows}
-        onClearAll={clearAllWindows}
-        onRemove={removeWindow}
-        onEdit={handleEditWindow}
-      />
+        return (
+          <div className="flex min-w-0 flex-col gap-2">
+            <DeliveryWindowCalendarModeSelector
+              mode={mode}
+              onChangeMode={(nextMode) => {
+                setMode(nextMode)
+                setSelectionValue(null)
+                setManualEditorDates(null)
+                setActivePopover(null)
+              }}
+            />
 
-      <p className={`text-[var(--color-muted)] ${compact ? 'text-[10px]' : 'text-xs'}`}>
-        {message ?? helperText}
-      </p>
-    </div>
+            {resolvedViewMode === 'mobile' ? (
+              <DeliveryWindowCalendarMobileLayout
+                calendar={calendarNode}
+                windowsPanel={windowsPanel}
+                editor={editorNode}
+              />
+            ) : (
+              <DeliveryWindowCalendarDesktopLayout
+                calendar={calendarNode}
+                windowsPanel={windowsPanel}
+                editor={desktopEditorNode}
+              />
+            )}
+            <DeliveryWindowCalendarWarningNotice
+              message={message}
+              helperText={helperText}
+              compact={compact}
+            />
+          </div>
+        )
+      }}
+    </DeliveryWindowCalendarShell>
   )
 }

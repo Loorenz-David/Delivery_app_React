@@ -259,6 +259,7 @@ export const useCalendarModel = (props: UseCalendarModelProps = {}): CalendarMod
 
   const [internalSelection, setInternalSelection] = useState<CalendarValue>(initialSelection)
   const [hoveredDate, setHoveredDateState] = useState<Date | null>(null)
+  const [lastInteractionDayKey, setLastInteractionDayKey] = useState<string | null>(null)
 
   const initialVisibleMonth = useMemo(() => {
     if (isMonthControlled && props.visibleMonth) {
@@ -284,6 +285,11 @@ export const useCalendarModel = (props: UseCalendarModelProps = {}): CalendarMod
     isSelectionControlled ? props.value : internalSelection,
   )
   const selectedValue = normalizedSelectedValue === undefined ? getEmptyValueForMode(selectionMode) : normalizedSelectedValue
+  const latestSelectionRef = useRef<CalendarValue>(selectedValue)
+
+  useEffect(() => {
+    latestSelectionRef.current = selectedValue
+  }, [selectedValue])
 
   const visibleMonth = useMemo(() => {
     if (isMonthControlled && props.visibleMonth) {
@@ -304,6 +310,15 @@ export const useCalendarModel = (props: UseCalendarModelProps = {}): CalendarMod
   const flatDays = useMemo(() => daysMatrix.flat(), [daysMatrix])
 
   const focusDayKey = useMemo(() => {
+    if (lastInteractionDayKey) {
+      const hasInteractionKey = flatDays.some(
+        (day) => getCalendarDayKey(day.date) === lastInteractionDayKey,
+      )
+      if (hasInteractionKey) {
+        return lastInteractionDayKey
+      }
+    }
+
     return resolveFocusDayKey({
       selectionMode,
       value: selectedValue,
@@ -311,7 +326,7 @@ export const useCalendarModel = (props: UseCalendarModelProps = {}): CalendarMod
       today,
       flatDays,
     })
-  }, [selectionMode, selectedValue, visibleMonth, today, flatDays])
+  }, [lastInteractionDayKey, selectionMode, selectedValue, visibleMonth, today, flatDays])
 
   const hasLoggedInvalidControlledMonthRef = useRef(false)
 
@@ -473,9 +488,19 @@ export const useCalendarModel = (props: UseCalendarModelProps = {}): CalendarMod
       }
 
       const normalizedDate = normalizeToCalendarDay(date)
-      const nextValue = selectByMode(selectionMode, selectedValue, normalizedDate)
+      const nextDayKey = getCalendarDayKey(normalizedDate)
+      setLastInteractionDayKey(nextDayKey)
+      const currentSelection = isSelectionControlled
+        ? latestSelectionRef.current
+        : selectedValue
+      const nextValue = selectByMode(selectionMode, currentSelection, normalizedDate)
 
       if (isSelectionControlled) {
+        const normalizedNextValue = normalizeCalendarValue(nextValue)
+        latestSelectionRef.current =
+          normalizedNextValue === undefined
+            ? getEmptyValueForMode(selectionMode)
+            : normalizedNextValue
         props.onChange?.(nextValue)
       } else {
         setInternalSelection(nextValue)

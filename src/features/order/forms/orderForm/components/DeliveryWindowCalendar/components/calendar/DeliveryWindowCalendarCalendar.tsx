@@ -1,14 +1,18 @@
+import type { ReactNode } from 'react'
 import {
   CalendarRoot,
   type CalendarModel,
 } from '@/shared/calendar'
 import type { CostumerOperatingHours } from '@/features/costumer'
+import { BackArrowIcon, BoldArrowIcon } from '@/assets/icons'
 import type { DeliveryWindowDisplayRow } from '../../../../flows/orderFormDeliveryWindows.flow'
 import { formatDateInTimeZone, isDayClosedByOperatingHours } from '../../../../flows/orderFormDeliveryWindows.flow'
+import { WEEKDAY_LABELS } from '../../DeliveryWindowCalendarLayout.flow'
 import { DeliveryWindowCalendarDayCell } from './DeliveryWindowCalendarDayCell'
 import { DeliveryWindowCalendarDayPopover } from './DeliveryWindowCalendarDayPopover'
 import type { DeliveryWindowCalendarDayPopoverState } from '../../DeliveryWindowCalendarDayPopover.action'
 import { getDeliveryWindowsForLocalDate } from '../../DeliveryWindowCalendarDayWindows.flow'
+import { useDeliveryWindowCalendarShellScale } from '../shell/DeliveryWindowCalendarShell.context'
 
 type DeliveryWindowCalendarCalendarProps = {
   model: CalendarModel
@@ -21,11 +25,13 @@ type DeliveryWindowCalendarCalendarProps = {
   onScheduleClosePopover: () => void
   onKeepPopoverOpen: () => void
   onClosePopoverNow: () => void
+  onMarkSelectionInteraction: () => void
   onAddWindowForDate: (localDate: string) => void
   onRemoveWindow: (row: DeliveryWindowDisplayRow) => void
   onEditWindow: (row: DeliveryWindowDisplayRow) => void
   isPopoverBlocked: boolean
   disableAddWindow: boolean
+  footer?: ReactNode
 }
 
 export const DeliveryWindowCalendarCalendar = ({
@@ -39,43 +45,62 @@ export const DeliveryWindowCalendarCalendar = ({
   onScheduleClosePopover,
   onKeepPopoverOpen,
   onClosePopoverNow,
+  onMarkSelectionInteraction,
   onAddWindowForDate,
   onRemoveWindow,
   onEditWindow,
   isPopoverBlocked,
   disableAddWindow,
+  footer,
 }: DeliveryWindowCalendarCalendarProps) => {
+  const shellScale = useDeliveryWindowCalendarShellScale()
+  const { calendar } = shellScale
+  const visibleDaysMatrix = model.daysMatrix.filter((weekRow) =>
+    weekRow.some((dayEntry) => dayEntry.isCurrentMonth),
+  )
+  const displayModel = { ...model, daysMatrix: visibleDaysMatrix }
+
   return (
-    <div className="overflow-hidden rounded-md border border-[var(--color-border-accent)] bg-[var(--color-page)]">
+    <div className={calendar.rootClassName}>
       <CalendarRoot
-        model={model}
-        renderHeader={(calendar) => {
-          const monthLabel = calendar.visibleMonth.toLocaleDateString(undefined, {
+        model={displayModel}
+        renderHeader={(calendarModel) => {
+          const monthLabel = calendarModel.visibleMonth.toLocaleDateString(undefined, {
             month: 'long',
             year: 'numeric',
           })
 
           return (
-            <div className="flex items-center justify-between border-b border-[var(--color-border-accent)] bg-[var(--color-page)] px-3 py-2">
-              <button
-                type="button"
-                onClick={calendar.prevMonth}
-                aria-label="Previous month"
-                className="rounded-md border border-[var(--color-border-accent)] px-2 py-1 text-xs text-[var(--color-muted)] transition-colors hover:bg-[var(--color-border-accent)]/40 hover:text-[var(--color-text)]"
-              >
-                Prev
-              </button>
+            <div className={calendar.headerClassName}>
+              <div className={calendar.headerRowClassName}>
+                <button
+                  type="button"
+                  onClick={calendarModel.prevMonth}
+                  aria-label="Previous month"
+                  className={calendar.navButtonClassName}
+                >
+                  <BoldArrowIcon className={ `rotate-180 ${calendar.navIconClassName}`} />
+                </button>
 
-              <div className="text-sm font-semibold text-[var(--color-text)]">{monthLabel}</div>
+                <div className={calendar.monthTitleClassName}>{monthLabel}</div>
 
-              <button
-                type="button"
-                onClick={calendar.nextMonth}
-                aria-label="Next month"
-                className="rounded-md border border-[var(--color-border-accent)] px-2 py-1 text-xs text-[var(--color-muted)] transition-colors hover:bg-[var(--color-border-accent)]/40 hover:text-[var(--color-text)]"
-              >
-                Next
-              </button>
+                <button
+                  type="button"
+                  onClick={calendarModel.nextMonth}
+                  aria-label="Next month"
+                  className={calendar.navButtonClassName}
+                >
+                  <BoldArrowIcon className={`${calendar.navIconClassName} `} />
+                </button>
+              </div>
+
+              <div className={calendar.weekdayRowClassName}>
+                {WEEKDAY_LABELS.map((dayLabel) => (
+                  <div key={dayLabel} className={calendar.weekdayLabelClassName}>
+                    {dayLabel}
+                  </div>
+                ))}
+              </div>
             </div>
           )
         }}
@@ -125,6 +150,7 @@ export const DeliveryWindowCalendarCalendar = ({
                   isClosed={closedByHours}
                   windowCount={windowCount}
                   onSelect={() => {
+                    onMarkSelectionInteraction()
                     if (closedByHours) {
                       onOpenClosedWarningPopover(dayKey)
                       return
@@ -150,6 +176,7 @@ export const DeliveryWindowCalendarCalendar = ({
           )
         }}
       />
+      {footer ? <div className={calendar.footerClassName}>{footer}</div> : null}
     </div>
   )
 }

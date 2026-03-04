@@ -40,6 +40,7 @@ export const DeliveryWindowCalendarDayPopover = ({
       reference={reference}
       offSetNum={6}
       classes="h-full"
+      outsidePressEvent="click"
     >
       <div
         className="w-64 rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-page)] p-2 shadow-lg"

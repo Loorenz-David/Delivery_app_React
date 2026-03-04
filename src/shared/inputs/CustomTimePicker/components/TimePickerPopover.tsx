@@ -25,12 +25,11 @@ export const TimePickerPopover = ({
       onOpenChange={onOpenChange}
       reference={reference}
       classes="w-full"
-      removeFlip
       offSetNum={6}
       crossOffSetNum={0}
     >
       <div
-        className="rounded-xl border border-[var(--color-border)] bg-[var(--color-page)] shadow-xl"
+        className="rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-page)] shadow-2xl"
         style={{
           width,
           minHeight: height,

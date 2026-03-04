@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 export type DeliveryWindowCalendarDayPopoverState = {
   dayKey: string
@@ -13,6 +13,15 @@ export const useDeliveryWindowCalendarDayPopoverActions = ({
   setActivePopover: (state: DeliveryWindowCalendarDayPopoverState | null) => void
 }) => {
   const closeTimerRef = useRef<number | null>(null)
+  const openTimerRef = useRef<number | null>(null)
+  const suppressOpenUntilRef = useRef(0)
+
+  const clearOpenTimer = useCallback(() => {
+    if (openTimerRef.current !== null) {
+      window.clearTimeout(openTimerRef.current)
+      openTimerRef.current = null
+    }
+  }, [])
 
   const clearCloseTimer = useCallback(() => {
     if (closeTimerRef.current !== null) {
@@ -21,37 +30,65 @@ export const useDeliveryWindowCalendarDayPopoverActions = ({
     }
   }, [])
 
+  useEffect(() => {
+    return () => {
+      clearCloseTimer()
+      clearOpenTimer()
+    }
+  }, [clearCloseTimer, clearOpenTimer])
+
   const openWindowsPopover = useCallback(
     (dayKey: string) => {
       if (isBlocked) {
         return
       }
+      if (Date.now() < suppressOpenUntilRef.current) {
+        return
+      }
       clearCloseTimer()
-      setActivePopover({ dayKey, kind: 'windows' })
+      clearOpenTimer()
+      openTimerRef.current = window.setTimeout(() => {
+        if (isBlocked) {
+          return
+        }
+        if (Date.now() < suppressOpenUntilRef.current) {
+          return
+        }
+        setActivePopover({ dayKey, kind: 'windows' })
+      }, 90)
     },
-    [clearCloseTimer, isBlocked, setActivePopover],
+    [clearCloseTimer, clearOpenTimer, isBlocked, setActivePopover],
   )
 
   const openClosedWarningPopover = useCallback(
     (dayKey: string) => {
       clearCloseTimer()
+      clearOpenTimer()
       setActivePopover({ dayKey, kind: 'closed-warning' })
     },
-    [clearCloseTimer, setActivePopover],
+    [clearCloseTimer, clearOpenTimer, setActivePopover],
   )
 
   const scheduleClose = useCallback(() => {
     clearCloseTimer()
+    clearOpenTimer()
     closeTimerRef.current = window.setTimeout(() => {
       setActivePopover(null)
       closeTimerRef.current = null
     }, 120)
-  }, [clearCloseTimer, setActivePopover])
+  }, [clearCloseTimer, clearOpenTimer, setActivePopover])
 
   const closePopoverNow = useCallback(() => {
     clearCloseTimer()
+    clearOpenTimer()
     setActivePopover(null)
-  }, [clearCloseTimer, setActivePopover])
+  }, [clearCloseTimer, clearOpenTimer, setActivePopover])
+
+  const markSelectionInteraction = useCallback(() => {
+    clearOpenTimer()
+    clearCloseTimer()
+    suppressOpenUntilRef.current = Date.now() + 220
+  }, [clearCloseTimer, clearOpenTimer])
 
   return {
     openWindowsPopover,
@@ -59,5 +96,6 @@ export const useDeliveryWindowCalendarDayPopoverActions = ({
     scheduleClose,
     clearCloseTimer,
     closePopoverNow,
+    markSelectionInteraction,
   }
 }

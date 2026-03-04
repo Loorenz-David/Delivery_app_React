@@ -54,7 +54,7 @@ export const buildDayCellKeyDownHandler = ({
   }
 }
 
-export const CalendarDayCell = forwardRef<HTMLDivElement, CalendarDayCellProps>(
+export const CalendarDayCell = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
   (
     {
       day,
@@ -72,12 +72,11 @@ export const CalendarDayCell = forwardRef<HTMLDivElement, CalendarDayCellProps>(
     },
     ref,
   ) => {
-    const handleKeyDown = buildDayCellKeyDownHandler({ onSelect, onKeyDown })
-
     const dayKey = getCalendarDayKey(day.date)
 
     return (
-      <div
+      <button
+        type="button"
         ref={ref}
         role='gridcell'
         tabIndex={tabIndex}
@@ -89,13 +88,13 @@ export const CalendarDayCell = forwardRef<HTMLDivElement, CalendarDayCellProps>(
         data-selected={isSelected ? 'true' : undefined}
         data-in-range={isInRange ? 'true' : undefined}
         onClick={onSelect}
-        onKeyDown={handleKeyDown}
+        onKeyDown={onKeyDown}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className={className}
+        className={`cursor-pointer ${className ?? ''}`}
       >
         {children}
-      </div>
+      </button>
     )
   },
 )

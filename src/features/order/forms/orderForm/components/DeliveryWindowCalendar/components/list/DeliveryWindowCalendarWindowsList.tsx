@@ -1,5 +1,7 @@
 import type { DeliveryWindowDisplayRow } from '../../../../flows/orderFormDeliveryWindows.flow'
 import { BasicButton } from '@/shared/buttons/BasicButton'
+import { useDeliveryWindowCalendarShellScale } from '../shell/DeliveryWindowCalendarShell.context'
+import { DeliveryWindowCalendarWindowRowCard } from '../cards/DeliveryWindowCalendarWindowRowCard'
 
 type DeliveryWindowCalendarWindowsListProps = {
   rows: DeliveryWindowDisplayRow[]
@@ -14,58 +16,65 @@ export const DeliveryWindowCalendarWindowsList = ({
   onRemove,
   onEdit,
 }: DeliveryWindowCalendarWindowsListProps) => {
+  const shellScale = useDeliveryWindowCalendarShellScale()
+  const { list } = shellScale
+
+  const groupedRows = rows.reduce<Record<string, DeliveryWindowDisplayRow[]>>((acc, row) => {
+    if (!acc[row.date]) {
+      acc[row.date] = []
+    }
+    acc[row.date].push(row)
+    return acc
+  }, {})
+
+  const sortedDates = Object.keys(groupedRows).sort((a, b) => a.localeCompare(b))
+
   return (
-    <div className="rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-page)] p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-[var(--color-text)]">Delivery windows</span>
-        <BasicButton
+    <div className={list.rootClassName}>
+      <div >
+        <div className={list.headerClassName}>
+          <h3 className={list.titleClassName}>Time Windows</h3>
+          <BasicButton
           params={{
             variant: 'text',
             onClick: onClearAll,
-            className:
-              'h-auto border-0 bg-transparent px-0 py-0 text-[10px] font-normal normal-case tracking-normal text-[var(--color-muted)] underline hover:bg-transparent',
+            className: list.clearActionClassName,
           }}
         >
-          Clear all
+          Clear
         </BasicButton>
+        </div>
+        
       </div>
       {rows.length ? (
-        <div className="flex flex-col divide-y divide-[var(--color-border-accent)]">
-          {rows.map((row) => (
-            <div key={row.key} className="flex items-center justify-between py-2 text-xs">
-              <div className="flex gap-2 text-[var(--color-text)]">
-                <span className="font-semibold">{row.date}</span>
-                <span>{row.start}</span>
-                <span>to</span>
-                <span>{row.end}</span>
+        <div className={list.groupsClassName}>
+          {sortedDates.map((localDate) => {
+            const dayRows = [...groupedRows[localDate]].sort((a, b) => {
+              if (a.start !== b.start) {
+                return a.start.localeCompare(b.start)
+              }
+              return a.end.localeCompare(b.end)
+            })
+
+            return (
+              <div key={localDate} className={list.groupClassName}>
+                <div className={list.windowsStackClassName}>
+                  {dayRows.map((row) => (
+                    <DeliveryWindowCalendarWindowRowCard
+                      key={row.key}
+                      localDate={localDate}
+                      row={row}
+                      onEdit={onEdit}
+                      onRemove={onRemove}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-2 divide-x divide-[var(--color-border-accent)] gap-x-3">
-                <BasicButton
-                  params={{
-                    variant: 'text',
-                    onClick: () => onEdit(row),
-                    className:
-                      'h-auto border-0 bg-transparent px-0 py-0 text-[10px]  text-[var(--color-dark-blue)] ',
-                  }}
-                >
-                  Edit
-                </BasicButton>
-                <BasicButton
-                  params={{
-                    variant: 'text',
-                    onClick: () => onRemove(row),
-                    className:
-                      'h-auto border-0 bg-transparent px-0 py-0 text-[10px] font-normal normal-case tracking-normal text-red-500 hover:bg-red-100',
-                  }}
-                >
-                  Remove
-                </BasicButton>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : (
-        <div className="text-[11px] text-[var(--color-muted)]">No delivery windows selected yet.</div>
+        <div className={list.emptyClassName}>No delivery windows selected yet.</div>
       )}
     </div>
   )

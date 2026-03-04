@@ -7,6 +7,7 @@ import {
 
 import {
   resolveOperatingDayAvailability,
+  type DeliveryWindowDisplayRow,
 } from '../../flows/orderFormDeliveryWindows.flow'
 import type { DeliveryWindowCalendarMode } from './DeliveryWindowCalendar.types'
 
@@ -63,9 +64,11 @@ export const formatSelectionRange = (range: CalendarRangeValue) => {
 export const resolveDefaultTimesForSelection = ({
   localDates,
   operatingHours,
+  existingRows = [],
 }: {
   localDates: string[]
   operatingHours: CostumerOperatingHours[]
+  existingRows?: DeliveryWindowDisplayRow[]
 }) => {
   if (!localDates.length) {
     return { startTime: null as string | null, endTime: null as string | null }
@@ -86,9 +89,26 @@ export const resolveDefaultTimesForSelection = ({
     return { startTime: null, endTime: null }
   }
 
+  const selectedDateSet = new Set(localDates)
+  const nextStarts = existingRows
+    .filter((row) => selectedDateSet.has(row.date))
+    .map((row) => addOneMinute(row.end))
+    .filter((value): value is string => value !== null)
+
+  const latestNextStart = nextStarts.length
+    ? nextStarts.reduce((latest, current) => (current > latest ? current : latest))
+    : null
+
+  const slotStart = slots[0]?.openTime ?? null
+  const slotEnd = slots[0]?.closeTime ?? null
+  const resolvedStart =
+    latestNextStart && isBetweenInclusive(latestNextStart, slotStart, slotEnd)
+      ? latestNextStart
+      : slotStart
+
   return {
-    startTime: slots[0]?.openTime ?? null,
-    endTime: slots[0]?.closeTime ?? null,
+    startTime: resolvedStart,
+    endTime: slotEnd,
   }
 }
 
@@ -121,4 +141,45 @@ export const isDeliveryWindowSelectionInProgress = ({
   }
 
   return false
+}
+
+const addOneMinute = (hhmm: string): string | null => {
+  const parsed = parseHHmm(hhmm)
+  if (!parsed) {
+    return null
+  }
+  const total = parsed.hour * 60 + parsed.minute + 1
+  if (total > 23 * 60 + 59) {
+    return null
+  }
+  const hour = Math.floor(total / 60)
+  const minute = total % 60
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
+
+const parseHHmm = (value: string): { hour: number; minute: number } | null => {
+  const match = /^(\d{2}):(\d{2})$/.exec(value)
+  if (!match) {
+    return null
+  }
+  const hour = Number(match[1])
+  const minute = Number(match[2])
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    return null
+  }
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null
+  }
+  return { hour, minute }
+}
+
+const isBetweenInclusive = (
+  value: string,
+  minimum: string | null,
+  maximum: string | null,
+) => {
+  if (!minimum || !maximum) {
+    return true
+  }
+  return value >= minimum && value <= maximum
 }

@@ -50,7 +50,7 @@ export type DayRenderParams = {
   isInRange: boolean
   onSelect: () => void
   tabIndex: number
-  onKeyDown: (event: KeyboardEvent<HTMLElement>) => void
+  onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void
   onMouseEnter?: () => void
   onMouseLeave?: () => void
   ariaLabel: string

@@ -1,4 +1,5 @@
 import { DELIVERY_WINDOW_CALENDAR_MODE_OPTIONS, type DeliveryWindowCalendarMode } from '../../DeliveryWindowCalendar.types'
+import { useDeliveryWindowCalendarShellScale } from '../shell/DeliveryWindowCalendarShell.context'
 
 type DeliveryWindowCalendarModeSelectorProps = {
   mode: DeliveryWindowCalendarMode
@@ -9,8 +10,11 @@ export const DeliveryWindowCalendarModeSelector = ({
   mode,
   onChangeMode,
 }: DeliveryWindowCalendarModeSelectorProps) => {
+  const shellScale = useDeliveryWindowCalendarShellScale()
+  const { mode: modeScale } = shellScale
+
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className={modeScale.rootClassName}>
       {DELIVERY_WINDOW_CALENDAR_MODE_OPTIONS.map((option) => {
         const isActive = option.value === mode
 
@@ -19,10 +23,10 @@ export const DeliveryWindowCalendarModeSelector = ({
             key={option.value}
             type="button"
             onClick={() => onChangeMode(option.value)}
-            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+            className={`${modeScale.buttonClassName} ${
               isActive
-                ? 'border-[var(--color-text)] bg-[var(--color-text)] text-[var(--color-page)]'
-                : 'border-[var(--color-border-accent)] bg-transparent text-[var(--color-muted)]'
+                ? modeScale.activeButtonClassName
+                : modeScale.inactiveButtonClassName
             }`}
           >
             {option.label}

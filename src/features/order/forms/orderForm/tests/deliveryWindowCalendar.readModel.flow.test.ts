@@ -1,7 +1,6 @@
 import {
   buildSelectedDateSummaries,
   buildSelectedDateWindowGroups,
-  buildSelectionBannerModel,
   buildTimeWindowsCardModel,
 } from '../components/DeliveryWindowCalendar/DeliveryWindowCalendar.readModel.flow'
 
@@ -51,17 +50,6 @@ export const runDeliveryWindowCalendarReadModelFlowTests = () => {
     const groups = buildSelectedDateWindowGroups({ selectedDates, windowsByDate })
     assert(groups.length === 2, 'groups should be created per selected date')
     assert(groups[0]?.windows[0]?.start === '09:00', 'windows in group should be sorted by start time')
-  }
-
-  {
-    const banner = buildSelectionBannerModel({
-      selectedDates: ['2026-03-05', '2026-03-06'],
-      maxWindowsReached: false,
-    })
-
-    assert(banner.visible, 'banner should be visible when dates are selected')
-    assert(banner.label === '2 dates selected', 'banner label should reflect selected count')
-    assert(!banner.addDisabled, 'banner add should be enabled when max has not been reached')
   }
 
   {

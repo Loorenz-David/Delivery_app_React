@@ -212,7 +212,7 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
         </BasicButton>
       </div>
 
-      <OrderFormDeliveryWindowCalendar compact={compact} />
+      <OrderFormDeliveryWindowCalendar compact={compact} sizePreset={"desktopPopup550"}  />
 
 
     </form>

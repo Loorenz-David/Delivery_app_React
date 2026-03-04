@@ -1,7 +1,6 @@
 import type { DeliveryWindowDisplayRow } from '../../flows/orderFormDeliveryWindows.flow'
 import {
   formatNoSelectedWindowsHelper,
-  formatSelectedDatesCountLabel,
 } from './DeliveryWindowCalendarLayout.flow'
 
 export type SelectedDateSummary = {
@@ -44,23 +43,6 @@ export const buildSelectedDateWindowGroups = ({
       return a.end.localeCompare(b.end)
     }),
   }))
-
-export const buildSelectionBannerModel = ({
-  selectedDates,
-  maxWindowsReached,
-}: {
-  selectedDates: string[]
-  maxWindowsReached: boolean
-}) => {
-  const selectionCount = selectedDates.length
-
-  return {
-    visible: selectionCount > 0,
-    selectionCount,
-    label: formatSelectedDatesCountLabel(selectionCount),
-    addDisabled: maxWindowsReached || selectionCount === 0,
-  }
-}
 
 export const buildTimeWindowsCardModel = ({
   selectedDates,

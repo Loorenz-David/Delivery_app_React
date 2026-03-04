@@ -1,6 +1,3 @@
-export const formatSelectedDatesCountLabel = (count: number) =>
-  `${count} date${count === 1 ? '' : 's'} selected`
-
 export const formatNoSelectedDatesHelper = () => 'Click on dates to select them'
 
 export const formatNoSelectedWindowsHelper = () => 'Select dates to view time windows'
@@ -15,7 +12,6 @@ export const formatLocalDateCardLabel = (localDate: string) => {
   return utcDate.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
   })
 }
 
