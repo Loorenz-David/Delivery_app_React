@@ -3,12 +3,12 @@ import {
   type CalendarModel,
 } from '@/shared/calendar'
 import type { CostumerOperatingHours } from '@/features/costumer'
-import type { DeliveryWindowDisplayRow } from '../../flows/orderFormDeliveryWindows.flow'
-import { formatDateInTimeZone, isDayClosedByOperatingHours } from '../../flows/orderFormDeliveryWindows.flow'
+import type { DeliveryWindowDisplayRow } from '../../../../flows/orderFormDeliveryWindows.flow'
+import { formatDateInTimeZone, isDayClosedByOperatingHours } from '../../../../flows/orderFormDeliveryWindows.flow'
 import { DeliveryWindowCalendarDayCell } from './DeliveryWindowCalendarDayCell'
 import { DeliveryWindowCalendarDayPopover } from './DeliveryWindowCalendarDayPopover'
-import type { DeliveryWindowCalendarDayPopoverState } from './DeliveryWindowCalendarDayPopover.action'
-import { getDeliveryWindowsForLocalDate } from './DeliveryWindowCalendarDayWindows.flow'
+import type { DeliveryWindowCalendarDayPopoverState } from '../../DeliveryWindowCalendarDayPopover.action'
+import { getDeliveryWindowsForLocalDate } from '../../DeliveryWindowCalendarDayWindows.flow'
 
 type DeliveryWindowCalendarCalendarProps = {
   model: CalendarModel

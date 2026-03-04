@@ -2,8 +2,7 @@ import type { ReactNode } from 'react'
 import { FloatingPopover } from '@/shared/popups/FloatingPopover/FloatingPopover'
 import { BasicButton } from '@/shared/buttons/BasicButton'
 
-import type { DeliveryWindowDisplayRow } from '../../flows/orderFormDeliveryWindows.flow'
-import { buildDayWindowCountLabel } from './DeliveryWindowCalendarDayWindows.flow'
+import type { DeliveryWindowDisplayRow } from '../../../../flows/orderFormDeliveryWindows.flow'
 
 type DeliveryWindowCalendarDayPopoverProps = {
   open: boolean

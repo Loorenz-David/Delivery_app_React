@@ -21,13 +21,13 @@ import {
   isDeliveryWindowSelectionInProgress,
   resolveDefaultTimesForSelection,
 } from './DeliveryWindowCalendar.flow'
-import { DeliveryWindowCalendarCalendar } from './DeliveryWindowCalendarCalendar'
+import { DeliveryWindowCalendarCalendar } from './components/calendar/DeliveryWindowCalendarCalendar'
 import { useDeliveryWindowCalendarDayPopoverActions, type DeliveryWindowCalendarDayPopoverState } from './DeliveryWindowCalendarDayPopover.action'
 import { groupDeliveryWindowsByLocalDate } from './DeliveryWindowCalendarDayWindows.flow'
-import { DeliveryWindowCalendarEditor } from './DeliveryWindowCalendarEditor'
-import { DeliveryWindowCalendarModeSelector } from './DeliveryWindowCalendarModeSelector'
+import { DeliveryWindowCalendarEditor } from './components/editor/DeliveryWindowCalendarEditor'
+import { DeliveryWindowCalendarModeSelector } from './components/controls/DeliveryWindowCalendarModeSelector'
 import type { DeliveryWindowCalendarMode } from './DeliveryWindowCalendar.types'
-import { DeliveryWindowCalendarWindowsList } from './DeliveryWindowCalendarWindowsList'
+import { DeliveryWindowCalendarWindowsList } from './components/list/DeliveryWindowCalendarWindowsList'
 import { MAX_ORDER_DELIVERY_WINDOWS } from '../../flows/orderFormDeliveryWindows.flow'
 
 const isDate = (value: unknown): value is Date =>

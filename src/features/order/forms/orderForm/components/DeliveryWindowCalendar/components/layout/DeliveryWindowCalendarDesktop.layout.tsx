@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { DeliveryWindowCalendarDensity } from './DeliveryWindowCalendarDensity.flow'
+import type { DeliveryWindowCalendarDensity } from '../../DeliveryWindowCalendarDensity.flow'
 
 type DeliveryWindowCalendarDesktopLayoutProps = {
   calendar: ReactNode

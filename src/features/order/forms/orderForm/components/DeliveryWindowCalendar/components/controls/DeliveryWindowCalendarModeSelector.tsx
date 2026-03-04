@@ -1,4 +1,4 @@
-import { DELIVERY_WINDOW_CALENDAR_MODE_OPTIONS, type DeliveryWindowCalendarMode } from './DeliveryWindowCalendar.types'
+import { DELIVERY_WINDOW_CALENDAR_MODE_OPTIONS, type DeliveryWindowCalendarMode } from '../../DeliveryWindowCalendar.types'
 
 type DeliveryWindowCalendarModeSelectorProps = {
   mode: DeliveryWindowCalendarMode

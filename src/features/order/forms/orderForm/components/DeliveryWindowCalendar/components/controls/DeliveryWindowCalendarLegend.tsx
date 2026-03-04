@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
 import { DeliveryWindowCalendarModeSelector } from './DeliveryWindowCalendarModeSelector'
-import type { DeliveryWindowCalendarMode } from './DeliveryWindowCalendar.types'
-import type { DeliveryWindowCalendarDensity } from './DeliveryWindowCalendarDensity.flow'
+import type { DeliveryWindowCalendarMode } from '../../DeliveryWindowCalendar.types'
+import type { DeliveryWindowCalendarDensity } from '../../DeliveryWindowCalendarDensity.flow'
 
 type DeliveryWindowCalendarLegendProps = {
   mode: DeliveryWindowCalendarMode

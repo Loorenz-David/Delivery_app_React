@@ -1,6 +1,6 @@
 import { PlusIcon } from '@/assets/icons'
 import { BasicButton } from '@/shared/buttons/BasicButton'
-import type { DeliveryWindowCalendarDensity } from './DeliveryWindowCalendarDensity.flow'
+import type { DeliveryWindowCalendarDensity } from '../../DeliveryWindowCalendarDensity.flow'
 
 type DeliveryWindowCalendarSelectionBannerProps = {
   label: string

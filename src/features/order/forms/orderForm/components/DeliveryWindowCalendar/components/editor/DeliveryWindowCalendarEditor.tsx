@@ -1,6 +1,6 @@
 import { CustomTimePicker } from '@/shared/inputs/CustomTimePicker'
 import { BasicButton } from '@/shared/buttons/BasicButton'
-import type { DeliveryWindowCalendarDensity } from './DeliveryWindowCalendarDensity.flow'
+import type { DeliveryWindowCalendarDensity } from '../../DeliveryWindowCalendarDensity.flow'
 
 type DeliveryWindowCalendarEditorProps = {
   isOpen: boolean

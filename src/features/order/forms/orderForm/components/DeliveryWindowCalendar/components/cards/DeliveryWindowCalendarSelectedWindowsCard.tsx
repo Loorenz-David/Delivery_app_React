@@ -1,10 +1,10 @@
 import { BasicButton } from '@/shared/buttons/BasicButton'
 import { TimeIcon } from '@/assets/icons'
 
-import type { DeliveryWindowDisplayRow } from '../../flows/orderFormDeliveryWindows.flow'
-import { formatLocalDateCardLabel, formatNoSelectedWindowsHelper } from './DeliveryWindowCalendarLayout.flow'
-import type { SelectedDateWindowGroup } from './DeliveryWindowCalendar.readModel.flow'
-import type { DeliveryWindowCalendarDensity } from './DeliveryWindowCalendarDensity.flow'
+import type { DeliveryWindowDisplayRow } from '../../../../flows/orderFormDeliveryWindows.flow'
+import { formatLocalDateCardLabel, formatNoSelectedWindowsHelper } from '../../DeliveryWindowCalendarLayout.flow'
+import type { SelectedDateWindowGroup } from '../../DeliveryWindowCalendar.readModel.flow'
+import type { DeliveryWindowCalendarDensity } from '../../DeliveryWindowCalendarDensity.flow'
 
 type DeliveryWindowCalendarSelectedWindowsCardProps = {
   groups: SelectedDateWindowGroup[]

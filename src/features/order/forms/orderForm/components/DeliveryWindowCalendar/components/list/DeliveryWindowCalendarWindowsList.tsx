@@ -1,4 +1,4 @@
-import type { DeliveryWindowDisplayRow } from '../../flows/orderFormDeliveryWindows.flow'
+import type { DeliveryWindowDisplayRow } from '../../../../flows/orderFormDeliveryWindows.flow'
 import { BasicButton } from '@/shared/buttons/BasicButton'
 
 type DeliveryWindowCalendarWindowsListProps = {
