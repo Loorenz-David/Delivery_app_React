@@ -1,9 +1,9 @@
-import { OrderFormFooter } from './OrderFormFooter'
-import { OrderFormFields } from './OrderFormFields'
-import { OrderFormHeader } from './OrderFormHeader'
-import { OrderFormItemsPanel } from './OrderFormItemsPanel'
-import type { OrderFormLayoutModel } from '../OrderForm.layout.model'
-import type { OrderFormExternalFlow } from '../flows/orderFormExternalRealtime.flow'
+import { OrderFormFooter } from '../../components/OrderFormFooter'
+import { OrderFormFields } from '../../components/OrderFormFields'
+import { OrderFormHeader } from '../../components/OrderFormHeader'
+import { OrderFormItemsPanel } from '../../components/OrderFormItemsPanel'
+import type { OrderFormLayoutModel } from '../../OrderForm.layout.model'
+import type { OrderFormExternalFlow } from '../../flows/orderFormExternalRealtime.flow'
 
 export const OrderFormMobileLayout = ({
   model,

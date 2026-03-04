@@ -13,7 +13,7 @@ export const validateCostumerFormShape = ({
   const lastNameValid = validateString(last_name)
 
   const trimmedEmail = email.trim()
-  const emailValid = !validateString(trimmedEmail) || validateEmail(trimmedEmail)
+  const emailValid = validateString(trimmedEmail) && validateEmail(trimmedEmail)
   const operatingHoursValid = validateOperatingHours(operating_hours).valid
 
   return firstNameValid && lastNameValid && emailValid && operatingHoursValid

@@ -2,13 +2,13 @@ import type { StackComponentProps } from '@/shared/stack-manager/types'
 import { AnimatePresence } from 'framer-motion'
 
 import { OrderFormFeature } from '@/features/order/forms/orderForm/OrderForm'
-import { OrderFormDesktopLayout } from '@/features/order/forms/orderForm/components/OrderFormDesktop.layout'
-import { OrderFormCostumerChangePrompt } from '@/features/order/forms/orderForm/components/OrderFormCostumerChangePrompt'
+import { OrderFormDesktopLayout } from '@/features/order/forms/orderForm/views/desktop/OrderFormDesktop.layout'
+import { OrderFormCostumerChangePrompt } from '@/features/order/forms/orderForm/components/CostumerChangePrompt'
 import {
   useOrderFormLayoutModel,
   type OrderFormLayoutModel,
 } from '@/features/order/forms/orderForm/OrderForm.layout.model'
-import { OrderFormMobileLayout } from '@/features/order/forms/orderForm/components/OrderFormMobile.layout'
+import { OrderFormMobileLayout } from '@/features/order/forms/orderForm/views/mobile/OrderFormMobile.layout'
 import type { OrderFormPayload } from '@/features/order/forms/orderForm/state/OrderForm.types'
 import {
   useOrderFormExternalFlow,

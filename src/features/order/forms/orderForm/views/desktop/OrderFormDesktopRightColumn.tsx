@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
 
-import type { OrderFormLayoutModel } from '../OrderForm.layout.model'
-import { OrderFormCustomerPanel } from './OrderFormCustomerPanel'
-import { OrderFormItemsPanel } from './OrderFormItemsPanel'
+import type { OrderFormLayoutModel } from '../../OrderForm.layout.model'
+import { OrderFormCostumerPanel } from '../../components/CostumerPanel'
+import { OrderFormItemsPanel } from '../../components/OrderFormItemsPanel'
 import type { DesktopLayoutMode } from './OrderFormDesktop.layout'
 
 type OrderFormDesktopRightColumnProps = {
@@ -27,17 +27,19 @@ export const OrderFormDesktopRightColumn = ({
     >
       <div
         className={`min-h-0 w-full self-center overflow-hidden transition-[max-width] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          isCustomerExpanded ? 'h-full max-w-[600px]' : 'h-auto max-w-[350px]'
+          isCustomerExpanded ? 'h-full max-w-[600px]' : 'h-auto max-h-[350px] max-w-[350px]'
         }`}
       >
-        <OrderFormCustomerPanel
-          setLayoutMode={setLayoutMode}
-          layoutMode={layoutMode}
-          costumer={model.selectedCostumer}
-          onSelectCostumer={(costumer, source = 'panel') =>
-            model.requestSelectCostumer(costumer, source)
-          }
-        />
+        <div className="h-full min-h-0">
+          <OrderFormCostumerPanel
+            setLayoutMode={setLayoutMode}
+              layoutMode={layoutMode}
+              costumer={model.selectedCostumer}
+              onSelectCostumer={(costumer, source = 'panel') =>
+                model.requestSelectCostumer(costumer, source)
+              }
+          />
+        </div>
       </div>
 
       <motion.div

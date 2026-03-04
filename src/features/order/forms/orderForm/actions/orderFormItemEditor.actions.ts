@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import type { useOrderItemDraftController } from '../../item'
-import type { Item, ItemPopupPayload } from '../../item'
+import type { useOrderItemDraftController } from '../../../item'
+import type { Item, ItemPopupPayload } from '../../../item'
 
 type ItemDraftEditorControllerApi = Pick<
   ReturnType<typeof useOrderItemDraftController>,

@@ -30,7 +30,45 @@ export const CostumerFormFields = ({ model, compact = false }: CostumerFormField
       }`}
     >
       <div className="rounded-2xl border border-[var(--color-border-accent)] bg-[var(--color-page)]">
-        <SplitRow splitRowClass="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[var(--color-border-accent)] border-t-0">
+
+        <SplitRow splitRowClass="grid grid-cols-1 divide-[var(--color-border-accent)] border-t-0">
+          <Cell>
+            <Field
+              warningPlacement="besidesLabel"
+              label="Email:"
+              required={true}
+              warningController={model.warnings.emailWarning}
+            >
+              <InputField
+                value={model.formState.email}
+                onChange={model.formSetters.handleEmail}
+                warningController={model.warnings.emailWarning}
+                fieldClassName={PLAIN_INPUT_CONTAINER_CLASS}
+                inputClassName={PLAIN_INPUT_CLASS}
+              />
+            </Field>
+          </Cell>
+        </SplitRow>
+
+         <SplitRow splitRowClass="grid grid-cols-2 divide-x divide-[var(--color-border-accent)]">
+          <Cell>
+            <Field warningPlacement="besidesLabel" label="Primary Phone:">
+              <PhoneField
+                phoneNumber={primaryPhone} onChange={model.formSetters.handlePrimaryPhone}
+              />
+            </Field>
+          </Cell>
+           <Cell>
+            <Field warningPlacement="besidesLabel" label="Secondary Phone:">
+              <PhoneField
+                phoneNumber={secondaryPhone}
+                onChange={model.formSetters.handleSecondaryPhone}
+              />
+            </Field>
+          </Cell>
+        </SplitRow>
+
+        <SplitRow splitRowClass="grid grid-cols-2 divide-x divide-[var(--color-border-accent)]">
           <Cell>
             <Field
               warningPlacement="besidesLabel"
@@ -65,46 +103,7 @@ export const CostumerFormFields = ({ model, compact = false }: CostumerFormField
             </Field>
           </Cell>
         </SplitRow>
-
-        <SplitRow splitRowClass="grid grid-cols-1 divide-[var(--color-border-accent)]">
-          <Cell>
-            <Field
-              warningPlacement="besidesLabel"
-              label="Email:"
-              warningController={model.warnings.emailWarning}
-            >
-              <InputField
-                value={model.formState.email}
-                onChange={model.formSetters.handleEmail}
-                warningController={model.warnings.emailWarning}
-                fieldClassName={PLAIN_INPUT_CONTAINER_CLASS}
-                inputClassName={PLAIN_INPUT_CLASS}
-              />
-            </Field>
-          </Cell>
-        </SplitRow>
-
-        <SplitRow splitRowClass="grid grid-cols-1 divide-[var(--color-border-accent)]">
-          <Cell>
-            <Field warningPlacement="besidesLabel" label="Primary Phone:">
-              <PhoneField
-
-                phoneNumber={primaryPhone} onChange={model.formSetters.handlePrimaryPhone}
-              />
-            </Field>
-          </Cell>
-        </SplitRow>
-
-        <SplitRow splitRowClass="grid grid-cols-1 divide-[var(--color-border-accent)]">
-          <Cell>
-            <Field warningPlacement="besidesLabel" label="Secondary Phone:">
-              <PhoneField
-                phoneNumber={secondaryPhone}
-                onChange={model.formSetters.handleSecondaryPhone}
-              />
-            </Field>
-          </Cell>
-        </SplitRow>
+       
 
         <SplitRow splitRowClass="grid grid-cols-1 divide-[var(--color-border-accent)]">
           <Cell>

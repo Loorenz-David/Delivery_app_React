@@ -18,8 +18,8 @@ export const runCostumerFormValidationTests = () => {
   )
 
   assert(
-    validateCostumerFormShape({ first_name: 'John', last_name: 'Doe', email: '', operating_hours: [] }),
-    'email can be empty',
+    !validateCostumerFormShape({ first_name: 'John', last_name: 'Doe', email: '', operating_hours: [] }),
+    'email is required',
   )
 
   assert(

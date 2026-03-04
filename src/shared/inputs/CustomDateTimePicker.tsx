@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { CustomDatePicker } from './CustomDatePicker'
-import { CustomTimePicker } from './CustomTimePicker'
+import { CustomTimePicker } from './CustomTimePicker/index'
 
 type CustomDateTimePickerProps = {
   date?: Date | null

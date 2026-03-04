@@ -168,7 +168,7 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
               </Cell>
             </SplitRow>
 
-            <div className={`border-t border-[var(--color-border-accent)] `}>
+            <div className={`border-t border-[var(--color-border-accent)] px-3 py-2`}>
               <Field  warningPlacement ='besidesLabel' label="Tracking link:">
                 <InputField
                   value={formState.tracking_link}
@@ -180,7 +180,7 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
             </div>
 
             {formState.delivery_plan_id == null ? (
-              <div className={`border-t border-[var(--color-border-accent)] `}>
+              <div className={`border-t border-[var(--color-border-accent)] px-3 py-2`}>
                 <Field  warningPlacement ='besidesLabel' label="Order plan objective:">
                   <OptionPopoverSelect
                     options={ORDER_PLAN_OBJECTIVE_OPTIONS}
@@ -188,7 +188,7 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
                     onChange={formSetters.handleOrderPlanObjective}
                     placeholder="Select objective"
                     emptyLabel="No objective"
-                    inputFieldClassName="flex w-full justify-between items-center py-2"
+                    inputFieldClassName="flex w-full justify-between items-center  px-2 pr-4 pb-2 "
                   />
                 </Field>
               </div>

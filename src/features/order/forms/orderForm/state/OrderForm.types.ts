@@ -9,7 +9,7 @@ import type { OrderDeliveryWindow } from '../../../types/order'
 import type { useOrderFormWarnings } from './OrderForm.warnings'
 import type { useOrderFormActions } from '../controllers/useOrderFormSubmit.actions'
 import type { useOrderFormSetters } from './orderForm.setters'
-import type { useOrderFormItemEditorActions } from '../orderFormItemEditor.actions'
+import type { useOrderFormItemEditorActions } from '../actions/orderFormItemEditor.actions'
 import type { Costumer } from '@/features/costumer'
 
 export type OrderFormMode = 'create' | 'edit'

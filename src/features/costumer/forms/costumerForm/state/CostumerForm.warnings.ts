@@ -20,10 +20,11 @@ export const useCostumerFormWarnings = () => {
     return isValid
   })
 
-  const emailWarning = useInputWarning('Invalid email.', (value, setMessage) => {
+  const emailWarning = useInputWarning('Email is required.', (value, setMessage) => {
     const candidate = String(value ?? '').trim()
     if (!validateString(candidate)) {
-      return true
+      setMessage('Email is required.')
+      return false
     }
 
     const isValid = validateEmail(candidate)

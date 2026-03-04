@@ -13,7 +13,7 @@ import { OrderFormContextComposer } from '../context/OrderForm.context'
 import { applySelectedCostumerToOrderForm } from '../flows/orderFormCostumerApply.flow'
 import { normalizeEmail, useOrderFormCostumerLookupFlow } from '../flows/orderFormCostumerLookup.flow'
 import { useOrderFormItemsFlow } from '../flows/orderFormItems.flow'
-import { useOrderFormItemEditorActions } from '../orderFormItemEditor.actions'
+import { useOrderFormItemEditorActions } from '../actions/orderFormItemEditor.actions'
 import { useOrderFormCloseController } from './useOrderFormCloseController'
 import { useOrderFormBootstrapState } from './useOrderFormBootstrapState'
 import type {
@@ -102,8 +102,9 @@ export const OrderFormProvider = ({
   const [pendingCostumerChangeSource, setPendingCostumerChangeSource] = useState<CostumerSelectionSource | null>(null)
   const [isCostumerChangePromptOpen, setIsCostumerChangePromptOpen] = useState(false)
   
+  // this flow might not be the appropiate implementation we must check deep if it is not correct.
   useCostumerFromOrderFlow({order, setSelectedCostumer})
-  console.log(selectedCostumer)
+  
 
   const { formState, setFormState, initialFormRef } = useOrderFormBootstrapState({
     mode,
