@@ -1,6 +1,7 @@
 import type { Item, ItemUpdateFields } from '@/features/order/item'
 import type { OrderUpdateFields } from '@/features/order/types/order'
 import type { OrderFormState } from '@/features/order/forms/orderForm/state/OrderForm.types'
+import { sortDeliveryWindowsUtc } from '@/features/order/forms/orderForm/flows/orderFormDeliveryWindows.flow'
 
 const toNullableString = (value: string | null) => {
   const trimmed = (value ?? '').trim()
@@ -50,6 +51,7 @@ export const normalizeFormStateForSave = (state: OrderFormState): OrderUpdateFie
     latest_delivery_date: state.latest_delivery_date,
     preferred_time_start: state.preferred_time_start || null,
     preferred_time_end: state.preferred_time_end || null,
+    delivery_windows: sortDeliveryWindowsUtc(state.delivery_windows),
     delivery_plan_id: state.delivery_plan_id ?? null,
   }
 }

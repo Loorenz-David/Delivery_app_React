@@ -89,16 +89,19 @@ export const OrderFormCustomerPanel = ({
   onSelectCostumer,
   setLayoutMode,
 }: OrderFormCustomerPanelProps) => {
+
   const [panelView, setPanelView] = useState<OrderFormCustomerPanelView>(
     resolveCustomerPanelInitialView(costumer),
   )
   const previousNonFormViewRef = useRef<NonFormView>(resolveCustomerPanelInitialView(costumer))
 
   useEffect(() => {
-    if (!costumer && panelView === 'details') {
+    if (!costumer) {
       setPanelView('search')
+      return
     }
-  }, [costumer, panelView])
+    setPanelView("details")
+  }, [costumer])
 
   useEffect(() => {
     if (!isFormView(panelView)) {
@@ -125,7 +128,7 @@ export const OrderFormCustomerPanel = ({
       className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-[var(--color-border)]/60 bg-[var(--color-page)]"
     >
       {!options?.hidePanelTitle ? (
-        <div className="flex items-center justify-between w-full px-4 pb-3 pt-3">
+        <div className="flex items-center justify-between w-full px-4 pb-3 pt-3 mb-4 shadow-sm">
           <span className="text-[12px] font-semibold">Costumer</span>
           {options?.headerAction ?? null}
         </div>
@@ -295,7 +298,7 @@ export const OrderFormCustomerPanel = ({
   }
 
   return panelShell(
-    <div className="flex flex-col  px-4 pb-4">
+    <div className="flex flex-col  px-4 pb-4 ">
       <div className="flex justify-between">
         <div className="flex flex-col gap-2">
           <DisplayInfo label="Name:" value={formatFullName(costumer)} />
@@ -304,7 +307,7 @@ export const OrderFormCustomerPanel = ({
         </div>
         <div className="flex justify-end">
           {costumer.operating_hours ?
-            <div className="border-b-1 border-[var(--color-border)]">
+            <div className="border-1 border-[var(--color-border)] mr-1 p-2 rounded-sm">
               <OpeningHoursPreview costumerOperatingHours = {costumer.operating_hours}/>
             </div>
 

@@ -5,6 +5,7 @@ import type { Phone } from '@/types/phone'
 
 import type { Item } from '../../../item'
 import type { Order } from '../../../types/order'
+import type { OrderDeliveryWindow } from '../../../types/order'
 import type { useOrderFormWarnings } from './OrderForm.warnings'
 import type { useOrderFormActions } from '../controllers/useOrderFormSubmit.actions'
 import type { useOrderFormSetters } from './orderForm.setters'
@@ -33,6 +34,7 @@ export type OrderFormState = {
   latest_delivery_date: string | null
   preferred_time_start: string
   preferred_time_end: string
+  delivery_windows: OrderDeliveryWindow[]
   delivery_plan_id?: number | null
 }
 

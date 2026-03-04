@@ -82,7 +82,8 @@ export const useCostumerQueries = ()=>{
     
             const normalized = normalizeCostumerPayload(payload)
             upsertCostumers(normalized)
-            return normalized
+
+            return Object.values(normalized.byClientId)[0]
           } catch (error) {
             const message = error instanceof ApiError ? error.message : 'Unable to load costumer.'
             const status = error instanceof ApiError ? error.status : 500

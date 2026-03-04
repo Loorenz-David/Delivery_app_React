@@ -26,6 +26,7 @@ import type {
 import { useOrderFormValidation } from '../state/OrderForm.validation'
 import { useOrderFormWarnings } from '../state/OrderForm.warnings'
 import { useOrderFormSetters } from '../state/orderForm.setters'
+import { useCostumerFromOrderFlow } from '../flows/orderFormCostumerLoad.flow'
 
 type PendingCostumerAction = 'replace' | 'keep' | 'cancel'
 
@@ -100,6 +101,9 @@ export const OrderFormProvider = ({
   const [pendingCostumerChange, setPendingCostumerChange] = useState<Costumer | null>(null)
   const [pendingCostumerChangeSource, setPendingCostumerChangeSource] = useState<CostumerSelectionSource | null>(null)
   const [isCostumerChangePromptOpen, setIsCostumerChangePromptOpen] = useState(false)
+  
+  useCostumerFromOrderFlow({order, setSelectedCostumer})
+  console.log(selectedCostumer)
 
   const { formState, setFormState, initialFormRef } = useOrderFormBootstrapState({
     mode,

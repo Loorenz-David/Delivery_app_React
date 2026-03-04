@@ -4,6 +4,21 @@ import type { RouteSolution } from '@/features/plan/planTypes/localDelivery/type
 import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
 import type { Item } from '@/features/order/item'
 
+export type OrderDeliveryWindowType =
+  | 'EXACT_DATETIME'
+  | 'DATE_ONLY'
+  | 'TIME_RANGE'
+  | 'DATE_RANGE'
+  | 'FULL_RANGE'
+
+export type OrderDeliveryWindow = {
+  id?: number
+  client_id?: string | null
+  start_at: string
+  end_at: string
+  window_type: OrderDeliveryWindowType
+}
+
 export type Order = {
   id?: number
   client_id: string
@@ -22,11 +37,16 @@ export type Order = {
 
   client_address?: address | null
   costumer_id?: number | null
+  costumer?: {
+    costumer_id?: number | null
+    client_id?: string | null
+  } | null
   
   earliest_delivery_date?: string | null
   latest_delivery_date?: string | null
   preferred_time_start?: string | null
   preferred_time_end?: string | null
+  delivery_windows?: OrderDeliveryWindow[]
   creation_date?: string | null
   order_state_id?: number | null
   delivery_plan_id?: number | null

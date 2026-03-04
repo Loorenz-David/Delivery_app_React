@@ -42,6 +42,7 @@ const buildBaseFormState = (): OrderFormState => ({
   latest_delivery_date: '2026-02-23T23:59:59.999Z',
   preferred_time_start: '08:00',
   preferred_time_end: '18:00',
+  delivery_windows: [],
   delivery_plan_id: 10,
 })
 

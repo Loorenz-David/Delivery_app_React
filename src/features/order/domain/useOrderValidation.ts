@@ -9,6 +9,11 @@ import type { address } from '@/types/address'
 import type { Phone } from '@/types/phone'
 
 import type { OrderUpdateFields } from '../types/order'
+import {
+  MAX_ORDER_DELIVERY_WINDOWS,
+  sortDeliveryWindowsUtc,
+  validateNonOverlappingUtcDeliveryWindows,
+} from '../forms/orderForm/flows/orderFormDeliveryWindows.flow'
 
 export const useOrderValidation = () => {
   const validateReferenceNumber = (value: string) => validateString(value)
@@ -83,6 +88,33 @@ export const useOrderValidation = () => {
   }
 
   const validateOrderFields = (fields: OrderUpdateFields) => {
+    if ('delivery_windows' in fields) {
+      const rows = fields.delivery_windows
+      if (!Array.isArray(rows)) {
+        return false
+      }
+      if (rows.length > MAX_ORDER_DELIVERY_WINDOWS) {
+        return false
+      }
+      const normalized = sortDeliveryWindowsUtc(rows)
+      const overlapValidation = validateNonOverlappingUtcDeliveryWindows(normalized)
+      if (!overlapValidation.valid) {
+        return false
+      }
+      const allRowsValid = normalized.every((row) => {
+        if (!row || typeof row !== 'object') return false
+        if (typeof row.start_at !== 'string' || typeof row.end_at !== 'string') return false
+        if (typeof row.window_type !== 'string' || !row.window_type) return false
+        const start = Date.parse(row.start_at)
+        const end = Date.parse(row.end_at)
+        if (Number.isNaN(start) || Number.isNaN(end)) return false
+        return end > start
+      })
+      if (!allRowsValid) {
+        return false
+      }
+    }
+
     if ('order_plan_objective' in fields) {
       if (!validateOrderPlanObjective(fields.order_plan_objective)) {
         return false

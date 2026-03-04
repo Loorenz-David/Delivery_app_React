@@ -3,6 +3,7 @@ import { buildClientId } from '@/lib/utils/clientId'
 import type { Phone } from '@/types/phone'
 
 import type { Order } from '../../../types/order'
+import { sortDeliveryWindowsUtc } from './orderFormDeliveryWindows.flow'
 import type { OrderFormMode, OrderFormState } from '../state/OrderForm.types'
 
 type BuildOrderFormInitialStateParams = {
@@ -59,6 +60,7 @@ export const buildInitialOrderForm = ({
   latest_delivery_date: order?.latest_delivery_date ?? null,
   preferred_time_start: order?.preferred_time_start ?? '',
   preferred_time_end: order?.preferred_time_end ?? '',
+  delivery_windows: sortDeliveryWindowsUtc(order?.delivery_windows ?? []),
   delivery_plan_id: order?.delivery_plan_id ?? deliveryPlanId ?? null,
 })
 
@@ -69,7 +71,10 @@ export const buildOrderFormInitialState = ({
   payloadRestoreFormState,
 }: BuildOrderFormInitialStateParams): OrderFormState =>
   payloadRestoreFormState
-    ? { ...payloadRestoreFormState }
+    ? {
+        ...payloadRestoreFormState,
+        delivery_windows: sortDeliveryWindowsUtc(payloadRestoreFormState.delivery_windows ?? []),
+      }
     :
   buildInitialOrderForm({
     mode,

@@ -25,3 +25,4 @@ export const useCostumerByClientId = (clientId: string | null | undefined) =>
 
 export const useCostumerByServerId = (id: number | null | undefined) =>
   useCostumerStore(selectCostumerByServerId(id))
+

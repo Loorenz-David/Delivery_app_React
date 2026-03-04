@@ -56,7 +56,7 @@ export const CostumerSearchBar = ({
         ) : isLoading ? (
           <div className="px-3 py-2 text-xs text-[var(--color-muted)] h-[200px]">Searching...</div>
         ) : error ? (
-          <div className="px-3 py-2 text-xs text-red-500 h-[300px]">{error}</div>
+          <div className="px-3 py-2 text-xs text-red-500 h-[200px]">{error}</div>
         ) : results.length === 0 ? (
           <div className="px-3 py-2 text-xs text-[var(--color-muted)] h-[200px]">No costumers found.</div>
         ) : (
