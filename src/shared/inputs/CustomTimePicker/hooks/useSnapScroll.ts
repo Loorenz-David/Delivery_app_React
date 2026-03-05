@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type WheelEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 type UseSnapScrollParams = {
   values: number[]
@@ -6,8 +6,6 @@ type UseSnapScrollParams = {
   itemHeight: number
   onChange: (nextValue: number) => void
 }
-
-const SCROLL_SNAP_DELAY_MS = 100
 
 export const useSnapScroll = ({
   values,
@@ -19,7 +17,6 @@ export const useSnapScroll = ({
   const wheelCaptureRef = useRef(false)
   const isUserScrollingRef = useRef(false)
   const suppressNextScrollRef = useRef(false)
-  const snapTimeoutRef = useRef<number | null>(null)
   const [visualIndex, setVisualIndex] = useState(0)
 
   const selectedIndex = useMemo(() => {
@@ -33,14 +30,6 @@ export const useSnapScroll = ({
     }
     setVisualIndex(selectedIndex)
   }, [selectedIndex])
-
-  const clearSnapTimeout = useCallback(() => {
-    if (snapTimeoutRef.current === null) {
-      return
-    }
-    window.clearTimeout(snapTimeoutRef.current)
-    snapTimeoutRef.current = null
-  }, [])
 
   const scrollToIndex = useCallback(
     (
@@ -84,12 +73,6 @@ export const useSnapScroll = ({
     scrollToValue(value, 'auto')
   }, [scrollToValue, value])
 
-  useEffect(() => {
-    return () => {
-      clearSnapTimeout()
-    }
-  }, [clearSnapTimeout])
-
   const snapToNearest = useCallback(() => {
     const node = scrollRef.current
     if (!node) {
@@ -110,18 +93,13 @@ export const useSnapScroll = ({
   }, [itemHeight, onChange, scrollToIndex, value, values])
 
   const onWheel = useCallback(
-    (_event: WheelEvent<HTMLDivElement>) => {
+    () => {
       if (!wheelCaptureRef.current) {
         return
       }
-
       isUserScrollingRef.current = true
-      clearSnapTimeout()
-      snapTimeoutRef.current = window.setTimeout(() => {
-        snapToNearest()
-      }, SCROLL_SNAP_DELAY_MS)
     },
-    [clearSnapTimeout, snapToNearest],
+    [],
   )
 
   const onScroll = useCallback(() => {
@@ -137,11 +115,23 @@ export const useSnapScroll = ({
       const clampedIndex = Math.max(0, Math.min(values.length - 1, nearestIndex))
       setVisualIndex(clampedIndex)
     }
-    clearSnapTimeout()
-    snapTimeoutRef.current = window.setTimeout(() => {
+  }, [itemHeight, values.length])
+
+  useEffect(() => {
+    const node = scrollRef.current
+    if (!node) {
+      return
+    }
+
+    const handleScrollEnd = () => {
       snapToNearest()
-    }, SCROLL_SNAP_DELAY_MS)
-  }, [clearSnapTimeout, itemHeight, snapToNearest, values.length])
+    }
+
+    node.addEventListener('scrollend', handleScrollEnd as EventListener)
+    return () => {
+      node.removeEventListener('scrollend', handleScrollEnd as EventListener)
+    }
+  }, [snapToNearest])
 
   const onPointerEnter = useCallback(() => {
     wheelCaptureRef.current = true

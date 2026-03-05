@@ -7,6 +7,7 @@ import { useOrderQuery } from './orderQuery.store'
 import {
   selectAllOrders,
   selectOrderByClientId,
+  selectOrdersByCostumerId,
   selectOrderByServerId,
   selectOrdersByPlanId,
   setOrder,
@@ -42,6 +43,9 @@ export const useOrderByServerId = (id: number | null | undefined) =>
 
 export const useOrdersByPlanId = (planId: number | null | undefined) =>
   useOrderStore(useShallow(selectOrdersByPlanId(planId)))
+
+export const useOrdersByCostumerServerId = (costumerId: number | null | undefined) =>
+  useOrderStore(useShallow(selectOrdersByCostumerId(costumerId)))
 
 export const useSetOrderStore = () =>
   useCallback((order: Order) => {

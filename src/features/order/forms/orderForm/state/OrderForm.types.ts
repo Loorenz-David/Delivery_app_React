@@ -41,6 +41,7 @@ export type OrderFormState = {
 export type OrderFormPayload = {
   mode?: OrderFormMode
   clientId?: string
+  costumer_id?: number
   deliveryPlanId?: number | null
   restoreFormState?: OrderFormState
 }

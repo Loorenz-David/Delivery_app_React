@@ -1,5 +1,6 @@
 export { costumerApi } from './api/costumerApi'
 export { useCostumerController } from './controllers/costumerMutations.controller'
+export { useCostumerQueries } from './controllers/costumerQueries.controller'
 export { CostumerSearchBar } from './components'
 export type { CostumerSearchBarProps } from './components'
 export { CostumerFormEmbedded } from './forms/costumerForm/CostumerFormEmbedded'
@@ -79,3 +80,9 @@ export {
   setCostumerListError,
   clearCostumerList,
 } from './store/costumerList.store'
+
+export {
+  useCostumerDetailUIStore,
+  useCostumerOrdersLoading,
+  setLoadingOrders,
+} from './store/costumerDetailUI.store'

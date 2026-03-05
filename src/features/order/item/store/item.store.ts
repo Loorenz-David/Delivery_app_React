@@ -26,6 +26,15 @@ export const selectItemsByOrderId = (orderId: number | null | undefined) =>
       .filter((item) => item.order_id === orderId)
   }
 
+export const selectItemsByOrderIds = (orderIds: number[]) =>
+  (state: EntityTable<Item>) => {
+    if (!orderIds.length) return []
+    const orderIdSet = new Set(orderIds)
+    return state.allIds
+      .map((clientId) => state.byClientId[clientId])
+      .filter((item) => orderIdSet.has(item.order_id))
+  }
+
 export const useItems = () => useItemStore(useShallow(selectAllItems))
 
 export const useItemByClientId = (clientId: string | null | undefined) =>
@@ -36,6 +45,9 @@ export const useItemByServerId = (id: number | null | undefined) =>
 
 export const useItemsByOrderId = (orderId: number | null | undefined) =>
   useItemStore(useShallow(selectItemsByOrderId(orderId)))
+
+export const useItemsByOrderIds = (orderIds: number[]) =>
+  useItemStore(useShallow(selectItemsByOrderIds(orderIds)))
 
 export const setItem = (item: Item) => useItemStore.getState().insert(item)
 

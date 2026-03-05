@@ -2,7 +2,8 @@ import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useMobile } from '@/app/contexts/MobileContext'
-import type { Costumer } from '@/features/costumer'
+import { useCostumerByServerId, type Costumer } from '@/features/costumer'
+import { useCostumerQueries } from '@/features/costumer/controllers/costumerQueries.controller'
 import { hasFormChanges } from '@/shared/data-validation/compareChanges'
 import { formatIsoDate } from '@/shared/utils/formatIsoDate'
 
@@ -92,6 +93,7 @@ export const OrderFormProvider = ({
 }) => {
   const { isMobile } = useMobile()
   const mode = payload?.mode ?? 'create'
+  const payloadCostumerId = payload?.costumer_id ?? null
   const order = useOrderByClientId(payload?.clientId ?? null)
   const orderServerId = order?.id ?? null
   const creationDate = formatIsoDate(order?.creation_date) ?? ''
@@ -101,6 +103,9 @@ export const OrderFormProvider = ({
   const [pendingCostumerChange, setPendingCostumerChange] = useState<Costumer | null>(null)
   const [pendingCostumerChangeSource, setPendingCostumerChangeSource] = useState<CostumerSelectionSource | null>(null)
   const [isCostumerChangePromptOpen, setIsCostumerChangePromptOpen] = useState(false)
+  const payloadCostumer = useCostumerByServerId(payloadCostumerId)
+  const { queryCostumerByServerId } = useCostumerQueries()
+  const appliedPayloadCostumerIdRef = useRef<number | null>(null)
   
   // this flow might not be the appropiate implementation we must check deep if it is not correct.
   useCostumerFromOrderFlow({order, setSelectedCostumer})
@@ -161,6 +166,41 @@ export const OrderFormProvider = ({
     },
     [applySelectedCostumerNow, mode, selectedCostumer?.client_id],
   )
+
+  useEffect(() => {
+    if (mode !== 'create') {
+      return
+    }
+
+    if (typeof payloadCostumerId !== 'number') {
+      return
+    }
+
+    if (appliedPayloadCostumerIdRef.current === payloadCostumerId) {
+      return
+    }
+
+    let cancelled = false
+
+    const applyPayloadCostumer = async () => {
+      const resolvedCostumer = payloadCostumer ?? (await queryCostumerByServerId(payloadCostumerId))
+      if (cancelled || !resolvedCostumer) return
+      requestSelectCostumer(resolvedCostumer, 'panel')
+      appliedPayloadCostumerIdRef.current = payloadCostumerId
+    }
+
+    void applyPayloadCostumer()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    mode,
+    payloadCostumerId,
+    payloadCostumer,
+    queryCostumerByServerId,
+    requestSelectCostumer,
+  ])
 
   const confirmReplaceWithPendingCostumer = useCallback(() => {
     const nextSelection = resolvePendingCostumerAction({

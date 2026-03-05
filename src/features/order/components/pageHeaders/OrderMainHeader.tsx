@@ -7,6 +7,7 @@ import { filterConfig } from '../../domain/orderFilterConfig'
 import { useSectionPanel } from '@/shared/section-panel/SectionPanelContext'
 import { useEffect } from 'react'
 import { pluralLabel } from '@/shared/utils/formatStrings'
+import { ThreeDotMenu } from '@/shared/buttons/ThreeDotMenu'
 
 
 
@@ -58,7 +59,7 @@ export const OrderMainHeader = ({ onCreate, applySearch, deleteFilter, updateFil
   return (
     <>
       <div className="flex flex-col">
-        <div className="flex gap-4 p-4 pb-3">
+        <div className="flex gap-4 p-4 pb-3 max-h-[60px]">
           <SearchFilterBar
             placeholder="Search orders..."
             applySearch={applySearch}
@@ -73,11 +74,26 @@ export const OrderMainHeader = ({ onCreate, applySearch, deleteFilter, updateFil
               variant: 'primary',
               onClick: onCreate,
               ariaLabel: 'Create order',
+              className:"text-xs ",
+              
+
             }}
           >
-            <PlusIcon className="mr-2 h-4 w-4 stroke-[var(--color-secondary)]" />
+            <PlusIcon className="mr-2 h-3 w-3 stroke-[var(--color-secondary)]" />
             Order
           </BasicButton>
+          <ThreeDotMenu
+              dotWidth={3}
+              dotHeight={3}
+              dotClassName={'bg-[var(--color-muted)]'}
+              triggerClassName={' p-2 w-5 rounded-full    ml-auto  cursor-pointer'}
+              options={[
+                  {label:'Update optimization', action: ()=>{}, icon:''},
+                  {label:'Download route', action: ()=>{}, icon:''},
+
+              ]}
+          />
+
         </div>
         <div className="flex w-full px-2">
 
