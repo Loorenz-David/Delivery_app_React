@@ -1,7 +1,7 @@
 import type { Order } from '@/features/order/types/order'
 import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
 
-import { DraggableLocalDeliveryOrderCard } from './DraggableLocalDeliveryOrderCard'
+import { LocalDeliveryOrderCard } from './LocalDeliveryOrderCard'
 
 type LocalDeliveryStopEntry = {
   stop: RouteSolutionStop
@@ -30,7 +30,7 @@ export const LocalDeliveryOrderGroupChildren = ({
           {entries.length > 1 ? (
             <div className="pointer-events-none absolute -left-[19px] top-8 h-px w-4 bg-[var(--color-primary)]/40" />
           ) : null}
-          <DraggableLocalDeliveryOrderCard
+          <LocalDeliveryOrderCard
             order={entry.order}
             stop={entry.stop}
             displayStopOrder={projectedStopOrderByClientId?.get(entry.stop.client_id) ?? entry.stop.stop_order ?? null}

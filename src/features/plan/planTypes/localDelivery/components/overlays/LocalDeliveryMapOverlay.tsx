@@ -15,6 +15,7 @@ import {
   useLocalDeliverySelectionMode,
   useSelectedLocalDeliveryOrdersSummary,
 } from '../../store/localDeliverySelectionHooks.store'
+import { LocalDeliveryMarkerGroupOverlay } from './LocalDeliveryMarkerGroupOverlay'
 
 export const LocalDeliveryMapOverlay = () => {
   const { isMobile } = useMobile()
@@ -113,7 +114,7 @@ export const LocalDeliveryMapOverlay = () => {
           </BasicButton>
         )}
       />
-      
+      <LocalDeliveryMarkerGroupOverlay />
     </>
   )
 }

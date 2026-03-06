@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMobile } from '@/app/contexts/MobileContext'
-import type { DragStartEvent, DragEndEvent } from '@dnd-kit/core'
+import type { DragStartEvent, DragEndEvent, DragOverEvent } from '@dnd-kit/core'
 import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import type { Order } from '@/features/order/types/order'
 import { useOrderSelectionStore } from '@/features/order/store/orderSelection.store'
@@ -8,8 +8,14 @@ import { buildBatchSelectionPayload } from '@/features/order/store/orderSelectio
 import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
 import { useMessageHandler } from '@/shared/message-handler'
 
-import { derivePlanDndIntent } from '@/features/plan/domain/planDndIntent'
 import { useExecutePlanDndIntent } from '@/features/plan/controllers/useExecutePlanDndIntent'
+import type { PlanDndIntent } from '@/features/plan/domain/planDndIntent'
+import { resolveDropIntent, type RouteReorderPreview } from '@/features/plan/dnd/controller/resolveDropIntent'
+import { resolveRouteSolutionPlanClientId } from '@/features/plan/dnd/domain/resolveRouteSolutionPlanClientId'
+import {
+  selectRouteSolutionStopsBySolutionId,
+  useRouteSolutionStopStore,
+} from '@/features/plan/planTypes/localDelivery/store/routeSolutionStop.store'
 
 const MAX_BATCH_IDS = 200
 
@@ -39,6 +45,12 @@ export type ActiveDrag =
 export const usePlanOrderDndController = () => {
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null)
   const [droppedInPlan, setDroppedInPlan] = useState<string | null>(null)
+  const [routeReorderPreview, setRouteReorderPreview] = useState<RouteReorderPreview | null>(null)
+  const pendingIntentRef = useRef<PlanDndIntent>(null)
+  const routeDragSnapshotRef = useRef<{
+    routeSolutionId: number
+    orderedStopClientIds: string[]
+  } | null>(null)
   const dropFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { isMobile } = useMobile()
   const { showMessage } = useMessageHandler()
@@ -70,8 +82,33 @@ export const usePlanOrderDndController = () => {
     }
   }, [])
 
+  const clearPendingDrop = () => {
+    pendingIntentRef.current = null
+    setRouteReorderPreview(null)
+  }
+
+  const readOrderedStopClientIds = (routeSolutionId: number): string[] => {
+    if (
+      routeDragSnapshotRef.current
+      && routeDragSnapshotRef.current.routeSolutionId === routeSolutionId
+      && routeDragSnapshotRef.current.orderedStopClientIds.length
+    ) {
+      return routeDragSnapshotRef.current.orderedStopClientIds
+    }
+
+    return selectRouteSolutionStopsBySolutionId(routeSolutionId)(useRouteSolutionStopStore.getState())
+      .sort((a, b) => {
+        const left = typeof a.stop_order === 'number' ? a.stop_order : Number.POSITIVE_INFINITY
+        const right = typeof b.stop_order === 'number' ? b.stop_order : Number.POSITIVE_INFINITY
+        return left - right
+      })
+      .map((stop) => stop.client_id)
+  }
+
   const resetDragUi = () => {
     document.body.style.cursor = ''
+    routeDragSnapshotRef.current = null
+    clearPendingDrop()
     setActiveDrag(null)
   }
 
@@ -116,28 +153,24 @@ export const usePlanOrderDndController = () => {
     source: 'group' as const,
   })
 
-  const resolveGroupMovePosition = (
-    orderedStopClientIds: string[],
-    movingStopClientIds: string[],
-    targetAnchorStopClientId: string | null | undefined,
-  ): number | null => {
-    if (!orderedStopClientIds.length || !movingStopClientIds.length || !targetAnchorStopClientId) {
-      return null
-    }
-    if (movingStopClientIds.includes(targetAnchorStopClientId)) {
-      return null
-    }
-
-    const movingSet = new Set(movingStopClientIds)
-    const remaining = orderedStopClientIds.filter((clientId) => !movingSet.has(clientId))
-    const targetIndex = remaining.findIndex((clientId) => clientId === targetAnchorStopClientId)
-    const boundedIndex = targetIndex < 0 ? remaining.length : targetIndex
-    return boundedIndex + 1
-  }
-
   const onDragStart = (event: DragStartEvent) => {
     const { active } = event
     document.body.style.cursor = 'grabbing'
+    clearPendingDrop()
+
+    const activeData = active.data.current
+    const routeSolutionId = Number(
+      activeData?.routeSolutionId
+      ?? activeData?.stop?.route_solution_id
+      ?? NaN,
+    )
+    if (Number.isFinite(routeSolutionId) && routeSolutionId > 0) {
+      routeDragSnapshotRef.current = {
+        routeSolutionId,
+        orderedStopClientIds: readOrderedStopClientIds(routeSolutionId),
+      }
+    }
+
     if (active.data.current?.type === 'order' && active.data.current?.order) {
       const draggedOrder = active.data.current.order as Order
       const selectionState = useOrderSelectionStore.getState()
@@ -190,8 +223,51 @@ export const usePlanOrderDndController = () => {
     }
   }
 
-  const onDragOver = () => {
-    // Reserved for live hover side-effects in the future.
+  const onDragOver = (event: DragOverEvent) => {
+    if (!event.over || !event.active.data.current) {
+      clearPendingDrop()
+      return
+    }
+
+    const activeData = event.active.data.current
+    const overData = event.over.data.current
+    const activeId = event.active.id ? String(event.active.id) : undefined
+    const overId = overData?.id ? String(overData.id) : undefined
+    const activeOrderClientId =
+      activeData.type === 'order'
+        ? (typeof activeData.id === 'string' ? activeData.id : activeId)
+        : activeData.type === 'route_stop'
+          ? (activeData.order?.client_id as string | undefined)
+          : undefined
+
+    const selectionState = useOrderSelectionStore.getState()
+    const activeOrder = (activeData?.order as Order | undefined) ?? null
+    const selectionModeEnabled = selectionState.isSelectionMode && hasSelectionIntent(selectionState)
+    const isActiveOrderSelected = isOrderSelectedForBatch(activeOrder, selectionState)
+
+    const resolved = resolveDropIntent({
+      event,
+      activeId,
+      overId,
+      activeOrderClientId,
+      selectionState,
+      selectionModeEnabled,
+      isActiveOrderSelected,
+      maxBatchIds: MAX_BATCH_IDS,
+      confirmLargeBatch: () => false,
+      buildSelectionBatchPayload: buildBatchSelectionPayload,
+      buildManualBatchSelection,
+      resolvePlanClientIdByRouteSolutionId: resolveRouteSolutionPlanClientId,
+      resolveOrderedStopClientIds: readOrderedStopClientIds,
+    })
+
+    if (resolved.type !== 'intent' || !resolved.intent) {
+      clearPendingDrop()
+      return
+    }
+
+    pendingIntentRef.current = resolved.intent
+    setRouteReorderPreview(resolved.preview ?? null)
   }
 
   const onDragCancel = () => {
@@ -222,136 +298,44 @@ export const usePlanOrderDndController = () => {
           ? (activeData.order?.client_id as string | undefined)
           : undefined
 
-    let intent = null
+    let intent: PlanDndIntent = pendingIntentRef.current
     const selectionState = useOrderSelectionStore.getState()
     const activeOrder = (activeData?.order as Order | undefined) ?? null
     const selectionModeEnabled = selectionState.isSelectionMode && hasSelectionIntent(selectionState)
     const isActiveOrderSelected = isOrderSelectedForBatch(activeOrder, selectionState)
+    if (!intent) {
+      const resolved = resolveDropIntent({
+        event,
+        activeId,
+        overId,
+        activeOrderClientId,
+        selectionState,
+        selectionModeEnabled,
+        isActiveOrderSelected,
+        maxBatchIds: MAX_BATCH_IDS,
+        confirmLargeBatch: () =>
+          window.confirm('This action will move more than 200 orders. Continue?'),
+        buildSelectionBatchPayload: buildBatchSelectionPayload,
+        buildManualBatchSelection,
+        resolvePlanClientIdByRouteSolutionId: resolveRouteSolutionPlanClientId,
+        resolveOrderedStopClientIds: readOrderedStopClientIds,
+      })
 
-    if (
-      activeData?.type === 'order'
-      && overData?.type === 'plan'
-      && overId
-      && selectionModeEnabled
-    ) {
-      if (!isActiveOrderSelected) {
+      if (resolved.type === 'warning') {
         showMessage({
-          status: 'warning',
-          message: 'Drag a selected order when selection mode is active.',
+          status: resolved.status ?? 'warning',
+          message: resolved.message,
         })
         resetDragUi()
         return
       }
 
-      intent = {
-        kind: 'ASSIGN_ORDERS_TO_PLAN_BATCH' as const,
-        planClientId: overId,
-        selection: buildBatchSelectionPayload(selectionState),
-      }
-    } else if (
-      activeData?.type === 'order_group'
-      && overData?.type === 'plan'
-      && overId
-    ) {
-      const manualIds = Array.isArray(activeData.orderIds)
-        ? activeData.orderIds.filter((id: unknown): id is number => Number.isFinite(Number(id)) && Number(id) > 0)
-          .map((id: number) => Number(id))
-        : []
-      if (!manualIds.length) {
-        resetDragUi()
-        return
-      }
-      if (manualIds.length > MAX_BATCH_IDS) {
-        const confirmed = window.confirm('This action will move more than 200 orders. Continue?')
-        if (!confirmed) {
-          resetDragUi()
-          return
-        }
-      }
-
-      intent = {
-        kind: 'ASSIGN_ORDERS_TO_PLAN_BATCH' as const,
-        planClientId: overId,
-        selection: buildManualBatchSelection(manualIds),
-      }
-    } else if (
-      activeData?.type === 'route_stop_group'
-      && overData?.type === 'plan'
-      && overId
-    ) {
-      const manualIds = Array.isArray(activeData.orderIds)
-        ? activeData.orderIds.filter((id: unknown): id is number => Number.isFinite(Number(id)) && Number(id) > 0)
-          .map((id: number) => Number(id))
-        : []
-      if (!manualIds.length) {
-        resetDragUi()
-        return
-      }
-      if (manualIds.length > MAX_BATCH_IDS) {
-        const confirmed = window.confirm('This action will move more than 200 orders. Continue?')
-        if (!confirmed) {
-          resetDragUi()
-          return
-        }
-      }
-
-      intent = {
-        kind: 'ASSIGN_ORDERS_TO_PLAN_BATCH' as const,
-        planClientId: overId,
-        selection: buildManualBatchSelection(manualIds),
-      }
-    } else if (
-      activeData?.type === 'route_stop_group'
-      && (overData?.type === 'route_stop' || overData?.type === 'route_stop_group_drop')
-    ) {
-      const routeSolutionId = Number(activeData.routeSolutionId)
-      const routeStopIds = Array.isArray(activeData.routeStopIds)
-        ? activeData.routeStopIds
-          .map((id: unknown) => Number(id))
-          .filter((id: number) => Number.isFinite(id) && id > 0)
-        : []
-      const targetAnchorStopId = overData?.type === 'route_stop'
-        ? Number(overData.stop?.id)
-        : Number(overData?.anchorStopId)
-      const orderedStopClientIds = Array.isArray(activeData.allOrderedStopClientIds)
-        ? activeData.allOrderedStopClientIds.map((clientId: unknown) => String(clientId))
-        : []
-      const movingStopClientIds = Array.isArray(activeData.routeStopClientIds)
-        ? activeData.routeStopClientIds.map((clientId: unknown) => String(clientId))
-        : []
-      const targetAnchorStopClientId = overData?.type === 'route_stop'
-        ? String(overData.stop?.client_id ?? '')
-        : String(overData?.anchorStopClientId ?? '')
-      const position = resolveGroupMovePosition(
-        orderedStopClientIds,
-        movingStopClientIds,
-        targetAnchorStopClientId,
-      )
-      if (
-        !Number.isFinite(routeSolutionId)
-        || !Number.isFinite(targetAnchorStopId)
-        || !routeStopIds.length
-        || !position
-      ) {
+      if (resolved.type === 'noop' || !resolved.intent) {
         resetDragUi()
         return
       }
 
-      intent = {
-        kind: 'MOVE_ROUTE_STOP_GROUP' as const,
-        routeSolutionId,
-        routeStopIds,
-        position,
-        anchorStopId: targetAnchorStopId,
-      }
-    } else {
-      intent = derivePlanDndIntent({
-        activeType: activeData?.type as string | undefined,
-        overType: overData?.type as string | undefined,
-        activeId,
-        overId,
-        activeOrderClientId,
-      })
+      intent = resolved.intent
     }
 
     const result = await execute(intent)
@@ -370,5 +354,6 @@ export const usePlanOrderDndController = () => {
     sensors,
     droppedInPlan,
     activeDrag,
+    routeReorderPreview,
   }
 }

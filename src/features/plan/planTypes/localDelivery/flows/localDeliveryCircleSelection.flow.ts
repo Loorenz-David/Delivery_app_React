@@ -5,6 +5,8 @@ import { MAP_MARKER_LAYERS } from '@/shared/map'
 import { useMapManager } from '@/shared/resource-manager/useResourceManager'
 import { useOrderStore } from '@/features/order/store/order.store'
 import type { Order } from '@/features/order/types/order'
+import type { LocalDeliveryMarkerGroupLookup } from '@/features/plan/planTypes/localDelivery/store/localDeliveryMapInteraction.store'
+import { useLocalDeliveryMapInteractionStore } from '@/features/plan/planTypes/localDelivery/store/localDeliveryMapInteraction.store'
 
 import {
   useLocalDeliverySelectionActions,
@@ -19,6 +21,26 @@ type SelectionFromClientIds = {
 
 const isLocalDeliveryOrderMarkerId = (markerId: string) =>
   !markerId.startsWith('route-start-') && !markerId.startsWith('route-end-')
+
+export const expandLocalDeliveryClientIdsFromMarkerSelection = (
+  markerIds: string[],
+  lookup: LocalDeliveryMarkerGroupLookup,
+): string[] => {
+  const expandedClientIds: string[] = []
+
+  markerIds
+    .filter(isLocalDeliveryOrderMarkerId)
+    .forEach((markerId) => {
+      const groupedClientIds = lookup.markerOrderClientIdsByMarkerId[markerId]
+      if (groupedClientIds && groupedClientIds.length > 0) {
+        expandedClientIds.push(...groupedClientIds)
+        return
+      }
+      expandedClientIds.push(markerId)
+    })
+
+  return Array.from(new Set(expandedClientIds))
+}
 
 export const buildLocalDeliverySelectionFromClientIds = (
   clientIds: string[],
@@ -71,12 +93,15 @@ export const useLocalDeliveryCircleSelectionFlow = (isActive: boolean) => {
 
     mapManager.enableCircleSelection({
       layerId: MAP_MARKER_LAYERS.localDelivery,
-      callback: (clientIds) => {
+      callback: (markerIds) => {
         const byClientId = useOrderStore.getState().byClientId
-        const { clientIds: resolvedClientIds, serverIds, unsyncedCount } = buildLocalDeliverySelectionFromClientIds(
-          clientIds,
-          byClientId,
-        )
+        const markerLookup = useLocalDeliveryMapInteractionStore.getState().markerLookup
+        const expandedClientIds = expandLocalDeliveryClientIdsFromMarkerSelection(markerIds, markerLookup)
+        const {
+          clientIds: resolvedClientIds,
+          serverIds,
+          unsyncedCount,
+        } = buildLocalDeliverySelectionFromClientIds(expandedClientIds, byClientId)
 
         setSelectedOrders({
           clientIds: resolvedClientIds,

@@ -17,6 +17,7 @@ import {
   useSelectedOrderServerIds,
   useSelectedOrdersSummary,
 } from '../store/orderSelectionHooks.store'
+import { OrderMarkerGroupOverlay } from './overlays/OrderMarkerGroupOverlay'
 
 export const OrderMapOverlay = () => {
   const { isMobile } = useMobile()
@@ -59,83 +60,86 @@ export const OrderMapOverlay = () => {
   }
 
   return (
-    <MapMultiSelectOverlay
-      isSelectionMode={isSelectionMode}
-      enableSelectionMode={enableSelectionMode}
-      disableSelectionMode={disableSelectionMode}
-      enableSelectionAriaLabel="Enable multi order selection"
-      disableSelectionAriaLabel="Exit selection mode"
-      enableLabel={(
-        <div className="flex items-center justify-center gap-2">
-          <MultiSelectIcon className="fill-[var(--color-muted)] h-5 w-5" />
-          <span>Multi Select</span>
-        </div>
-      )}
-      title="Orders Selected"
-      count={count}
-      totalItems={totalItems}
-      totalVolume={totalVolume}
-      totalWeight={totalWeight}
-      sideControls={(
-        <div className="absolute -right-36 top-0 flex w-32 flex-col gap-2 cursor-pointer">
-          <div className="flex w-full justify-end">
-            <button
-              type="button"
-              onClick={handleEraseSelection}
-              aria-label="Clear selection shape"
-              className="flex items-center justify-center rounded-md border-1 border-[var(--color-muted)]/40 bg-[var(--color-page)] p-2 cursor-pointer"
-            >
-              <EraseIcon className="h-3 w-3 text-[var(--color-muted)]" />
-            </button>
+    <>
+      <MapMultiSelectOverlay
+        isSelectionMode={isSelectionMode}
+        enableSelectionMode={enableSelectionMode}
+        disableSelectionMode={disableSelectionMode}
+        enableSelectionAriaLabel="Enable multi order selection"
+        disableSelectionAriaLabel="Exit selection mode"
+        enableLabel={(
+          <div className="flex items-center justify-center gap-2">
+            <MultiSelectIcon className="fill-[var(--color-muted)] h-5 w-5" />
+            <span>Multi Select</span>
           </div>
-          {(['circle', 'rectangle', 'polygon'] as const).map((shape) => (
-            <button
-              key={shape}
-              type="button"
-              onClick={() => handleShapeSelection(shape)}
-              className={`rounded-md border px-3 py-2 text-left text-xs font-medium capitalize transition ${
-                selectedShape === shape
-                  ? ' bg-[var(--color-page)] text-[var(--color-dark-blue)] border-[var(--color-light-blue)]'
-                  : 'border-[var(--color-muted)]/40 bg-[var(--color-page)] text-[var(--color-muted)]'
-              }`}
+        )}
+        title="Orders Selected"
+        count={count}
+        totalItems={totalItems}
+        totalVolume={totalVolume}
+        totalWeight={totalWeight}
+        sideControls={(
+          <div className="absolute -right-36 top-0 flex w-32 flex-col gap-2 cursor-pointer">
+            <div className="flex w-full justify-end">
+              <button
+                type="button"
+                onClick={handleEraseSelection}
+                aria-label="Clear selection shape"
+                className="flex items-center justify-center rounded-md border-1 border-[var(--color-muted)]/40 bg-[var(--color-page)] p-2 cursor-pointer"
+              >
+                <EraseIcon className="h-3 w-3 text-[var(--color-muted)]" />
+              </button>
+            </div>
+            {(['circle', 'rectangle', 'polygon'] as const).map((shape) => (
+              <button
+                key={shape}
+                type="button"
+                onClick={() => handleShapeSelection(shape)}
+                className={`rounded-md border px-3 py-2 text-left text-xs font-medium capitalize transition ${
+                  selectedShape === shape
+                    ? ' bg-[var(--color-page)] text-[var(--color-dark-blue)] border-[var(--color-light-blue)]'
+                    : 'border-[var(--color-muted)]/40 bg-[var(--color-page)] text-[var(--color-muted)]'
+                }`}
+              >
+                {shape}
+              </button>
+            ))}
+          </div>
+        )}
+        actions={(
+          <>
+            <BasicButton
+              params={{
+                variant: 'secondary',
+                onClick: () => undefined,
+                ariaLabel: 'Select plan',
+                disabled: true,
+              }}
             >
-              {shape}
-            </button>
-          ))}
-        </div>
-      )}
-      actions={(
-        <>
-          <BasicButton
-            params={{
-              variant: 'secondary',
-              onClick: () => undefined,
-              ariaLabel: 'Select plan',
-              disabled: true,
-            }}
-          >
-            Select Plan
-          </BasicButton>
-          <BasicButton
-            params={{
-              variant: 'primary',
-              onClick: () => {
-                popupManager.open({
-                  key: 'PlanForm',
-                  payload: {
-                    mode: 'create',
-                    selectedOrderServerIds,
-                    source: 'order_multi_select',
-                  },
-                })
-              },
-              ariaLabel: 'Create plan from selected orders',
-            }}
-          >
-            + Plan
-          </BasicButton>
-        </>
-      )}
-    />
+              Select Plan
+            </BasicButton>
+            <BasicButton
+              params={{
+                variant: 'primary',
+                onClick: () => {
+                  popupManager.open({
+                    key: 'PlanForm',
+                    payload: {
+                      mode: 'create',
+                      selectedOrderServerIds,
+                      source: 'order_multi_select',
+                    },
+                  })
+                },
+                ariaLabel: 'Create plan from selected orders',
+              }}
+            >
+              + Plan
+            </BasicButton>
+          </>
+        )}
+      />
+      <OrderMarkerGroupOverlay />
+    </>
   )
 }

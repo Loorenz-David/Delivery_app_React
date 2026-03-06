@@ -13,6 +13,7 @@ import { OrderAddressGroupChildren } from '../lists/OrderAddressGroupChildren'
 type OrderAddressGroupCardProps = {
   group: OrderAddressGroup
   expanded: boolean
+  isGroupHovered?: boolean
   onToggleExpanded: () => void
   isSelectionMode: boolean
   isOrderSelected?: (order: Order) => boolean
@@ -30,6 +31,7 @@ type OrderAddressGroupCardProps = {
 export const OrderAddressGroupCard = ({
   group,
   expanded,
+  isGroupHovered = false,
   onToggleExpanded,
   isSelectionMode,
   isOrderSelected,
@@ -52,8 +54,11 @@ export const OrderAddressGroupCard = ({
   }, [group.orders, hasRenderCap, showAllChildren])
 
   return (
-    <div className="flex flex-col border-y-1  border-y-[var(--color-muted)]/60  ">
-      <div className="  py-4 pr-4 pl-2 z-2">
+    <div className={`flex flex-col border-y-1 border-y-[var(--color-muted)]/60 transition-colors ${
+      isGroupHovered ? 'bg-[var(--color-light-blue)]/10' : ''
+    }`}
+    >
+      <div className="py-4 pr-4 pl-2 z-2">
         <div
           className="flex cursor-pointer items-center gap-3"
           onClick={onToggleExpanded}

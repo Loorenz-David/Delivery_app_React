@@ -5,6 +5,8 @@ import { MAP_MARKER_LAYERS } from '@/shared/map'
 import { useMapManager } from '@/shared/resource-manager/useResourceManager'
 
 import { useOrderSelectionActions, useOrderSelectionMode } from '../store/orderSelectionHooks.store'
+import type { OrderMarkerGroupLookup } from '../store/orderMapInteraction.store'
+import { useOrderMapInteractionStore } from '../store/orderMapInteraction.store'
 import { useOrderStore } from '../store/order.store'
 import type { Order } from '../types/order'
 
@@ -38,6 +40,24 @@ export const buildOrderSelectionFromClientIds = (
   }
 }
 
+export const expandOrderClientIdsFromMarkerSelection = (
+  markerIds: string[],
+  lookup: OrderMarkerGroupLookup,
+): string[] => {
+  const expandedClientIds: string[] = []
+
+  markerIds.forEach((markerId) => {
+    const groupedClientIds = lookup.markerOrderClientIdsByMarkerId[markerId]
+    if (groupedClientIds && groupedClientIds.length > 0) {
+      expandedClientIds.push(...groupedClientIds)
+      return
+    }
+    expandedClientIds.push(markerId)
+  })
+
+  return Array.from(new Set(expandedClientIds))
+}
+
 export const useOrderCircleSelectionFlow = () => {
   const mapManager = useMapManager()
   const { showMessage } = useMessageHandler()
@@ -55,12 +75,15 @@ export const useOrderCircleSelectionFlow = () => {
 
     mapManager.enableCircleSelection({
       layerId: MAP_MARKER_LAYERS.orders,
-      callback: (clientIds) => {
+      callback: (markerIds) => {
         const byClientId = useOrderStore.getState().byClientId
-        const { clientIds: resolvedClientIds, serverIds, unsyncedCount } = buildOrderSelectionFromClientIds(
-          clientIds,
-          byClientId,
-        )
+        const markerLookup = useOrderMapInteractionStore.getState().markerLookup
+        const expandedClientIds = expandOrderClientIdsFromMarkerSelection(markerIds, markerLookup)
+        const {
+          clientIds: resolvedClientIds,
+          serverIds,
+          unsyncedCount,
+        } = buildOrderSelectionFromClientIds(expandedClientIds, byClientId)
 
         setSelectedOrders({
           clientIds: resolvedClientIds,

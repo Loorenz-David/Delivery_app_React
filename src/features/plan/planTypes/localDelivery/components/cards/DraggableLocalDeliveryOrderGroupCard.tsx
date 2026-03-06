@@ -1,4 +1,4 @@
-import { useDraggable, useDroppable } from '@dnd-kit/core'
+import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
 import type { LocalDeliveryAddressGroup } from '@/features/plan/planTypes/localDelivery/domain/localDeliveryAddressGroup.flow'
@@ -21,16 +21,20 @@ export const DraggableLocalDeliveryOrderGroupCard = ({
   projectedStopOrderByClientId,
   allOrderedStopClientIds,
 }: DraggableLocalDeliveryOrderGroupCardProps) => {
+  const rowId = `route_stop_group:${group.key}`
+
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
+    transition,
     isDragging,
-  } = useDraggable({
-    id: `route_stop_group:${group.key}`,
+  } = useSortable({
+    id: rowId,
     data: {
       type: 'route_stop_group',
+      id: rowId,
       groupKey: group.key,
       label: group.label,
       orderIds: group.orderIds,
@@ -38,6 +42,10 @@ export const DraggableLocalDeliveryOrderGroupCard = ({
       routeStopIds: group.routeStopIds,
       routeStopClientIds: group.routeStopClientIds,
       routeSolutionId: group.routeSolutionId,
+      firstAnchorStopId: group.firstAnchorStopId,
+      firstAnchorStopClientId: group.firstAnchorStopClientId,
+      lastAnchorStopId: group.lastAnchorStopId,
+      lastAnchorStopClientId: group.lastAnchorStopClientId,
       anchorStopId: group.anchorStopId,
       anchorStopClientId: group.anchorStopClientId,
       allOrderedStopClientIds,
@@ -51,29 +59,15 @@ export const DraggableLocalDeliveryOrderGroupCard = ({
     },
   })
 
-  const { setNodeRef: setDropRef } = useDroppable({
-    id: `route_stop_group_drop:${group.key}`,
-    data: {
-      type: 'route_stop_group_drop',
-      anchorStopClientId: group.anchorStopClientId,
-      anchorStopId: group.anchorStopId,
-    },
-  })
-
   const style = {
     transform: CSS.Transform.toString(transform),
+    transition,
     opacity: isDragging ? 0.45 : 1,
     cursor: 'grab',
   }
 
   return (
-    <div
-      ref={(node) => {
-        setNodeRef(node)
-        setDropRef(node)
-      }}
-      style={style}
-    >
+    <div ref={setNodeRef} style={style}>
       <LocalDeliveryOrderGroupCard
         group={group}
         expanded={expanded}

@@ -13,11 +13,14 @@ import { DeliveryReadyIcon } from '@/assets/icons'
 import { buildLocalDeliveryStopAddressGroups } from '../domain/localDeliveryAddressGroup.flow'
 import { DraggableLocalDeliveryOrderGroupCard } from './cards/DraggableLocalDeliveryOrderGroupCard'
 import { useOrderGroupUIActions, useOrderGroupUIStore } from '@/features/order/store/orderGroupUI.store'
+import { useResourceManager } from '@/shared/resource-manager/useResourceManager'
+import type { RouteReorderPreview } from '@/features/plan/dnd/controller/resolveDropIntent'
 
 
 
 
 export const LocalDeliveryOrderList = () => {
+    const { routeReorderPreview } = useResourceManager<{ routeReorderPreview?: RouteReorderPreview | null }>()
     const {
         orders,
         planStartDate,
@@ -37,7 +40,11 @@ export const LocalDeliveryOrderList = () => {
         stopByOrderId,
         ordersById,
     )
-    const { projectedStopOrderByClientId } = useLocalDeliveryDndProjectionFlow(sortedEntries)
+    const { projectedStopOrderByClientId } = useLocalDeliveryDndProjectionFlow(
+        sortedEntries,
+        routeReorderPreview ?? null,
+        selectedRouteSolution?.id ?? null,
+    )
     const groupedStops = useMemo(
         () => buildLocalDeliveryStopAddressGroups(sortedEntries),
         [sortedEntries],
@@ -58,14 +65,11 @@ export const LocalDeliveryOrderList = () => {
                 if (firstClientId) visibleIds.push(firstClientId)
                 return
             }
-            const uiKey = `local:${group.key}`
-            const expanded = expandedGroupsByKey[uiKey] ?? false
-            if (expanded) {
-                visibleIds.push(...group.routeStopClientIds)
-            }
+
+            visibleIds.push(`route_stop_group:${group.key}`)
         })
         return visibleIds
-    }, [expandedGroupsByKey, groupedStops, sortableIds])
+    }, [groupedStops, sortableIds])
 
     const strategyLabel = getRouteStrategyLabel(selectedRouteSolution?.route_end_strategy)
     const startLocationLabel = `${strategyLabel} · ${boundaryLocations.start.label}`
@@ -99,6 +103,7 @@ export const LocalDeliveryOrderList = () => {
                                         stop={entry.stop}
                                         displayStopOrder={projectedStopOrderByClientId?.get(entry.stop.client_id) ?? entry.stop.stop_order ?? null}
                                         planStartDate={planStartDate}
+                                        allOrderedStopClientIds={allOrderedStopClientIds}
                                     />
                                 )
                             }

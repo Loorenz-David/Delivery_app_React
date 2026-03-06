@@ -11,6 +11,7 @@ type DraggableLocalDeliveryOrderCardProps = {
   stop: RouteSolutionStop
   displayStopOrder?: number | null
   planStartDate?: string | null
+  allOrderedStopClientIds: string[]
 }
 
 
@@ -19,6 +20,7 @@ export const DraggableLocalDeliveryOrderCard = ({
   stop,
   displayStopOrder,
   planStartDate,
+  allOrderedStopClientIds,
 }: DraggableLocalDeliveryOrderCardProps) => {
   const {
     attributes,
@@ -38,6 +40,7 @@ export const DraggableLocalDeliveryOrderCard = ({
       routeStopId: stop.id,
       routeStopClientId: stop.client_id,
       routeSolutionId: stop.route_solution_id,
+      allOrderedStopClientIds,
     },
   })
 

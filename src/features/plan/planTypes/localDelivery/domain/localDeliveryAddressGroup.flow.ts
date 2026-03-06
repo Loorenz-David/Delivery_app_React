@@ -20,6 +20,10 @@ export type LocalDeliveryAddressGroup = {
   routeStopIds: number[]
   routeStopClientIds: string[]
   routeSolutionId: number | null
+  firstAnchorStopId: number | null
+  firstAnchorStopClientId: string | null
+  lastAnchorStopId: number | null
+  lastAnchorStopClientId: string | null
   anchorStopId: number | null
   anchorStopClientId: string | null
   firstStopOrder: number | null
@@ -147,6 +151,10 @@ export const buildLocalDeliveryStopAddressGroups = (
           .map((entry) => entry.stop.client_id)
           .filter((clientId): clientId is string => Boolean(clientId)),
         routeSolutionId: typeof first?.stop.route_solution_id === 'number' ? first.stop.route_solution_id : null,
+        firstAnchorStopId: typeof first?.stop.id === 'number' ? first.stop.id : null,
+        firstAnchorStopClientId: first?.stop.client_id ?? null,
+        lastAnchorStopId: typeof last?.stop.id === 'number' ? last.stop.id : null,
+        lastAnchorStopClientId: last?.stop.client_id ?? null,
         anchorStopId: typeof first?.stop.id === 'number' ? first.stop.id : null,
         anchorStopClientId: first?.stop.client_id ?? null,
         firstStopOrder: typeof first?.stop.stop_order === 'number' ? first.stop.stop_order : null,

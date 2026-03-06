@@ -22,7 +22,7 @@ const createOrder = (overrides?: Partial<Order>): Order => ({
 
 export const runOrderMapMarkersFlowTests = () => {
   {
-    const markers = buildOrderMarkers({
+    const { markers } = buildOrderMarkers({
       orders: [
         createOrder({ client_id: 'valid-1' }),
         createOrder({ client_id: 'invalid-no-address', client_address: null }),
@@ -43,7 +43,7 @@ export const runOrderMapMarkersFlowTests = () => {
   }
 
   {
-    const markers = buildOrderMarkers({
+    const { markers } = buildOrderMarkers({
       orders: [createOrder({ client_id: 'styled-order' })],
       markerClassName: 'order-marker',
       onMarkerClick: () => undefined,
@@ -62,7 +62,7 @@ export const runOrderMapMarkersFlowTests = () => {
     let clickedOrderClientId: string | null = null
     const clickEvent = {} as MouseEvent
 
-    const markers = buildOrderMarkers({
+    const { markers } = buildOrderMarkers({
       orders: [createOrder({ client_id: 'click-target' })],
       markerClassName: 'order-marker',
       onMarkerClick: (_event, order) => {
@@ -72,5 +72,43 @@ export const runOrderMapMarkersFlowTests = () => {
 
     markers[0].onClick(clickEvent)
     assert(clickedOrderClientId === 'click-target', 'marker click should forward the exact order')
+  }
+
+  {
+    const { markers, lookup } = buildOrderMarkers({
+      orders: [
+        createOrder({
+          client_id: 'group-a',
+          id: 101,
+          client_address: {
+            street_address: 'Same Address',
+            coordinates: { lat: 25.7617, lng: -80.1918 },
+          },
+        }),
+        createOrder({
+          client_id: 'group-b',
+          id: 102,
+          client_address: {
+            street_address: 'Same Address',
+            coordinates: { lat: 25.761704, lng: -80.191804 },
+          },
+        }),
+      ],
+      markerClassName: 'order-marker',
+      onMarkerClick: () => undefined,
+    })
+
+    assert(markers.length === 1, 'same-address orders should render a single grouped marker')
+    assert(markers[0].label === '2', 'grouped marker should display grouped order count label')
+
+    const markerId = String(markers[0].id)
+    assert(
+      lookup.markerOrderClientIdsByMarkerId[markerId]?.length === 2,
+      'lookup should map grouped marker to all grouped order client ids',
+    )
+    assert(
+      lookup.markerIdByOrderClientId['group-a'] === markerId && lookup.markerIdByOrderClientId['group-b'] === markerId,
+      'lookup should map each grouped order client id back to grouped marker id',
+    )
   }
 }

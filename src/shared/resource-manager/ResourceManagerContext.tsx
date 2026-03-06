@@ -23,6 +23,7 @@ export type KnownResourceRegistry = {
   isMobileObject?: isMobileObject
   baseControlls?: BaseControls<unknown>
   droppedInPlan?: string | null
+  routeReorderPreview?: unknown
 }
 
 export type ResourceRegistry<T extends Record<string, unknown> = KnownResourceRegistry> =

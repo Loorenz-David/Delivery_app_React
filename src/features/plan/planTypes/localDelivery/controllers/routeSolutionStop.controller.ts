@@ -215,6 +215,7 @@ export function useRouteSolutionStopMutations() {
       position: number
       anchorStopId: number
     }) => {
+
       const { routeSolutionId, routeStopIds, position, anchorStopId } = params
       if (!routeStopIds.length) return null
 
@@ -238,6 +239,7 @@ export function useRouteSolutionStopMutations() {
 
       const currentOrder = stops.map((stop) => stop.client_id)
       const nextOrder = reordered.map((stop) => stop.client_id)
+
       const isSameOrder = currentOrder.length === nextOrder.length
         && currentOrder.every((value, index) => value === nextOrder[index])
       if (isSameOrder) {

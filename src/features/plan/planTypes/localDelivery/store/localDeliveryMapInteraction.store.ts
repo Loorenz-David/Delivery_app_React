@@ -1,27 +1,21 @@
 import { create } from 'zustand'
 
-export type OrderMapHoverSource = 'list' | 'map'
-
-export type OrderMarkerGroupLookup = {
+export type LocalDeliveryMarkerGroupLookup = {
   markerOrderClientIdsByMarkerId: Record<string, string[]>
   primaryOrderClientIdByMarkerId: Record<string, string>
   markerIdByOrderClientId: Record<string, string>
 }
 
-type OrderGroupOverlayState = {
+type LocalDeliveryGroupOverlayState = {
   markerId: string | null
   markerAnchorEl: HTMLElement | null
   orderClientIds: string[]
 }
 
-type OrderMapInteractionState = {
-  hoveredClientId: string | null
-  hoverSource: OrderMapHoverSource | null
-  markerLookup: OrderMarkerGroupLookup
-  groupOverlay: OrderGroupOverlayState
-  setHovered: (clientId: string, source: OrderMapHoverSource) => void
-  clearHovered: (source?: OrderMapHoverSource) => void
-  setMarkerLookup: (lookup: OrderMarkerGroupLookup) => void
+type LocalDeliveryMapInteractionState = {
+  markerLookup: LocalDeliveryMarkerGroupLookup
+  groupOverlay: LocalDeliveryGroupOverlayState
+  setMarkerLookup: (lookup: LocalDeliveryMarkerGroupLookup) => void
   clearMarkerLookup: () => void
   openGroupOverlay: (params: {
     markerId: string
@@ -31,13 +25,13 @@ type OrderMapInteractionState = {
   closeGroupOverlay: () => void
 }
 
-const EMPTY_LOOKUP: OrderMarkerGroupLookup = {
+const EMPTY_LOOKUP: LocalDeliveryMarkerGroupLookup = {
   markerOrderClientIdsByMarkerId: {},
   primaryOrderClientIdByMarkerId: {},
   markerIdByOrderClientId: {},
 }
 
-const EMPTY_GROUP_OVERLAY: OrderGroupOverlayState = {
+const EMPTY_GROUP_OVERLAY: LocalDeliveryGroupOverlayState = {
   markerId: null,
   markerAnchorEl: null,
   orderClientIds: [],
@@ -70,44 +64,17 @@ const areStringArrayMapsEqual = (
 }
 
 const isSameLookup = (
-  left: OrderMarkerGroupLookup,
-  right: OrderMarkerGroupLookup,
+  left: LocalDeliveryMarkerGroupLookup,
+  right: LocalDeliveryMarkerGroupLookup,
 ): boolean => (
   areStringArrayMapsEqual(left.markerOrderClientIdsByMarkerId, right.markerOrderClientIdsByMarkerId)
   && areStringMapsEqual(left.primaryOrderClientIdByMarkerId, right.primaryOrderClientIdByMarkerId)
   && areStringMapsEqual(left.markerIdByOrderClientId, right.markerIdByOrderClientId)
 )
 
-export const useOrderMapInteractionStore = create<OrderMapInteractionState>((set) => ({
-  hoveredClientId: null,
-  hoverSource: null,
+export const useLocalDeliveryMapInteractionStore = create<LocalDeliveryMapInteractionState>((set) => ({
   markerLookup: EMPTY_LOOKUP,
   groupOverlay: EMPTY_GROUP_OVERLAY,
-  setHovered: (clientId, source) =>
-    set((state) => {
-      if (state.hoveredClientId === clientId && state.hoverSource === source) {
-        return state
-      }
-      return {
-        ...state,
-        hoveredClientId: clientId,
-        hoverSource: source,
-      }
-    }),
-  clearHovered: (source) =>
-    set((state) => {
-      if (source && state.hoverSource !== source) {
-        return state
-      }
-      if (state.hoveredClientId == null && state.hoverSource == null) {
-        return state
-      }
-      return {
-        ...state,
-        hoveredClientId: null,
-        hoverSource: null,
-      }
-    }),
   setMarkerLookup: (lookup) =>
     set((state) => {
       const sameLookup = isSameLookup(state.markerLookup, lookup)

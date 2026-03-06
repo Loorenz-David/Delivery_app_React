@@ -8,6 +8,7 @@ import { OrderAddressGroupCard } from '../cards/OrderAddressGroupCard'
 type DraggableOrderAddressGroupCardProps = {
   group: OrderAddressGroup
   expanded: boolean
+  isGroupHovered?: boolean
   onToggleExpanded: () => void
   isSelectionMode: boolean
   isOrderSelected?: (order: Order) => boolean
@@ -23,6 +24,7 @@ type DraggableOrderAddressGroupCardProps = {
 export const DraggableOrderAddressGroupCard = ({
   group,
   expanded,
+  isGroupHovered,
   onToggleExpanded,
   isSelectionMode,
   isOrderSelected,
@@ -55,9 +57,13 @@ export const DraggableOrderAddressGroupCard = ({
     },
   })
 
-  const style = {
+  const style: {
+    transform: string | undefined
+    visibility: 'hidden' | 'visible'
+    cursor: string
+  } = {
     transform: CSS.Transform.toString(transform),
-    opacity: isDragging ? 0.45 : 1,
+    visibility: isDragging ? 'hidden' : 'visible',
     cursor: 'grab',
   }
 
@@ -66,6 +72,7 @@ export const DraggableOrderAddressGroupCard = ({
       <OrderAddressGroupCard
         group={group}
         expanded={expanded}
+        isGroupHovered={isGroupHovered}
         onToggleExpanded={onToggleExpanded}
         isSelectionMode={isSelectionMode}
         isOrderSelected={isOrderSelected}

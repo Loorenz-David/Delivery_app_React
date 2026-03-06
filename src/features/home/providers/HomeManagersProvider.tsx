@@ -1,7 +1,7 @@
 import type { ComponentType, ReactNode } from 'react'
 import { useEffect, useMemo } from 'react'
 
-import { DndContext, DragOverlay, closestCenter, pointerWithin } from '@dnd-kit/core'
+import { DndContext, DragOverlay } from '@dnd-kit/core'
 
 
 import { usePlanOrderDndController } from '@/features/plan/hooks/usePlanOrderDndController'
@@ -22,23 +22,13 @@ import { OrderBatchDragOverlayCard } from '@/features/order/components/cards/Ord
 import { OrderGroupDragOverlayCard } from '@/features/order/components/cards/OrderGroupDragOverlayCard'
 import { RouteStopDragOverlay } from '@/features/plan/planTypes/localDelivery/components/overlays/RouteStopDragOverlay'
 import { RouteStopGroupDragOverlay } from '@/features/plan/planTypes/localDelivery/components/overlays/RouteStopGroupDragOverlay'
+import { homeCollisionDetection } from '@/features/home/dnd/collisionStrategies'
 
 import type{ PayloadBase } from '../types/types'
 import { useBaseControlls } from '../hooks/useBaseControlls'
 import { homePopupRegistry } from '../registry/homePopups'
 import { homeSectionRegistry } from '../registry/homeSections'
 import { useMobile } from '@/app/contexts/MobileContext'
-
-const collisionDetection = (args: Parameters<typeof pointerWithin>[0]) => {
-    const pointerCollisions = pointerWithin(args)
-    if (pointerCollisions.length > 0) {
-        return pointerCollisions
-    }
-
-    return closestCenter(args)
-}
-
-
 
 type ExtractPayload<T> = T extends ComponentType<StackComponentProps<infer P>>
   ? P
@@ -96,13 +86,29 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
         }
     },[isMobile])
 
-    const { onDragStart, onDragOver, onDragEnd, onDragCancel, activeDrag, droppedInPlan, sensors }  = usePlanOrderDndController()
+    const {
+        onDragStart,
+        onDragOver,
+        onDragEnd,
+        onDragCancel,
+        activeDrag,
+        droppedInPlan,
+        routeReorderPreview,
+        sensors,
+    }  = usePlanOrderDndController()
 
     return (
-       <ResourcesManagerProvider managers={{ sectionManager, mapManager, popupManager, baseControlls, droppedInPlan }}>
-            <DndContext
-                sensors={sensors}
-                collisionDetection={collisionDetection}
+       <ResourcesManagerProvider managers={{
+            sectionManager,
+            mapManager,
+            popupManager,
+            baseControlls,
+            droppedInPlan,
+            routeReorderPreview,
+        }}>
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={homeCollisionDetection}
                 autoScroll={{
                     enabled: true,
                     threshold: { x: 0.1, y: 0.2 },

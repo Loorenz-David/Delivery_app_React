@@ -46,9 +46,13 @@ export const DraggableOrderCard = ({
     },
   })
 
-  const style = {
+  const style: {
+    transform: string | undefined
+    visibility: 'hidden' | 'visible'
+    cursor: string
+  } = {
     transform: CSS.Transform.toString(transform),
-    opacity: isDragging ? 0.4 : 1,
+    visibility: isDragging ? 'hidden' : 'visible',
     cursor: isSelectionMode ? 'pointer' : 'grab',
   }
 

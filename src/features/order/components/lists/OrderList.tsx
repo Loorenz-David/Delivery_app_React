@@ -69,12 +69,16 @@ export const OrderList = ({
 
         const uiKey = `order:${group.key}`
         const expanded = expandedGroupsByKey[uiKey] ?? false
+        const isGroupHovered = Boolean(
+          hoveredClientId && group.orders.some((order) => order.client_id === hoveredClientId),
+        )
 
         return (
           <DraggableOrderAddressGroupCard
             key={group.key}
             group={group}
             expanded={expanded}
+            isGroupHovered={isGroupHovered}
             onToggleExpanded={() => toggleGroup(uiKey)}
             isSelectionMode={isSelectionMode}
             isOrderSelected={isOrderSelected}

@@ -12,7 +12,11 @@ import { useBaseControlls, useMapManager, useSectionManager } from '@/shared/res
 import { useOrderCircleSelectionFlow } from '../flows/orderCircleSelection.flow'
 import { useOrderBatchSelectionResolveFlow } from '../flows/orderBatchSelectionResolve.flow'
 import { useOrderStats } from '../store/orderList.store'
-import { useHoveredOrderClientId, useOrderMapInteractionActions } from '../store/orderMapInteractionHooks.store'
+import {
+  useHoveredOrderClientId,
+  useOrderMapInteractionActions,
+  useOrderMarkerLookup,
+} from '../store/orderMapInteractionHooks.store'
 import { useStackActionEntries } from '@/shared/stack-manager/useStackActionEntries'
 import type { Order } from '../types/order'
 import { useOrderSelectionActions, useOrderSelectionMode } from '../store/orderSelectionHooks.store'
@@ -35,7 +39,8 @@ export const OrderProvider = ({ children }: PropsWithChildren) => {
   const sectionManager = useSectionManager()
   const sectionEntries = useStackActionEntries(sectionManager)
   const hoveredClientId = useHoveredOrderClientId()
-  const { setHovered, clearHovered } = useOrderMapInteractionActions()
+  const markerLookup = useOrderMarkerLookup()
+  const { setHovered, clearHovered, openGroupOverlay, closeGroupOverlay } = useOrderMapInteractionActions()
 
   const { loadOrders } = useOrderFlow()
   const orderSelectionActions = useOrderSelectionListActions({
@@ -76,11 +81,27 @@ export const OrderProvider = ({ children }: PropsWithChildren) => {
   const handleOrderMarkerMouseLeave = useCallback((_event: MouseEvent, _order: Order) => {
     clearHovered('map')
   }, [clearHovered])
+
+  const handleGroupMarkerClick = useCallback(
+    ({ markerId, markerAnchorEl, orders: groupedOrders }: {
+      markerId: string
+      markerAnchorEl: HTMLElement
+      orders: Order[]
+    }) => {
+      openGroupOverlay({
+        markerId,
+        markerAnchorEl,
+        orderClientIds: groupedOrders.map((order) => order.client_id),
+      })
+    },
+    [openGroupOverlay],
+  )
   
 
   useOrderMapMarkersFlow({
     orders,
     onMarkerClick: orderActions.handleOrderMarkerClick,
+    onGroupMarkerClick: handleGroupMarkerClick,
     onMarkerMouseEnter: handleOrderMarkerMouseEnter,
     onMarkerMouseLeave: handleOrderMarkerMouseLeave,
     markerClassName: 'order-marker',
@@ -89,12 +110,18 @@ export const OrderProvider = ({ children }: PropsWithChildren) => {
   useOrderCircleSelectionFlow()
 
   useEffect(() => {
-    mapManager.setSelectedMarker(activeOrderDetailClientId)
-  }, [activeOrderDetailClientId, mapManager])
+    const markerId = activeOrderDetailClientId
+      ? markerLookup.markerIdByOrderClientId[activeOrderDetailClientId] ?? activeOrderDetailClientId
+      : null
+    mapManager.setSelectedMarker(markerId)
+  }, [activeOrderDetailClientId, mapManager, markerLookup.markerIdByOrderClientId])
 
   useEffect(() => {
-    mapManager.setHoveredMarker(hoveredClientId)
-  }, [hoveredClientId, mapManager])
+    const markerId = hoveredClientId
+      ? markerLookup.markerIdByOrderClientId[hoveredClientId] ?? hoveredClientId
+      : null
+    mapManager.setHoveredMarker(markerId)
+  }, [hoveredClientId, mapManager, markerLookup.markerIdByOrderClientId])
 
   useEffect(() => {
     if (fistLoad.current) {
@@ -110,8 +137,15 @@ export const OrderProvider = ({ children }: PropsWithChildren) => {
     return () => {
       useOrderSelectionStore.getState().disableSelectionMode()
       useOrderGroupUIStore.getState().clearGroupUI()
+      closeGroupOverlay()
     }
-  }, [])
+  }, [closeGroupOverlay])
+
+  useEffect(() => {
+    if (baseControlls.isBaseOpen) {
+      closeGroupOverlay()
+    }
+  }, [baseControlls.isBaseOpen, closeGroupOverlay])
 
   useEffect(() => {
     const teamIdRaw = (
