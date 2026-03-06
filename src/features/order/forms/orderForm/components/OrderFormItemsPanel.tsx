@@ -82,7 +82,7 @@ export const OrderFormItemsPanel = ({
                 </div>
 
                 <div className="h-full w-full min-h-0 overflow-y-auto">
-                  <ItemFormProvider payload={itemEditorPayload} closeItemForm={closeItemEditor}>
+                  <ItemFormProvider payload={itemEditorPayload} onSuccessClose={closeItemEditor}>
                     <ItemFormLayout />
                   </ItemFormProvider>
                 </div>

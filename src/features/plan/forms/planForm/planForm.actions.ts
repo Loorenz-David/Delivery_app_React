@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useMessageHandler } from '@/shared/message-handler/MessageHandlerContext'
 import type { DeliveryPlan } from '../../types/plan'
 import { usePlanController } from '../../controllers/plan.controller'
-import { useBaseControlls, usePopupManager } from '@/shared/resource-manager/useResourceManager'
+import { useBaseControlls } from '@/shared/resource-manager/useResourceManager'
 import { useOrderSelectionStore } from '@/features/order/store/orderSelection.store'
 
 
@@ -21,42 +21,46 @@ export const usePlanFormActions = ({
 }: Props) => {
     const { showMessage } = useMessageHandler()
     const { createPlan, deletePlan } = usePlanController()
-    const popupManager = usePopupManager()
     const baseControlls = useBaseControlls()
 
 
-    const handleCreatePlan = useCallback ( async ()=>{
+    const handleCreatePlan = useCallback(async (): Promise<boolean> => {
 
         const isValidPlanForm  = planValidateForm()
 
 
-        if( !isValidPlanForm ) return showMessage({message:"Invalid form, check for required fields.", status:'warning'})
+        if (!isValidPlanForm) {
+            showMessage({message:'Invalid form, check for required fields.', status:'warning'})
+            return false
+        }
 
         const response = await createPlan(planForm, {
             newOrderLinks: selectedOrderServerIds,
         })
 
-        if (response !== null){
-            popupManager.closeByKey('PlanForm')
+        if (response !== null) {
             if (source === 'order_multi_select') {
                 useOrderSelectionStore.getState().disableSelectionMode()
             }
+            return true
         }
-    } , [createPlan, planForm, planValidateForm, popupManager, selectedOrderServerIds, showMessage, source] )
+        return false
+    }, [createPlan, planForm, planValidateForm, selectedOrderServerIds, showMessage, source])
 
-    const handleDeletePlan = useCallback(async () => {
+    const handleDeletePlan = useCallback(async (): Promise<boolean> => {
         const planId = planForm.id ?? planForm.client_id
         if (!planId) {
             showMessage({message:"Plan id is missing.", status:'warning'})
-            return
+            return false
         }
 
         const result = await deletePlan(planId)
         if (result) {
-            popupManager.closeByKey('PlanForm')
             baseControlls.closeBase()
+            return true
         }
-    }, [planForm, deletePlan, showMessage, popupManager])
+        return false
+    }, [baseControlls, deletePlan, planForm, showMessage])
 
     return {
         handleCreatePlan,

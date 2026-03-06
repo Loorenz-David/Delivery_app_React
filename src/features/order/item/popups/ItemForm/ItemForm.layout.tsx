@@ -6,7 +6,7 @@ import { Field } from '@/shared/inputs/FieldContainer'
 import { InputField } from '@/shared/inputs/InputField'
 import { InputWarning } from '@/shared/inputs/InputWarning'
 import { SelectInputWithPopover } from '@/shared/inputs/SelectInputWithPopover'
-import { PopupFooter } from '@/shared/popups/MainPopup/PopupFooter'
+import { FeaturePopupFooter } from '@/shared/popups/featurePopup'
 
 import { ItemPropertiesInputs } from '../../components/ItemPropertiesInputs'
 import { useItemForm } from './ItemForm.context'
@@ -154,7 +154,31 @@ export const ItemFormLayout = () => {
           </BasicButton>
         </footer>
       ) : (
-        <PopupFooter footerConfig={footerConfig} />
+        <FeaturePopupFooter>
+          {footerConfig.deleteButton ? (
+            <BasicButton
+              params={{
+                variant: 'secondary',
+                onClick: footerConfig.deleteButton.action,
+                className: 'py-2 px-4 text-red-500 border-red-500',
+              }}
+            >
+              {footerConfig.deleteButton.label}
+            </BasicButton>
+          ) : <span />}
+          <div className="flex flex-1 justify-end">
+            <BasicButton
+              params={{
+                variant: 'primary',
+                onClick: footerConfig.saveButton.action,
+                className: 'py-3 px-4',
+                style:{backgroundColor:'var(--color-turques)'}
+              }}
+            >
+              {footerConfig.saveButton.label}
+            </BasicButton>
+          </div>
+        </FeaturePopupFooter>
       )}
     </div>
   )

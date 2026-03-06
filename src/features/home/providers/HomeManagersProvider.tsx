@@ -16,7 +16,6 @@ import { useMap } from '@/shared/map'
 
 
 import { SectionPanel } from '@/shared/section-panel/SectionPanel'
-import { MainPopup } from '@/shared/popups/MainPopup/MainPopup'
 
 import { OrderCard } from '@/features/order/components/cards/OrderCard'
 import { OrderBatchDragOverlayCard } from '@/features/order/components/cards/OrderBatchDragOverlayCard'
@@ -26,9 +25,8 @@ import { RouteStopGroupDragOverlay } from '@/features/plan/planTypes/localDelive
 
 import type{ PayloadBase } from '../types/types'
 import { useBaseControlls } from '../hooks/useBaseControlls'
-import { homePopupRegistry, loadingPopupRegistry } from '../registry/homePopups'
+import { homePopupRegistry } from '../registry/homePopups'
 import { homeSectionRegistry } from '../registry/homeSections'
-import { LoadingPopup } from '@/shared/popups/loadingPopup/loadingPopup'
 import { useMobile } from '@/app/contexts/MobileContext'
 
 const collisionDetection = (args: Parameters<typeof pointerWithin>[0]) => {
@@ -61,7 +59,6 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
     const popupManager = useMemo(
         () =>
         new StackActionManager<HomePopupPayloads>({
-            //blueprint: MainPopup,
             stackRegistry: homePopupRegistry,
         }),
         [],

@@ -271,7 +271,7 @@ export const OrderFormDeliveryWindowCalendar = ({
         )
 
         return (
-          <div className="flex min-w-0 flex-col gap-2">
+          <div className="flex min-w-0 flex-col gap-2 ">
             <DeliveryWindowCalendarModeSelector
               mode={mode}
               onChangeMode={(nextMode) => {

@@ -19,16 +19,16 @@ export const LocalDeliveryOrderGroupChildren = ({
   planStartDate,
   projectedStopOrderByClientId,
 }: LocalDeliveryOrderGroupChildrenProps) => (
-  <div className="relative ml-6 mt-3 pl-6">
+  <div className="relative ml-6 pl-6 mt-4 mb-4 ">
     {entries.length > 1 ? (
-      <div className="pointer-events-none absolute bottom-2 left-1 top-2 w-px bg-[var(--color-border)]/70" />
+      <div className="pointer-events-none absolute bottom-2 -left-[2px] -top-6 w-px bg-[var(--color-muted)]/40" />
     ) : null}
 
     <div className="flex flex-col gap-3">
       {entries.map((entry) => (
         <div key={entry.stop.client_id} className="relative">
           {entries.length > 1 ? (
-            <div className="pointer-events-none absolute -left-[19px] top-8 h-px w-4 bg-[var(--color-border)]/70" />
+            <div className="pointer-events-none absolute -left-[19px] top-8 h-px w-4 bg-[var(--color-primary)]/40" />
           ) : null}
           <DraggableLocalDeliveryOrderCard
             order={entry.order}

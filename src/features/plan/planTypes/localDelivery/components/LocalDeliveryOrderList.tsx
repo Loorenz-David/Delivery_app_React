@@ -84,6 +84,7 @@ export const LocalDeliveryOrderList = () => {
                             planStartDate={planStartDate}
                             warningRegistry={routeSolutionWarningRegistry}
                             localDeliveryActions={localDeliveryActions}
+
                         />
                     }
                     <SortableContext items={visibleSortableIds} strategy={verticalListSortingStrategy}>
@@ -126,7 +127,7 @@ export const LocalDeliveryOrderList = () => {
                             planStartDate={planStartDate}
                         />
                     ))}
-                    {  boundaryLocations.end.location &&
+                    {  boundaryLocations.end.location && groupedStops.length > 0 && 
                         <div className="pb-10">
                             <LocalDeliveryBoundaryLocationCard 
                                 label={endLocationLabel}
@@ -136,6 +137,7 @@ export const LocalDeliveryOrderList = () => {
                                 planStartDate={planStartDate}
                                 warningRegistry={routeSolutionWarningRegistry}
                                 localDeliveryActions={localDeliveryActions}
+                                containerClassName={" mt-4"}
                             />
 
                          </div>

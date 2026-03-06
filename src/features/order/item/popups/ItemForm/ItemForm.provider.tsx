@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { hasFormChanges } from '@/shared/data-validation/compareChanges'
 import { makeInitialFormCopy } from '@/shared/data-validation/initialFormSnapshot'
 
 import { useItemFlow } from '../../hooks/useItemFlow'
@@ -11,21 +12,19 @@ import { useItemFormValidation } from './ItemForm.validation'
 import { useItemFormWarnings } from './ItemForm.warnings'
 import { useItemFormSubmit } from './useItemFormSubmit'
 import { useItemFormSetters } from './useItemFormSetters'
-import { useItemFormConfig } from './useItemFormConfig'
-import type { ItemFormPopupBindings } from './useItemFormConfig'
 import { useItemConfigurations } from './useItemConfigurations'
 import { buildInitialItemDraft } from './form/itemForm.factory'
 
 export const ItemFormProvider = ({
   payload,
   children,
-  closeItemForm,
-  popupBindings,
+  onSuccessClose,
+  onUnsavedChangesChange,
 }: {
   payload: ItemPopupPayload | undefined
   children: ReactNode
-  closeItemForm: () => void
-  popupBindings?: ItemFormPopupBindings
+  onSuccessClose?: () => void | Promise<void>
+  onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void
 }) => {
   if (!payload) {
     throw new Error('ItemForm payload is missing.')
@@ -53,18 +52,16 @@ export const ItemFormProvider = ({
       setSelectedItemType
     })
 
-  useItemFormConfig({
-    payload,
-    formState,
-    initialFormRef,
-    popupBindings,
-  })
-
   useEffect(() => {
     const initialDraft = buildInitialItemDraft({ payload, existingItem })
     setFormState(initialDraft)
     makeInitialFormCopy(initialFormRef, initialDraft)
   }, [autonomousItemId, existingItem, payload])
+
+  const hasUnsavedChanges = hasFormChanges(formState, initialFormRef)
+  useEffect(() => {
+    onUnsavedChangesChange?.(hasUnsavedChanges)
+  }, [hasUnsavedChanges, onUnsavedChangesChange])
 
   const { validateForm } = useItemFormValidation({ formState, warnings })
 
@@ -73,7 +70,7 @@ export const ItemFormProvider = ({
     formState,
     validateForm,
     initialFormRef,
-    closeItemForm,
+    onSuccessClose,
   })
 
   const value = useMemo(
@@ -85,6 +82,7 @@ export const ItemFormProvider = ({
       setFormState,
       initialFormRef,
       warnings,
+      hasUnsavedChanges,
       itemTypeOptions, 
       selectedItemTypeProperties, 
       ...submitters,
@@ -92,7 +90,9 @@ export const ItemFormProvider = ({
     [
       existingItem,
       formState,
+      hasUnsavedChanges,
       itemTypeOptions,
+      onSuccessClose,
       payload,
       selectedItemTypeProperties,
       setters,

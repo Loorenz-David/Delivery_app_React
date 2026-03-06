@@ -127,7 +127,7 @@ const DELIVERY_WINDOW_CALENDAR_SHELL_PRESETS: Record<
       activeButtonClassName:
         'border-[var(--color-text)] bg-[var(--color-text)] text-[var(--color-page)]',
       inactiveButtonClassName:
-        'border-[var(--color-border-accent)] bg-transparent text-[var(--color-muted)]',
+        'border-[var(--color-border-accent)] bg-[var(--color-page)] text-[var(--color-muted)]',
     },
     list: {
       rootClassName:

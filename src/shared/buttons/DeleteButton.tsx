@@ -65,7 +65,7 @@ export const ConfirmActionButton = ({
         <motion.div
           key="confirm"
           role="button"
-          className={`relative overflow-hidden cursor-pointer ${confirmClassName}`}
+          className={`relative overflow-hidden cursor-pointer select-none ${confirmClassName}`}
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.96 }}
@@ -74,7 +74,7 @@ export const ConfirmActionButton = ({
         >
           {/* Progress Overlay */}
           <motion.span
-            className={`absolute inset-0 ${confirmOverLay}`}
+            className={`absolute inset-0 select-none ${confirmOverLay}`}
             style={{ transformOrigin: 'left center' }}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}

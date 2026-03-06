@@ -12,13 +12,13 @@ export const useItemFormSubmit = ({
   formState,
   validateForm,
   initialFormRef,
-  closeItemForm,
+  onSuccessClose,
 }: {
   payload: ItemPopupPayload
   formState: Item
   validateForm: () => boolean
   initialFormRef: RefObject<Item | null>
-  closeItemForm: () => void
+  onSuccessClose?: () => void | Promise<void>
 }) => {
   const { showMessage } = useMessageHandler()
   const { saveAutonomousItem, deleteAutonomousItem } = useItemController()
@@ -31,17 +31,17 @@ export const useItemFormSubmit = ({
     [payload],
   )
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (): Promise<boolean> => {
     const isValid = validateForm()
     if (!isValid) {
       showMessage({ status: 400, message: 'Please fix the highlighted fields.' })
-      return
+      return false
     }
 
     const initialForm = initialFormRef.current
     if (!initialForm) {
       showMessage({ status: 400, message: 'Missing initial form snapshot.' })
-      return
+      return false
     }
 
     if (payload.mode === 'controlled') {
@@ -49,13 +49,13 @@ export const useItemFormSubmit = ({
         ...formState,
         order_id: payload.orderId,
       })
-      closeItemForm()
-      return
+      await onSuccessClose?.()
+      return true
     }
 
     if (payload.itemId && !hasFormChanges(formState, initialFormRef)) {
       showMessage({ status: 400, message: 'No changes to save.' })
-      return
+      return false
     }
 
     const saved = await saveAutonomousItem({
@@ -67,31 +67,36 @@ export const useItemFormSubmit = ({
       },
     })
 
-    if (saved) {
-      closeItemForm()
+    if (!saved) {
+      return false
     }
-  }, [closeItemForm, formState, initialFormRef, payload, saveAutonomousItem, showMessage, validateForm])
 
-  const handleDelete = useCallback(async () => {
-    if (!canDelete) return
+    await onSuccessClose?.()
+    return true
+  }, [formState, initialFormRef, onSuccessClose, payload, saveAutonomousItem, showMessage, validateForm])
+
+  const handleDelete = useCallback(async (): Promise<boolean> => {
+    if (!canDelete) return false
 
     if (payload.mode === 'controlled') {
       const targetId = payload.initialItem?.client_id
-      if (!targetId || !payload.onDelete) return
+      if (!targetId || !payload.onDelete) return false
 
       payload.onDelete(targetId)
-      closeItemForm()
-      return
+      await onSuccessClose?.()
+      return true
     }
 
     const targetId = payload.itemId
-    if (!targetId) return
+    if (!targetId) return false
 
     const deleted = await deleteAutonomousItem(targetId)
-    if (deleted) {
-      closeItemForm()
+    if (!deleted) {
+      return false
     }
-  }, [canDelete, closeItemForm, deleteAutonomousItem, payload])
+    await onSuccessClose?.()
+    return true
+  }, [canDelete, deleteAutonomousItem, onSuccessClose, payload])
 
   return {
     canDelete,

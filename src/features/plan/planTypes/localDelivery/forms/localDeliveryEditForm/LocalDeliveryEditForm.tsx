@@ -1,10 +1,27 @@
-import { LocalDeliveryEditFormLayout } from './LocalDeliveryEditForm.layout'
-import { LocalDeliveryEditFormProvider } from './LocalDeliveryEditForm.provider'
+import type { ReactNode } from 'react'
 
-export const LocalDeliveryEditFormFeature = () => {
+import { LocalDeliveryEditFormForm } from './components'
+import { LocalDeliveryEditFormProvider } from './LocalDeliveryEditForm.provider'
+import type { PopupPayload } from './LocalDeliveryEditForm.types'
+
+export const LocalDeliveryEditFormFeature = ({
+  payload,
+  onSuccessClose,
+  onUnsavedChangesChange,
+  children,
+}: {
+  payload?: PopupPayload
+  onSuccessClose?: () => void | Promise<void>
+  onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void
+  children?: ReactNode
+}) => {
   return (
-    <LocalDeliveryEditFormProvider>
-      <LocalDeliveryEditFormLayout />
+    <LocalDeliveryEditFormProvider
+      payload={payload}
+      onSuccessClose={onSuccessClose}
+      onUnsavedChangesChange={onUnsavedChangesChange}
+    >
+      {children ?? <LocalDeliveryEditFormForm />}
     </LocalDeliveryEditFormProvider>
   )
 }

@@ -41,11 +41,11 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
  
   return (
     <form
-      className={`flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pt-4 scroll-thin ${
+      className={`flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pt-4 scroll-thin bg-[var(--color-ligth-bg)] ${
         compact ? 'pb-5' : 'h-full pb-[100px]'
       }`}
     >
-      <div className=" rounded-2xl border border-[var(--color-border-accent)] bg-[var(--color-page)]">
+      <div className=" rounded-2xl border border-[var(--color-border-accent)] bg-[var(--color-page)] shadow-sm">
         <Cell>
           <Field  warningPlacement ='besidesLabel' label="Email:" required={true} warningController={warnings.emailWarning}>
             <InputField
@@ -121,7 +121,11 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
             <AddressAutocomplete
               onSelectedAddress={formSetters.handleAddress}
               selectedAddress={formState.client_address}
-              fieldClassName={' w-full pl-1 pb-1'}
+              fieldClassName={' flex w-full items-center px-4 py-1 pb-2 gap-2'}
+              inputClassName={'text-sm w-full'}
+              intentKey={'order-form-delivery-address'}
+              enableCurrentLocation
+              enableSavedLocations
             />
           </Field>
         </div>
@@ -211,7 +215,8 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
           {showMore ? 'less' : 'more'}
         </BasicButton>
       </div>
-
+      
+     
       <OrderFormDeliveryWindowCalendar compact={compact} sizePreset={"desktopPopup550"}  />
 
 

@@ -52,53 +52,55 @@ export const OrderAddressGroupCard = ({
   }, [group.orders, hasRenderCap, showAllChildren])
 
   return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
-      <div
-        className="flex cursor-pointer items-center gap-3"
-        onClick={onToggleExpanded}
-        {...dragAttributes}
-        {...dragListeners}
-      >
-        <div className="flex h-8 min-w-8 items-center justify-center rounded-full bg-[var(--color-primary)]/10 px-2 text-xs font-semibold text-[var(--color-primary)]">
-          {group.orders.length}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-[var(--color-text)]">{group.label}</p>
-          <p className="text-xs text-[var(--color-muted)]">Grouped orders</p>
-        </div>
-        <BoldArrowIcon
-          className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-90' : 'rotate-0'}`}
-        />
-      </div>
-
-      {expanded ? (
-        <>
-          <OrderAddressGroupChildren
-            orders={visibleOrders}
-            isSelectionMode={isSelectionMode}
-            isOrderSelected={isOrderSelected}
-            onToggleSelection={onToggleSelection}
-            onOpenOrder={onOpenOrder}
-            onArchive={onArchive}
-            onUnarchive={onUnarchive}
-            hoveredClientId={hoveredClientId}
-            onOrderMouseEnter={onOrderMouseEnter}
-            onOrderMouseLeave={onOrderMouseLeave}
+    <div className="flex flex-col border-y-1  border-y-[var(--color-muted)]/60  ">
+      <div className="  py-4 pr-4 pl-2 z-2">
+        <div
+          className="flex cursor-pointer items-center gap-3"
+          onClick={onToggleExpanded}
+          {...dragAttributes}
+          {...dragListeners}
+        >
+          <div className="flex h-7 min-w-7 items-center justify-center rounded-full bg-[var(--color-primary)]/60 px-2 text-sm font-semibold text-[var(--color-page)]">
+            {group.orders.length}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-[var(--color-text)]">{group.label}</p>
+            <p className="text-xs text-[var(--color-muted)]">Grouped orders</p>
+          </div>
+          <BoldArrowIcon
+            className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-90' : 'rotate-0'}`}
           />
-          {hasRenderCap && !showAllChildren ? (
-            <button
-              type="button"
-              className="mt-3 text-xs font-medium text-[var(--color-primary)] underline"
-              onClick={(event) => {
-                event.stopPropagation()
-                setShowAllChildren(true)
-              }}
-            >
-              Show all ({group.orders.length})
-            </button>
-          ) : null}
-        </>
-      ) : null}
+        </div>
+
+      </div>
+      {expanded ? (
+          <>
+            <OrderAddressGroupChildren
+              orders={visibleOrders}
+              isSelectionMode={isSelectionMode}
+              isOrderSelected={isOrderSelected}
+              onToggleSelection={onToggleSelection}
+              onOpenOrder={onOpenOrder}
+              onArchive={onArchive}
+              onUnarchive={onUnarchive}
+              hoveredClientId={hoveredClientId}
+              onOrderMouseEnter={onOrderMouseEnter}
+              onOrderMouseLeave={onOrderMouseLeave}
+            />
+            {hasRenderCap && !showAllChildren ? (
+              <button
+                type="button"
+                className="mt-3 text-xs font-medium text-[var(--color-primary)] underline"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setShowAllChildren(true)
+                }}
+              >
+                Show all ({group.orders.length})
+              </button>
+            ) : null}
+          </>
+        ) : null}
     </div>
   )
 }

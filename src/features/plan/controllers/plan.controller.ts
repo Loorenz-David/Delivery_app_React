@@ -3,8 +3,10 @@ import { useCallback } from 'react'
 import { buildClientId } from '@/lib/utils/clientId'
 import { ApiError } from '@/lib/api/ApiClient'
 import { useMessageHandler } from '@/shared/message-handler'
+import { useAddressCurrentLocationFlow } from '@/shared/inputs/address-autocomplete/hooks/useAddressCurrentLocationFlow'
 import { planApi } from '@/features/plan/api/plan.api'
 import { useOrderPlanPatchController } from '@/features/order'
+import { resolvePlanTypeDefaults } from '@/features/plan/domain/planTypeDefaults/planTypeDefaults.registry'
 import type {
   DeliveryPlan,
   DeliveryPlanFields,
@@ -122,6 +124,7 @@ const resolveError = (error: unknown, fallback: string) => ({
 export function usePlanController() {
   const { showMessage } = useMessageHandler()
   const { patchOrdersPlanByServerIds } = useOrderPlanPatchController()
+  const { getCurrentLocationAddress } = useAddressCurrentLocationFlow()
 
 
   const createPlan = useCallback(
@@ -151,6 +154,10 @@ export function usePlanController() {
         if (!normalizedStartDate) {
           throw new Error('start_date is required to create a plan.')
         }
+        const planTypeDefaults = await resolvePlanTypeDefaults(
+          planTypeKey,
+          { getCurrentLocationAddress },
+        )
 
         const planPayloadApi: PlanCreatePayload = {
           client_id: planClientId,
@@ -162,6 +169,9 @@ export function usePlanController() {
             : {}),
           ...(sanitizedNewOrderLinks.length > 0
             ? { order_ids: sanitizedNewOrderLinks }
+            : {}),
+          ...(typeof planTypeDefaults !== 'undefined'
+            ? { plan_type_defaults: planTypeDefaults }
             : {}),
         }
 
@@ -214,7 +224,7 @@ export function usePlanController() {
         return null
       }
     },
-    [patchOrdersPlanByServerIds, showMessage],
+    [getCurrentLocationAddress, patchOrdersPlanByServerIds, showMessage],
   )
 
   const deletePlanInstance = useCallback(

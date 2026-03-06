@@ -1,0 +1,10 @@
+export const PLAN_DEFAULT_SET_START_TIME_KEY = 'set_start_time'
+export const PLAN_DEFAULT_SET_END_TIME_KEY = 'set_end_time'
+export const PLAN_DEFAULT_ROUTE_END_STRATEGY_KEY = 'route_end_strategy'
+export const PLAN_DEFAULT_START_LOCATION_KEY = 'start_location'
+export const PLAN_DEFAULT_END_LOCATION_KEY = 'end_location'
+export const PLAN_DEFAULT_DRIVER_ID_KEY = 'driver_id'
+
+export const LOCAL_DELIVERY_DEFAULT_START_TIME = '09:00'
+export const LOCAL_DELIVERY_DEFAULT_END_TIME = '17:00'
+export const LOCAL_DELIVERY_DEFAULT_ROUTE_END_STRATEGY = 'round_trip'

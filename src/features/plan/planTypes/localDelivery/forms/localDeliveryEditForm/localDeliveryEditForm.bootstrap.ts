@@ -4,6 +4,7 @@ import type { DeliveryPlan } from '@/features/plan/types/plan'
 
 import type { LocalDeliveryEditFormState } from './LocalDeliveryEditForm.types'
 
+
 export const initialLocalDeliveryEditForm = (): LocalDeliveryEditFormState => ({
   local_delivery_plan_id: null,
   delivery_plan: {
@@ -17,8 +18,8 @@ export const initialLocalDeliveryEditForm = (): LocalDeliveryEditFormState => ({
     label: null,
     start_location: null,
     end_location: null,
-    set_start_time: null,
-    set_end_time: null,
+    set_start_time: '00:00',
+    set_end_time: '23:59',
     route_end_strategy: 'round_trip',
     driver_id: null,
     created_at: null,
@@ -61,27 +62,31 @@ export const buildFormState = (
   plan: DeliveryPlan,
   routeSolution: RouteSolution,
   createVariantOnSave: boolean,
-): LocalDeliveryEditFormState => ({
-  local_delivery_plan_id: localDeliveryPlanId,
-  delivery_plan: {
-    id: plan.id ?? undefined,
-    client_id: plan.client_id ?? null,
-    label: plan.label ?? '',
-    start_date: plan.start_date ?? '',
-    end_date: plan.end_date ?? '',
-  },
-  route_solution: {
-    id: routeSolution.id ?? undefined,
-    client_id: routeSolution.client_id ?? null,
-    label: routeSolution.label ?? null,
-    start_location: coerceAddress(routeSolution.start_location as Record<string, unknown> | null),
-    end_location: coerceAddress(routeSolution.end_location as Record<string, unknown> | null),
-    set_start_time: normalizeTimeValue(routeSolution.set_start_time),
-    set_end_time: normalizeTimeValue(routeSolution.set_end_time),
-    route_end_strategy: routeSolution.route_end_strategy ?? 'round_trip',
-    driver_id: routeSolution.driver_id ?? null,
-    created_at: routeSolution.created_at ?? null,
-    is_optimized: routeSolution.is_optimized ?? null,
-  },
-  create_variant_on_save: createVariantOnSave,
-})
+): LocalDeliveryEditFormState => {
+
+
+  return {
+    local_delivery_plan_id: localDeliveryPlanId,
+    delivery_plan: {
+      id: plan.id ?? undefined,
+      client_id: plan.client_id ?? null,
+      label: plan.label ?? '',
+      start_date: plan.start_date ?? '',
+      end_date: plan.end_date ?? '',
+    },
+    route_solution: {
+      id: routeSolution.id ?? undefined,
+      client_id: routeSolution.client_id ?? null,
+      label: routeSolution.label ?? null,
+      start_location: coerceAddress(routeSolution.start_location as Record<string, unknown> | null) ,
+      end_location: coerceAddress(routeSolution.end_location as Record<string, unknown> | null) ,
+      set_start_time: normalizeTimeValue(routeSolution.set_start_time) ?? '09:00',
+      set_end_time: normalizeTimeValue(routeSolution.set_end_time) ?? '17:00',
+      route_end_strategy: routeSolution.route_end_strategy ??  'round_trip',
+      driver_id: routeSolution.driver_id ?? null,
+      created_at: routeSolution.created_at ?? null,
+      is_optimized: routeSolution.is_optimized ?? null,
+    },
+    create_variant_on_save: createVariantOnSave,
+  }
+}

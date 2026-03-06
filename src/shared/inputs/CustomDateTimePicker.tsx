@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { CustomDatePicker } from './CustomDatePicker'
 import { CustomTimePicker } from './CustomTimePicker/index'
@@ -8,6 +8,11 @@ type CustomDateTimePickerProps = {
   onChangeDate?: (value: string | null) => void
   selectedTime?: string | null
   onChangeTime?: (value: string | null) => void
+  className?: string
+  dateSectionClassName?: string
+  timeSectionClassName?: string
+  datePickerClassName?: string
+  timePickerClassName?: string
 }
 
 export const CustomDateTimePicker = ({
@@ -15,8 +20,18 @@ export const CustomDateTimePicker = ({
   onChangeDate,
   selectedTime,
   onChangeTime,
+  className,
+  dateSectionClassName,
+  timeSectionClassName,
+  datePickerClassName,
+  timePickerClassName,
 }: CustomDateTimePickerProps) => {
   const isTimeControlled = selectedTime !== undefined && Boolean(onChangeTime)
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
+  const interactionOrderRef = useRef<'none' | 'date-first' | 'time-first'>('none')
+  const lastSelectedDateRef = useRef<string | null>(date ? formatDateOnly(date) : null)
+  const suppressDateOpenUntilRef = useRef(0)
 
   const [internalTime, setInternalTime] = useState<string | null>(() =>
     deriveTimeFromDate(date),
@@ -32,11 +47,24 @@ export const CustomDateTimePicker = ({
     setInternalTime(deriveTimeFromDate(date))
   }, [date, isTimeControlled])
 
+  useEffect(() => {
+    lastSelectedDateRef.current = date ? formatDateOnly(date) : null
+  }, [date])
+
+  useEffect(() => {
+    if (!isDatePickerOpen && !isTimePickerOpen) {
+      interactionOrderRef.current = 'none'
+    }
+  }, [isDatePickerOpen, isTimePickerOpen])
+
   const handleDateChange = (value: string | null) => {
     if (!value) {
+      lastSelectedDateRef.current = null
       onChangeDate?.(null)
       return
     }
+
+    lastSelectedDateRef.current = value
 
     const normalizedTime = normalizeTime(resolvedTime)
     if (!normalizedTime) {
@@ -49,14 +77,17 @@ export const CustomDateTimePicker = ({
   }
 
   const handleTimeChange = (value: string | null) => {
+    suppressDateOpenUntilRef.current = Date.now() + 250
+    setIsDatePickerOpen(false)
+
     if (isTimeControlled) {
       onChangeTime?.(value)
     } else {
       setInternalTime(value)
     }
 
-    if (!date) return
-    const dateValue = formatDateOnly(date)
+    const dateValue = date ? formatDateOnly(date) : lastSelectedDateRef.current
+    if (!dateValue) return
 
     const normalized = normalizeTime(value)
     if (!normalized) {
@@ -68,11 +99,51 @@ export const CustomDateTimePicker = ({
     onChangeDate?.(Number.isNaN(combined.getTime()) ? dateValue : combined.toISOString())
   }
 
-  const isTimeDisabled = !date
+  const isTimeDisabled = !date && !isTimePickerOpen
+
+  const handleDatePickerOpenChange = (nextOpen: boolean) => {
+    if (nextOpen && (isTimePickerOpen || Date.now() < suppressDateOpenUntilRef.current)) {
+      return
+    }
+
+    setIsDatePickerOpen(nextOpen)
+
+    if (!nextOpen) {
+      return
+    }
+
+    setIsTimePickerOpen(false)
+    if (interactionOrderRef.current === 'none') {
+      interactionOrderRef.current = 'date-first'
+    }
+  }
+
+  const handleTimePickerOpenChange = (nextOpen: boolean) => {
+    setIsTimePickerOpen(nextOpen)
+
+    if (!nextOpen) {
+      suppressDateOpenUntilRef.current = Date.now() + 250
+      return
+    }
+
+    setIsDatePickerOpen(false)
+    if (interactionOrderRef.current === 'none') {
+      interactionOrderRef.current = 'time-first'
+    }
+  }
+
+  const handleDateCalendarSelect = () => {
+    if (interactionOrderRef.current !== 'date-first') {
+      return
+    }
+
+    setIsDatePickerOpen(false)
+    setIsTimePickerOpen(true)
+  }
 
   return (
-    <div className="custom-field-container custom-date-time-group flex items-center "
-
+    <div className={`custom-field-container custom-date-time-group flex items-center ${className ?? ''}`}
+    style={{padding:'0'}}
     >
       <style>
         {`
@@ -89,14 +160,41 @@ export const CustomDateTimePicker = ({
           }
         `}
       </style>
-      <div className="flex-1 border-r-1 border-[var(--color-muted)]/30">
-        <CustomDatePicker date={date} onChange={handleDateChange} />
+      <div className={`flex-1 border-r-1 border-[var(--color-muted)]/30 ${dateSectionClassName ?? ''}`}>
+        <CustomDatePicker
+          date={date}
+          onChange={handleDateChange}
+          className={datePickerClassName}
+          open={isDatePickerOpen}
+          onOpenChange={handleDatePickerOpenChange}
+          onCalendarSelect={handleDateCalendarSelect}
+        />
       </div>
 
-      <div className={isTimeDisabled ? 'flex-1 opacity-50 pointer-events-none' : 'flex-1'}>
+      <div
+        className={`${isTimeDisabled ? 'flex-1 opacity-50 pointer-events-none' : 'flex-1'} ${timeSectionClassName ?? ''}`}
+        onPointerDown={(event) => {
+          if (isTimeDisabled) return
+          suppressDateOpenUntilRef.current = Date.now() + 350
+          event.stopPropagation()
+        }}
+        onMouseDown={(event) => {
+          if (isTimeDisabled) return
+          suppressDateOpenUntilRef.current = Date.now() + 350
+          event.stopPropagation()
+        }}
+        onClick={() => {
+          if (isTimeDisabled) return
+          suppressDateOpenUntilRef.current = Date.now() + 350
+          handleTimePickerOpenChange(true)
+        }}
+      >
         <CustomTimePicker
           selectedTime={resolvedTime}
           onChange={(value) => handleTimeChange(value || null)}
+          containerClassName={timePickerClassName}
+          open={isTimePickerOpen}
+          onOpenChange={handleTimePickerOpenChange}
         />
       </div>
     </div>

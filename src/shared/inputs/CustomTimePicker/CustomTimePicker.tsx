@@ -7,8 +7,8 @@ import {
   type Period,
   type PickerFormat,
 } from './types'
-import { minuteValuesByStep } from './utils/timeClamp'
-import { parseHHmm, to12HourParts, to2 } from './utils/timeFormat'
+import { minuteValuesByStep, normalizeTimeValue } from './utils/timeClamp'
+import { formatHHmm, parseHHmm, to12HourParts, to2 } from './utils/timeFormat'
 import { useTimePickerState } from './hooks/useTimePickerState'
 import { useSegmentedTimeInput } from './hooks/input/useSegmentedTimeInput'
 import { TimeInputField } from './components/TimeInputField'
@@ -23,9 +23,12 @@ type CustomTimePickerProps = {
   disabled?: boolean
   minuteStep?: number
   className?: string
+  containerClassName?: string
   popoverWidth?: number
   popoverHeight?: number
   closeOnDone?: boolean
+  open?: boolean
+  onOpenChange?: (isOpen: boolean) => void
 }
 
 export const CustomTimePicker = ({
@@ -35,9 +38,12 @@ export const CustomTimePicker = ({
   disabled = false,
   minuteStep = 1,
   className,
+  containerClassName,
   popoverWidth = 320,
   popoverHeight = 260,
   closeOnDone = true,
+  open,
+  onOpenChange,
 }: CustomTimePickerProps) => {
   useEffect(() => {
     if (!import.meta.env.DEV) {
@@ -55,8 +61,8 @@ export const CustomTimePicker = ({
   }, [selectedTime])
 
   const {
-    open,
-    setOpen,
+    open: internalOpen,
+    setOpen: setInternalOpen,
     draft,
     setDraftHour,
     setDraftMinute,
@@ -69,6 +75,15 @@ export const CustomTimePicker = ({
     minuteStep,
     closeOnDone,
   })
+  const isOpenControlled = open !== undefined
+  const resolvedOpen = isOpenControlled ? Boolean(open) : internalOpen
+
+  const setOpen = (nextOpen: boolean) => {
+    if (!isOpenControlled) {
+      setInternalOpen(nextOpen)
+    }
+    onOpenChange?.(nextOpen)
+  }
 
   const minuteValues = useMemo(() => minuteValuesByStep(minuteStep), [minuteStep])
   const draft12 = useMemo(() => to12HourParts(draft), [draft])
@@ -94,10 +109,12 @@ export const CustomTimePicker = ({
 
     if (nextOpen) {
       beginInteraction()
+      setOpen(true)
       return
     }
 
     cancel()
+    setOpen(false)
   }
 
   const handleDone = () => {
@@ -105,6 +122,35 @@ export const CustomTimePicker = ({
     onChange(normalized || '')
     if (!closeOnDone) {
       setOpen(true)
+      return
+    }
+    setOpen(false)
+  }
+
+  const handleCancel = () => {
+    cancel()
+    setOpen(false)
+  }
+
+  const handleNow = () => {
+    const now = new Date()
+    now.setMinutes(now.getMinutes() + 1)
+
+    const normalized = normalizeTimeValue(
+      {
+        hour: now.getHours(),
+        minute: now.getMinutes(),
+      },
+      minuteStep,
+    )
+
+    setDraftHour(normalized.hour)
+    setDraftMinute(normalized.minute)
+
+    onChange(formatHHmm(normalized))
+
+    if (closeOnDone) {
+      setOpen(false)
     }
   }
 
@@ -112,11 +158,12 @@ export const CustomTimePicker = ({
     <TimeInputField
       value={segmentedInput.displayValue}
       disabled={disabled}
-      className={className}
+      className={containerClassName ?? className}
       onOpen={() => {
-        if (!open) {
+        if (!resolvedOpen) {
           beginInteraction()
         }
+        setOpen(true)
       }}
       onFocus={(input) => segmentedInput.onFocus(input)}
       onClick={(input, caret) => segmentedInput.onClick(input, caret)}
@@ -126,7 +173,7 @@ export const CustomTimePicker = ({
 
   return (
     <TimePickerPopover
-      open={open}
+      open={resolvedOpen}
       onOpenChange={closeWithCancel}
       reference={inputReference}
       width={popoverWidth}
@@ -169,7 +216,7 @@ export const CustomTimePicker = ({
         </div>
       </div>
 
-      <PickerFooter onCancel={cancel} onDone={handleDone} />
+      <PickerFooter onNow={handleNow} onCancel={handleCancel} onDone={handleDone} />
     </TimePickerPopover>
   )
 }

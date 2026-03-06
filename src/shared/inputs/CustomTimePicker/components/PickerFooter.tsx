@@ -1,13 +1,37 @@
 import { BasicButton } from '@/shared/buttons/BasicButton'
 
 type PickerFooterProps = {
+  onNow: () => void
   onCancel: () => void
   onDone: () => void
 }
 
-export const PickerFooter = ({ onCancel, onDone }: PickerFooterProps) => {
+export const PickerFooter = ({ onNow, onCancel, onDone }: PickerFooterProps) => {
   return (
-    <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-accent)]/60 p-3">
+    <div
+      className="flex items-center justify-between gap-2 border-t border-[var(--color-border-accent)]/60 p-3"
+      onPointerDown={(event) => {
+        event.stopPropagation()
+      }}
+      onMouseDown={(event) => {
+        event.stopPropagation()
+      }}
+      onClick={(event) => {
+        event.stopPropagation()
+      }}
+    >
+      <BasicButton
+        params={{
+          variant: 'ghost',
+          onClick: onNow,
+          className: 'px-3 py-1 text-xs text-blue-600',
+          ariaLabel: 'Select current time plus one minute',
+        }}
+      >
+        Now
+      </BasicButton>
+
+      <div className="flex items-center gap-2">
       <BasicButton
         params={{
           variant: 'ghost',
@@ -28,6 +52,7 @@ export const PickerFooter = ({ onCancel, onDone }: PickerFooterProps) => {
       >
         Done
       </BasicButton>
+      </div>
     </div>
   )
 }

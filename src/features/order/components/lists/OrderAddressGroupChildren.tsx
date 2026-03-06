@@ -26,16 +26,16 @@ export const OrderAddressGroupChildren = ({
   onOrderMouseEnter,
   onOrderMouseLeave,
 }: OrderAddressGroupChildrenProps) => (
-  <div className="relative ml-6 mt-3 pl-6">
+  <div className="relative ml-[39px]  mt-2 mb-4 ">
     {orders.length > 1 ? (
-      <div className="pointer-events-none absolute bottom-2 left-1 top-2 w-px bg-[var(--color-border)]/70" />
+      <div className="pointer-events-none absolute  bottom-2 -left-[18px] -top-6 w-[1px] bg-[var(--color-primary)]/40" />
     ) : null}
 
     <div className="flex flex-col gap-3">
       {orders.map((order) => (
         <div key={order.client_id} className="relative">
           {orders.length > 1 ? (
-            <div className="pointer-events-none absolute -left-[19px] top-8 h-px w-4 bg-[var(--color-border)]/70" />
+            <div className="pointer-events-none absolute -left-[15px] top-8 h-px w-3 bg-[var(--color-primary)]/40" />
           ) : null}
           <DraggableOrderCard
             order={order}

@@ -9,6 +9,7 @@ import { RouteStopWarnings } from '../warnings/RouteStopWarnings'
 import { formatRouteTime } from '@/features/plan/planTypes/localDelivery/utils/formatRouteTime'
 import { useOrderActions } from '@/features/order'
 import { LottieSpinner } from '@/shared/spiners'
+import { StopOrderAvatar } from './StopOrderAvatar'
 
 type LocalDeliveryOrderCardProps = {
     order: Order;
@@ -48,11 +49,7 @@ export const LocalDeliveryOrderCard = ({ order, stop, displayStopOrder, planStar
         >
 
             <div className="flex gap-3 w-full">
-                <div className="flex h-7 w-7 bg-blue-100 rounded-full items-center justify-center">
-                    <span className="text-sm text-gray-500 font-bold">
-                        {stopOrder  ?? '--'}
-                    </span>
-                </div>
+                <StopOrderAvatar stopOrder={stopOrder} />
                 <div className="flex min-w-0 flex-col gap-2 flex-1 pl-1">
                         <div className="flex justify-between">
                             <div className="flex gap-3">

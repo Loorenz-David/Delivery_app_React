@@ -5,7 +5,7 @@ import { useMessageHandler } from '@/shared/message-handler'
 import { makeInitialFormCopy } from '@/shared/data-validation/initialFormSnapshot'
 import { useLocalDeliveryPlanSettingsMutations } from '@/features/plan/planTypes/localDelivery/controllers/localDeliveryPlanSettings.controller'
 import { usePlanController } from '@/features/plan/controllers/plan.controller'
-import { useBaseControlls, usePopupManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
+import { useBaseControlls, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 
 import type { LocalDeliveryEditFormState } from './LocalDeliveryEditForm.types'
 
@@ -23,46 +23,46 @@ export const useLocalDeliveryEditFormActions = ({
   const { showMessage } = useMessageHandler()
   const { updateLocalDeliverySettings } = useLocalDeliveryPlanSettingsMutations()
   const { deletePlan } = usePlanController()
-  const popupManager = usePopupManager()
   const sectionManager = useSectionManager()
   const  baseControlls = useBaseControlls()
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (): Promise<boolean> => {
     if (!validateForm()) {
       showMessage({ message: 'Invalid form, check required fields.', status: 'warning' })
-      return
+      return false
     }
     if (!formState.local_delivery_plan_id) {
       showMessage({ message: 'Local delivery plan id is missing.', status: 'warning' })
-      return
+      return false
     }
     if (!formState.route_solution.id) {
       showMessage({ message: 'Route solution id is missing.', status: 'warning' })
-      return
+      return false
     }
 
     const result = await updateLocalDeliverySettings(formState)
 
     if (result) {
       makeInitialFormCopy(initialFormRef, formState)
-      popupManager.closeByKey('LocalDeliveryEditForm')
+      return true
     }
-  }, [formState, validateForm, showMessage, initialFormRef, updateLocalDeliverySettings, popupManager])
+    return false
+  }, [formState, validateForm, showMessage, initialFormRef, updateLocalDeliverySettings])
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = useCallback(async (): Promise<boolean> => {
     if (!formState.delivery_plan.id) {
       showMessage({ message: 'Delivery plan id is missing.', status: 'warning' })
-      return
+      return false
     }
 
     const result = await deletePlan(formState.delivery_plan.id)
 
     if (result) {
-      popupManager.closeByKey('LocalDeliveryEditForm')
       sectionManager.closeByKey('LocalDeliveryPage')
       baseControlls.closeBase()
-
+      return true
     }
-  }, [deletePlan, formState, showMessage, popupManager])
+    return false
+  }, [baseControlls, deletePlan, formState, sectionManager, showMessage])
 
   return {
     handleSave,

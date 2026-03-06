@@ -42,6 +42,7 @@ export type PropsLocalDeliveryEditFormContext = {
   formState: LocalDeliveryEditFormState
   formWarnings: LocalDeliveryEditFormWarnings
   hasMultipleVariants: boolean
+  hasUnsavedChanges: boolean
   formSetters: ReturnType<typeof useLocalDeliveryEditFormSetters>
   actions: LocalDeliveryEditFormActions
 }
