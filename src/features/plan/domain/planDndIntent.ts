@@ -1,6 +1,16 @@
+import type { OrderBatchSelectionPayload } from '@/features/order/types/orderBatchSelection'
+
 export type PlanDndIntent =
   | { kind: 'MOVE_ROUTE_STOP'; fromStopClientId: string; toStopClientId: string }
+  | {
+      kind: 'MOVE_ROUTE_STOP_GROUP'
+      routeSolutionId: number
+      routeStopIds: number[]
+      position: number
+      anchorStopId: number
+    }
   | { kind: 'ASSIGN_ORDER_TO_PLAN'; orderClientId: string; planClientId: string }
+  | { kind: 'ASSIGN_ORDERS_TO_PLAN_BATCH'; selection: OrderBatchSelectionPayload; planClientId: string }
   | null
 
 export function derivePlanDndIntent(params: {

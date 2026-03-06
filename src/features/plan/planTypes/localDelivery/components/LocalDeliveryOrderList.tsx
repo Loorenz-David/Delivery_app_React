@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 import { LocalDeliveryOrderCard } from './cards/LocalDeliveryOrderCard'
@@ -9,6 +10,9 @@ import { useLocalDeliveryDndProjectionFlow } from '../flows/localDeliveryDndProj
 import { formatRouteTime } from '@/features/plan/planTypes/localDelivery/utils/formatRouteTime'
 import { BasicButton } from '@/shared/buttons'
 import { DeliveryReadyIcon } from '@/assets/icons'
+import { buildLocalDeliveryStopAddressGroups } from '../domain/localDeliveryAddressGroup.flow'
+import { DraggableLocalDeliveryOrderGroupCard } from './cards/DraggableLocalDeliveryOrderGroupCard'
+import { useOrderGroupUIActions, useOrderGroupUIStore } from '@/features/order/store/orderGroupUI.store'
 
 
 
@@ -34,6 +38,34 @@ export const LocalDeliveryOrderList = () => {
         ordersById,
     )
     const { projectedStopOrderByClientId } = useLocalDeliveryDndProjectionFlow(sortedEntries)
+    const groupedStops = useMemo(
+        () => buildLocalDeliveryStopAddressGroups(sortedEntries),
+        [sortedEntries],
+    )
+    const expandedGroupsByKey = useOrderGroupUIStore((state) => state.expandedGroupsByKey)
+    const { toggleGroup } = useOrderGroupUIActions()
+    const allOrderedStopClientIds = useMemo(
+        () => sortedEntries.map((entry) => entry.stop.client_id),
+        [sortedEntries],
+    )
+    const visibleSortableIds = useMemo(() => {
+        if (groupedStops.length === 0) return sortableIds
+
+        const visibleIds: string[] = []
+        groupedStops.forEach((group) => {
+            if (group.entries.length <= 1) {
+                const firstClientId = group.entries[0]?.stop.client_id
+                if (firstClientId) visibleIds.push(firstClientId)
+                return
+            }
+            const uiKey = `local:${group.key}`
+            const expanded = expandedGroupsByKey[uiKey] ?? false
+            if (expanded) {
+                visibleIds.push(...group.routeStopClientIds)
+            }
+        })
+        return visibleIds
+    }, [expandedGroupsByKey, groupedStops, sortableIds])
 
     const strategyLabel = getRouteStrategyLabel(selectedRouteSolution?.route_end_strategy)
     const startLocationLabel = `${strategyLabel} · ${boundaryLocations.start.label}`
@@ -54,16 +86,37 @@ export const LocalDeliveryOrderList = () => {
                             localDeliveryActions={localDeliveryActions}
                         />
                     }
-                    <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
-                        {sortedEntries.map((entry) => (
-                            <DraggableLocalDeliveryOrderCard
-                                key={entry.stop.client_id}
-                                order={entry.order}
-                                stop={entry.stop}
-                                displayStopOrder={projectedStopOrderByClientId?.get(entry.stop.client_id) ?? entry.stop.stop_order ?? null}
-                                planStartDate={planStartDate}
-                            />
-                        ))}
+                    <SortableContext items={visibleSortableIds} strategy={verticalListSortingStrategy}>
+                        {groupedStops.map((group) => {
+                            if (group.entries.length <= 1) {
+                                const entry = group.entries[0]
+                                if (!entry) return null
+                                return (
+                                    <DraggableLocalDeliveryOrderCard
+                                        key={entry.stop.client_id}
+                                        order={entry.order}
+                                        stop={entry.stop}
+                                        displayStopOrder={projectedStopOrderByClientId?.get(entry.stop.client_id) ?? entry.stop.stop_order ?? null}
+                                        planStartDate={planStartDate}
+                                    />
+                                )
+                            }
+
+                            const uiKey = `local:${group.key}`
+                            const expanded = expandedGroupsByKey[uiKey] ?? false
+
+                            return (
+                                <DraggableLocalDeliveryOrderGroupCard
+                                    key={group.key}
+                                    group={group}
+                                    expanded={expanded}
+                                    onToggleExpanded={() => toggleGroup(uiKey)}
+                                    planStartDate={planStartDate}
+                                    projectedStopOrderByClientId={projectedStopOrderByClientId}
+                                    allOrderedStopClientIds={allOrderedStopClientIds}
+                                />
+                            )
+                        })}
                     </SortableContext>
                     {missingOrders.map((order) => (
                         <LocalDeliveryOrderCard

@@ -130,6 +130,11 @@ export const OrderDetailSummary = ({ order, orderState }: OrderDetailSummaryProp
                     <p>—</p>
                   )}
               </div>
+
+              <div className="text-sm">
+                <p className="text-xs text-[var(--color-muted)]">Tracking number</p>
+                  <p className="break-all">{asText(order?.tracking_number)}</p>
+              </div>
             </>
           </SummaryCard>
 

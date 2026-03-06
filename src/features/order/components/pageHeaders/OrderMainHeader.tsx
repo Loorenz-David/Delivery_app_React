@@ -1,4 +1,4 @@
-import {  OrderIcon, PlusIcon } from '@/assets/icons'
+import {  CloseIcon, OrderIcon, PlusIcon } from '@/assets/icons'
 import { BasicButton } from '@/shared/buttons/BasicButton'
 import { SectionHeader } from '@/shared/section-panel/SectionHeader'
 import type { OrderQueryFilters, OrderQueryStringQueries, OrderStats } from '../../types/orderMeta'
@@ -13,6 +13,11 @@ import { ThreeDotMenu } from '@/shared/buttons/ThreeDotMenu'
 
 type OrderMainHeaderProps = {
   onCreate: () => void
+  onEnterSelectionMode: () => void
+  onExitSelectionMode: () => void
+  onSelectAllFiltered: () => void
+  onClearSelection: () => void
+  isSelectionMode: boolean
   applySearch: (input: string) => void
   applyFilters: (filters: OrderQueryFilters) => void
   updateFilters: (key: OrderQueryStringQueries, value: unknown) => void
@@ -24,7 +29,19 @@ type OrderMainHeaderProps = {
   }
 }
 
-export const OrderMainHeader = ({ onCreate, applySearch, deleteFilter, updateFilters, query, orderStats }: OrderMainHeaderProps) => {
+export const OrderMainHeader = ({
+  onCreate,
+  onEnterSelectionMode,
+  onExitSelectionMode,
+  onSelectAllFiltered,
+  onClearSelection,
+  isSelectionMode,
+  applySearch,
+  deleteFilter,
+  updateFilters,
+  query,
+  orderStats,
+}: OrderMainHeaderProps) => {
   const { setHeader } = useSectionPanel()
   const filterLabelMap = filterConfig.reduce<Record<string, string>>((acc, filter) => {
     if (filter.type === 'option') {
@@ -90,7 +107,10 @@ export const OrderMainHeader = ({ onCreate, applySearch, deleteFilter, updateFil
               options={[
                   {label:'Update optimization', action: ()=>{}, icon:''},
                   {label:'Download route', action: ()=>{}, icon:''},
-
+                  {...(isSelectionMode 
+                        ? { label: 'Exit selection', action: onExitSelectionMode, icon: '' }
+                        : { label: 'Selection mode', action: onEnterSelectionMode, icon: '' }
+                      )}
               ]}
           />
 
@@ -104,6 +124,34 @@ export const OrderMainHeader = ({ onCreate, applySearch, deleteFilter, updateFil
             formatFilterLabel={(key) => filterLabelMap[key] ?? key}
           />
         </div>
+        {isSelectionMode && 
+          <div className="flex w-full px-2 justify-center gap-3 text-xs ">
+            <BasicButton params={{
+              variant:'ghost',
+              onClick:onClearSelection,
+              className:" hover:bg-red-100 text-red-400"
+            }}>
+                 Clear selection
+            </BasicButton>
+
+            <BasicButton params={{
+              variant:'ghost',
+              onClick:onSelectAllFiltered,
+              className:" hover:bg-blue-100 text-blue-400"
+            }}>
+               Select all filtered
+            </BasicButton>
+
+            <BasicButton params={{
+              variant:'ghost',
+              onClick:onExitSelectionMode,
+            }}>
+              <div className="text-underline flex gap-2 text-[var(--color-muted)] ml-auto">
+                <CloseIcon className="h-3 w-3"/> Exit selection
+              </div>
+            </BasicButton>
+          </div>
+        }
       </div>
     </>
 

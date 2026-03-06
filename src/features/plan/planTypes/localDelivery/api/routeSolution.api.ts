@@ -29,6 +29,12 @@ export type RouteSolutionTimesPayload = {
   set_end_time?: string | null
 }
 
+export type RouteStopGroupPositionPayload = {
+  route_solution_id: number
+  route_stop_ids: number[]
+  position: number
+  anchor_stop_id: number
+}
 
 
 export type RouteSolutionReadyResponse = {
@@ -43,6 +49,15 @@ export const routeSolutionApi = {
     apiClient.request<RouteSolutionUpdateResponse>({
       path: `/route_solutions/stops/${routeStopId}/position/${position}`,
       method: 'PATCH',
+    }),
+
+  updateStopGroupPosition: (
+    payload: RouteStopGroupPositionPayload,
+  ): Promise<ApiResult<RouteSolutionUpdateResponse>> =>
+    apiClient.request<RouteSolutionUpdateResponse>({
+      path: '/route_solutions/stops/group-position',
+      method: 'PATCH',
+      data: payload,
     }),
 
   selectRouteSolution: (

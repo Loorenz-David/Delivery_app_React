@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { OrderList } from '@/features/order/components/OrderList'
+import { OrderList } from '@/features/order/components/lists/OrderList'
 import { useOrdersByPlanId } from '@/features/order/store/orderHooks.store'
 import { usePlanOrders } from '@/features/plan/hooks/usePlanOrders'
 import { useStorePickupHeaderAction } from '@/features/plan/planTypes/storePickup/hooks/useStorePickupHeaderAction'

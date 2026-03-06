@@ -2,13 +2,24 @@
 import type { StackComponentProps } from '@/shared/stack-manager/types'
 
 import { OrderMainHeader } from '../components/pageHeaders/OrderMainHeader'
-import { OrderList } from '../components/OrderList'
+import { OrderList } from '../components/lists/OrderList'
 import { OrderProvider } from '../context/OrderProvider'
 import { useOrderContext } from '../context/OrderContext'
 import type { Order } from '../types/order'
 
 const OrderMainContent = () => {
-  const { orders, orderActions, query, orderStats, hoveredClientId, handleOrderRowMouseEnter, handleOrderRowMouseLeave } = useOrderContext()
+  const {
+    orders,
+    orderActions,
+    orderSelectionActions,
+    isSelectionMode,
+    isOrderSelected,
+    query,
+    orderStats,
+    hoveredClientId,
+    handleOrderRowMouseEnter,
+    handleOrderRowMouseLeave,
+  } = useOrderContext()
 
   const handleOpenOrder = (order: Order) => {
     orderActions.openOrderDetail(
@@ -21,6 +32,11 @@ const OrderMainContent = () => {
     <div className="flex h-full w-full flex-col bg-[var(--color-primary)]/5">
       <OrderMainHeader 
         onCreate={() => orderActions.openOrderForm({ mode: 'create' })}
+        onEnterSelectionMode={orderSelectionActions.handleEnterSelectionMode}
+        onExitSelectionMode={orderSelectionActions.handleExitSelectionMode}
+        onSelectAllFiltered={orderSelectionActions.handleSelectAllFiltered}
+        onClearSelection={orderSelectionActions.handleClearSelection}
+        isSelectionMode={isSelectionMode}
         applySearch={orderActions.applySearch}
         applyFilters={orderActions.applyFilters}
         query={query}
@@ -32,6 +48,9 @@ const OrderMainContent = () => {
       <div className="flex-1 overflow-y-auto p-2">
         <OrderList
           orders={orders}
+          isSelectionMode={isSelectionMode}
+          isOrderSelected={isOrderSelected}
+          onToggleSelection={orderSelectionActions.handleToggleOrderSelection}
           onOpenOrder={handleOpenOrder}
           onArchive={orderActions.handleArchiveOrder}
           onUnarchive={orderActions.handleUnarchiveOrder}

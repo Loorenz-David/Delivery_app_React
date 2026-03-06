@@ -1,0 +1,43 @@
+import type { Order } from '@/features/order/types/order'
+import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
+
+import { DraggableLocalDeliveryOrderCard } from './DraggableLocalDeliveryOrderCard'
+
+type LocalDeliveryStopEntry = {
+  stop: RouteSolutionStop
+  order: Order
+}
+
+type LocalDeliveryOrderGroupChildrenProps = {
+  entries: LocalDeliveryStopEntry[]
+  planStartDate?: string | null
+  projectedStopOrderByClientId?: Map<string, number> | null
+}
+
+export const LocalDeliveryOrderGroupChildren = ({
+  entries,
+  planStartDate,
+  projectedStopOrderByClientId,
+}: LocalDeliveryOrderGroupChildrenProps) => (
+  <div className="relative ml-6 mt-3 pl-6">
+    {entries.length > 1 ? (
+      <div className="pointer-events-none absolute bottom-2 left-1 top-2 w-px bg-[var(--color-border)]/70" />
+    ) : null}
+
+    <div className="flex flex-col gap-3">
+      {entries.map((entry) => (
+        <div key={entry.stop.client_id} className="relative">
+          {entries.length > 1 ? (
+            <div className="pointer-events-none absolute -left-[19px] top-8 h-px w-4 bg-[var(--color-border)]/70" />
+          ) : null}
+          <DraggableLocalDeliveryOrderCard
+            order={entry.order}
+            stop={entry.stop}
+            displayStopOrder={projectedStopOrderByClientId?.get(entry.stop.client_id) ?? entry.stop.stop_order ?? null}
+            planStartDate={planStartDate}
+          />
+        </div>
+      ))}
+    </div>
+  </div>
+)

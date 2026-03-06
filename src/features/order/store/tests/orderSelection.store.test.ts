@@ -1,6 +1,6 @@
 import type { Order } from '../../types/order'
 
-import { buildSelectedOrdersSummary } from '../orderSelectionHooks.store'
+import { buildBatchSelectionPayload, buildSelectedOrdersSummary } from '../orderSelectionHooks.store'
 import { useOrderSelectionStore } from '../orderSelection.store'
 
 const assert = (condition: boolean, message: string) => {
@@ -14,9 +14,22 @@ export const runOrderSelectionStoreTests = () => {
     isSelectionMode: false,
     selectedClientIds: [],
     selectedServerIds: [],
+    manualSelectedClientIds: [],
+    manualSelectedServerIds: [],
+    selectAllSnapshots: [],
+    excludedServerIds: [],
+    loadedSelectionIds: [],
+    resolvedSelection: { count: 0, signature: null, isLoading: false },
     enableSelectionMode: useOrderSelectionStore.getState().enableSelectionMode,
     disableSelectionMode: useOrderSelectionStore.getState().disableSelectionMode,
     setSelectedOrders: useOrderSelectionStore.getState().setSelectedOrders,
+    toggleManualOrder: useOrderSelectionStore.getState().toggleManualOrder,
+    addSelectAllSnapshot: useOrderSelectionStore.getState().addSelectAllSnapshot,
+    removeSelectAllSnapshot: useOrderSelectionStore.getState().removeSelectAllSnapshot,
+    setLoadedSelectionIds: useOrderSelectionStore.getState().setLoadedSelectionIds,
+    toggleExcludedServerId: useOrderSelectionStore.getState().toggleExcludedServerId,
+    setResolvedSelection: useOrderSelectionStore.getState().setResolvedSelection,
+    clearResolvedSelection: useOrderSelectionStore.getState().clearResolvedSelection,
     clearSelection: useOrderSelectionStore.getState().clearSelection,
   })
 
@@ -61,4 +74,17 @@ export const runOrderSelectionStoreTests = () => {
   assert(summary.totalWeight === 4, 'summary totalWeight should fallback null/undefined to zero')
   assert(summary.totalItems === 2, 'summary totalItems should fallback null/undefined to zero')
   assert(summary.totalVolume === 8, 'summary totalVolume should fallback null/undefined to zero')
+
+  actions.addSelectAllSnapshot(
+    {
+      key: 'snapshot-a',
+      query: { q: 'a' },
+      estimatedCount: 20,
+    },
+    [1, 2, 3],
+  )
+  actions.toggleExcludedServerId(2)
+  const selectionPayload = buildBatchSelectionPayload(useOrderSelectionStore.getState())
+  assert(selectionPayload.select_all_snapshots.length === 1, 'selection payload should include snapshots')
+  assert(selectionPayload.excluded_order_ids.length === 1, 'selection payload should include exclusions')
 }

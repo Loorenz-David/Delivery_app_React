@@ -18,8 +18,11 @@ import { useMap } from '@/shared/map'
 import { SectionPanel } from '@/shared/section-panel/SectionPanel'
 import { MainPopup } from '@/shared/popups/MainPopup/MainPopup'
 
-import { OrderCard } from '@/features/order/components/OrderCard'
+import { OrderCard } from '@/features/order/components/cards/OrderCard'
+import { OrderBatchDragOverlayCard } from '@/features/order/components/cards/OrderBatchDragOverlayCard'
+import { OrderGroupDragOverlayCard } from '@/features/order/components/cards/OrderGroupDragOverlayCard'
 import { RouteStopDragOverlay } from '@/features/plan/planTypes/localDelivery/components/overlays/RouteStopDragOverlay'
+import { RouteStopGroupDragOverlay } from '@/features/plan/planTypes/localDelivery/components/overlays/RouteStopGroupDragOverlay'
 
 import type{ PayloadBase } from '../types/types'
 import { useBaseControlls } from '../hooks/useBaseControlls'
@@ -129,6 +132,29 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
                     ) : activeDrag?.type === 'order' ? (
                         <div className="pointer-events-none cursor-grabbing">
                             <OrderCard order={activeDrag.order} />
+                        </div>
+                    ) : activeDrag?.type === 'order_batch' ? (
+                        <div className="pointer-events-none cursor-grabbing">
+                            <OrderBatchDragOverlayCard
+                                selectedCount={activeDrag.selectedCount}
+                                isLoading={activeDrag.isLoading}
+                            />
+                        </div>
+                    ) : activeDrag?.type === 'order_group' ? (
+                        <div className="pointer-events-none cursor-grabbing">
+                            <OrderGroupDragOverlayCard
+                                count={activeDrag.count}
+                                label={activeDrag.label}
+                            />
+                        </div>
+                    ) : activeDrag?.type === 'route_stop_group' ? (
+                        <div className="pointer-events-none cursor-grabbing">
+                            <RouteStopGroupDragOverlay
+                                count={activeDrag.count}
+                                label={activeDrag.label}
+                                firstStopOrder={activeDrag.firstStopOrder}
+                                lastStopOrder={activeDrag.lastStopOrder}
+                            />
                         </div>
                     ) : null}
                 </DragOverlay>

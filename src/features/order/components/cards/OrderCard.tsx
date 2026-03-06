@@ -1,10 +1,10 @@
 import { useOrderStateByServerId } from '@/features/order/store/orderStateHooks.store'
 import { ArchiveOrderIcon, DeleteIcon, ItemIcon, SendBackIcon } from '@/assets/icons'
 
-import type { Order } from '../types/order'
+import type { Order } from '../../types/order'
 import { StateCard } from '@/shared/layout/StateCard'
 import { ConfirmActionButton } from '@/shared/buttons/DeleteButton'
-import { OrderMissingInfoNotifier } from './OrderMissingInfoNotifier'
+import { OrderMissingInfoNotifier } from '../OrderMissingInfoNotifier'
 
 type OrderCardProps = {
   order: Order
