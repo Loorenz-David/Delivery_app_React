@@ -14,6 +14,11 @@ import type {
   CostumerUpdateResponse,
   CostumerUpdateTargetPayload,
 } from '../dto/costumer.dto'
+import type { OrderMap } from '@/features/order/types/order'
+
+type CostumerOrdersResponse = {
+  order: OrderMap
+}
 
 export const costumerApi = {
   list: (query?: CostumerQueryFilters): Promise<ApiResult<CostumerListResponse>> =>
@@ -27,6 +32,16 @@ export const costumerApi = {
     apiClient.request<CostumerDetailResponse>({
       path: `/costumers/${costumerId}`,
       method: 'GET',
+    }),
+
+  listOrdersByCostumerId: (
+    costumerId: number,
+    query?: { limit?: number; offset?: number },
+  ): Promise<ApiResult<CostumerOrdersResponse>> =>
+    apiClient.request<CostumerOrdersResponse>({
+      path: `/costumers/${costumerId}/orders`,
+      method: 'GET',
+      query,
     }),
 
   create: (payload: CostumerCreatePayload): Promise<ApiResult<CostumerCreateResponse>> =>
@@ -57,6 +72,13 @@ export const useListCostumersApi = () => useCallback((query?: CostumerQueryFilte
 
 export const useGetCostumerApi = () =>
   useCallback((costumerId: number | string) => costumerApi.getById(costumerId), [])
+
+export const useListCostumerOrdersApi = () =>
+  useCallback(
+    (costumerId: number, query?: { limit?: number; offset?: number }) =>
+      costumerApi.listOrdersByCostumerId(costumerId, query),
+    [],
+  )
 
 export const useCreateCostumerApi = () =>
   useCallback((payload: CostumerCreatePayload) => costumerApi.create(payload), [])

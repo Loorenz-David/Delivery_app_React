@@ -2,6 +2,15 @@ import type { Dispatch, SetStateAction, ChangeEvent } from 'react'
 import type { address } from '@/types/address'
 
 import type { LocalDeliveryEditFormState, LocalDeliveryEditFormWarnings } from './LocalDeliveryEditForm.types'
+import {
+  saveDriverIdPreference,
+  saveEndLocationPreference,
+  saveEndTimePreference,
+  saveRouteEndStrategyPreference,
+  saveStartLocationPreference,
+  saveStartTimePreference,
+  saveStopsServiceTimePreference,
+} from './localDeliveryEditForm.storage'
 
 type SetFormState = Dispatch<SetStateAction<LocalDeliveryEditFormState>>
 
@@ -9,6 +18,25 @@ type Props = {
   setFormState: SetFormState
   formWarnings: LocalDeliveryEditFormWarnings
 }
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+const parseDateOnlyUtc = (value: string | null | undefined): Date | null => {
+  if (!value) return null
+  const [yearRaw, monthRaw, dayRaw] = String(value).split('T')[0].split('-')
+  const year = Number(yearRaw)
+  const month = Number(monthRaw)
+  const day = Number(dayRaw)
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return null
+  }
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return null
+  }
+  return new Date(Date.UTC(year, month - 1, day))
+}
+
+const formatDateOnlyUtc = (value: Date): string => value.toISOString().slice(0, 10)
 
 const normalizeRouteEndStrategy = (
   value: string | number,
@@ -31,17 +59,34 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
   const handlePlanStartDate = (value: string | null) => {
     if ( !value ) return
     setFormState((prev) => {
+      let nextEndDate = prev.delivery_plan.end_date
+      const previousStartDate = parseDateOnlyUtc(prev.delivery_plan.start_date)
+      const previousEndDate = parseDateOnlyUtc(prev.delivery_plan.end_date)
+      const nextStartDate = parseDateOnlyUtc(value)
+
+      // Preserve day-span only when moving start beyond current end.
+      if (
+        previousStartDate &&
+        previousEndDate &&
+        nextStartDate &&
+        nextStartDate.getTime() > previousEndDate.getTime()
+      ) {
+        const deltaDays = Math.round((nextStartDate.getTime() - previousStartDate.getTime()) / MS_PER_DAY)
+        const shiftedEndDate = new Date(previousEndDate.getTime() + (deltaDays * MS_PER_DAY))
+        nextEndDate = formatDateOnlyUtc(shiftedEndDate)
+      }
+
       const next = {
         ...prev,
-        delivery_plan: { ...prev.delivery_plan, start_date: value },
+        delivery_plan: { ...prev.delivery_plan, start_date: value, end_date: nextEndDate },
       }
       formWarnings.planDateWarning.validate({
         start_date: value,
-        end_date: prev.delivery_plan.end_date,
+        end_date: nextEndDate,
       })
       formWarnings.routeTimeWarning.validate({
         start_date: value,
-        end_date: prev.delivery_plan.end_date,
+        end_date: nextEndDate,
         start_time: prev.route_solution.set_start_time,
         end_time: prev.route_solution.set_end_time,
       })
@@ -71,6 +116,7 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
   }
 
   const handleRouteStartTime = (value: string | null) => {
+    saveStartTimePreference(value)
     setFormState((prev) => {
       const next = {
         ...prev,
@@ -87,6 +133,7 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
   }
 
   const handleRouteEndTime = (value: string | null) => {
+    saveEndTimePreference(value)
     setFormState((prev) => {
       const next = {
         ...prev,
@@ -103,6 +150,7 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
   }
 
   const handleRouteStartLocation = (value: address | null) => {
+    saveStartLocationPreference(value)
 
     setFormState((prev) => ({
       ...prev,
@@ -111,6 +159,7 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
   }
 
   const handleRouteEndLocation = (value: address | null) => {
+    saveEndLocationPreference(value)
     setFormState((prev) => ({
       ...prev,
       route_solution: { ...prev.route_solution, end_location: value },
@@ -118,13 +167,16 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
   }
 
   const handleRouteEndStrategy = (value: string | number) => {
+    const normalized = normalizeRouteEndStrategy(value)
+    saveRouteEndStrategyPreference(normalized)
     setFormState((prev) => ({
       ...prev,
-      route_solution: { ...prev.route_solution, route_end_strategy: normalizeRouteEndStrategy(value) },
+      route_solution: { ...prev.route_solution, route_end_strategy: normalized },
     }))
   }
 
   const handleDriverSelection = (value: number | null) => {
+    saveDriverIdPreference(value)
     setFormState((prev) => ({
       ...prev,
       route_solution: { ...prev.route_solution, driver_id: value },
@@ -138,6 +190,36 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
     }))
   }
 
+  const handleStopsServiceTimeTime = (value: number) => {
+    setFormState((prev) => {
+      const current = prev.route_solution.stops_service_time ?? { time: 0, per_item: 0 }
+      const nextServiceTime = {
+        ...current,
+        time: Math.max(0, Math.trunc(value)),
+      }
+      saveStopsServiceTimePreference(nextServiceTime)
+      return {
+        ...prev,
+        route_solution: { ...prev.route_solution, stops_service_time: nextServiceTime },
+      }
+    })
+  }
+
+  const handleStopsServiceTimePerItem = (value: number) => {
+    setFormState((prev) => {
+      const current = prev.route_solution.stops_service_time ?? { time: 0, per_item: 0 }
+      const nextServiceTime = {
+        ...current,
+        per_item: Math.max(0, Math.trunc(value)),
+      }
+      saveStopsServiceTimePreference(nextServiceTime)
+      return {
+        ...prev,
+        route_solution: { ...prev.route_solution, stops_service_time: nextServiceTime },
+      }
+    })
+  }
+
   return {
     handlePlanLabel,
     handlePlanStartDate,
@@ -149,5 +231,7 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
     handleRouteEndStrategy,
     handleDriverSelection,
     handleCreateVariantToggle,
+    handleStopsServiceTimeTime,
+    handleStopsServiceTimePerItem,
   }
 }

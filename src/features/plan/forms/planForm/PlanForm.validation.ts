@@ -1,5 +1,3 @@
-
-import { useEffect } from 'react'
 import type { RefObject } from 'react'
 
 import { hasFormChanges } from '@/shared/data-validation/compareChanges'
@@ -8,14 +6,12 @@ import type { DeliveryPlan } from '../../types/plan'
 import type { PlanWarningsControllers, PlanTypeState } from './PlanForm.types'
 
 type Props = {
-    registerCloseGuard: ( fn:()=>boolean )=> void
     planFormWarnings: PlanWarningsControllers
     planForm: DeliveryPlan
     initialPlanFormRef: RefObject<DeliveryPlan | null>
 }
 
 export const usePlanFormValidation = ({
-    registerCloseGuard,
     planFormWarnings,
     planForm,
     initialPlanFormRef,
@@ -40,16 +36,9 @@ export const usePlanFormValidation = ({
         return val
     }
 
-    useEffect(()=>{
-
-        const unregister = registerCloseGuard( setCloseGuards )
-        return unregister
-    },[planForm ])
-
 
     return {
         planValidateForm,
         hasChanges: setCloseGuards
     }
 }
-

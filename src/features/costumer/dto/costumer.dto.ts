@@ -46,6 +46,7 @@ export type Costumer = {
   operating_hours?: CostumerOperatingHours[]
 
   order_count?: number
+  active_order_count?: number
   __optimistic?: boolean
 }
 

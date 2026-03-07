@@ -3,7 +3,7 @@ import { createContext, useContext } from 'react'
 import type { useGoogleAutoComplete } from './hooks/useGoogleAutoComplete'
 import type { useControllers } from './hooks/useController'
 
-import type { PlaceSuggestion  } from '../types'
+import type { PlaceSuggestion  } from './types'
 
 export type AddressAutocompleteContextValue =
   & ReturnType<typeof useGoogleAutoComplete>
@@ -11,6 +11,9 @@ export type AddressAutocompleteContextValue =
   & {
     isLoading: boolean
     suggestions: PlaceSuggestion []
+    enableCurrentLocation: boolean
+    enableSavedLocations: boolean
+    intentKey?: string
   }
 
 export const AddressAutocompleteContext = createContext<AddressAutocompleteContextValue | null>(null)

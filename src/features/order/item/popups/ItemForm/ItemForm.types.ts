@@ -14,6 +14,7 @@ export type ItemFormContextValue = {
   payload: ItemPopupPayload
   currentItem: Item | null
   formState: Item
+  hasUnsavedChanges: boolean
   setFormState: Dispatch<SetStateAction<Item>>
   initialFormRef: RefObject<Item | null>
   warnings: ItemFormWarnings

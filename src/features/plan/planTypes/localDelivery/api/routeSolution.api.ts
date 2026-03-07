@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api/ApiClient'
 import type { ApiResult } from '@/lib/api/types'
 
 import type { RouteSolution, RouteSolutionMap } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
+import type { ServiceTime } from '@/features/plan/planTypes/localDelivery/types/serviceTime'
 import type {
   RouteSolutionStop,
   RouteSolutionStopMap,
@@ -27,8 +28,19 @@ export type RouteSolutionTimesPayload = {
   route_solution_id: number
   set_start_time?: string | null
   set_end_time?: string | null
+  stops_service_time?: ServiceTime | null
 }
 
+export type RouteStopServiceTimePayload = {
+  service_time: ServiceTime | null
+}
+
+export type RouteStopGroupPositionPayload = {
+  route_solution_id: number
+  route_stop_ids: number[]
+  position: number
+  anchor_stop_id: number
+}
 
 
 export type RouteSolutionReadyResponse = {
@@ -43,6 +55,25 @@ export const routeSolutionApi = {
     apiClient.request<RouteSolutionUpdateResponse>({
       path: `/route_solutions/stops/${routeStopId}/position/${position}`,
       method: 'PATCH',
+    }),
+
+  updateStopGroupPosition: (
+    payload: RouteStopGroupPositionPayload,
+  ): Promise<ApiResult<RouteSolutionUpdateResponse>> =>
+    apiClient.request<RouteSolutionUpdateResponse>({
+      path: '/route_solutions/stops/group-position',
+      method: 'PATCH',
+      data: payload,
+    }),
+
+  updateStopServiceTime: (
+    routeStopId: number,
+    payload: RouteStopServiceTimePayload,
+  ): Promise<ApiResult<RouteSolutionUpdateResponse>> =>
+    apiClient.request<RouteSolutionUpdateResponse>({
+      path: `/route_solutions/stops/${routeStopId}/service-time`,
+      method: 'PATCH',
+      data: payload,
     }),
 
   selectRouteSolution: (

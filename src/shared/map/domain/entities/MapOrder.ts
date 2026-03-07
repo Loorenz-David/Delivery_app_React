@@ -2,6 +2,7 @@ import type { Coordinates } from '../types'
 
 export type MapOrderStatus = 'pending' | 'in_progress' | 'completed' | 'skipped' | string
 export type MapOrderInteractionVariant = 'default' | 'order'
+export type MapMarkerOperationDirection = 'up' | 'down'
 
 export type MapOrder = {
   id: string
@@ -16,4 +17,5 @@ export type MapOrder = {
   onMouseLeave?: (e: MouseEvent) => void
   className?: string
   interactionVariant?: MapOrderInteractionVariant
+  operationBadgeDirections?: MapMarkerOperationDirection[]
 }

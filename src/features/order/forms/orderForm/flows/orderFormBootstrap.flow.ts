@@ -3,6 +3,7 @@ import { buildClientId } from '@/lib/utils/clientId'
 import type { Phone } from '@/types/phone'
 
 import type { Order } from '../../../types/order'
+import { sortDeliveryWindowsUtc } from './orderFormDeliveryWindows.flow'
 import type { OrderFormMode, OrderFormState } from '../state/OrderForm.types'
 
 type BuildOrderFormInitialStateParams = {
@@ -45,6 +46,7 @@ export const buildInitialOrderForm = ({
 }): OrderFormState => ({
   client_id: order?.client_id ?? buildClientId('order'),
   order_plan_objective: order?.order_plan_objective ?? null,
+  operation_type: order?.operation_type ?? 'dropoff',
   reference_number: order?.reference_number ?? (mode === 'create' ? buildReferenceNumber() : ''),
   external_source: order?.external_source ?? '',
   tracking_number: order?.tracking_number ?? '',
@@ -59,6 +61,7 @@ export const buildInitialOrderForm = ({
   latest_delivery_date: order?.latest_delivery_date ?? null,
   preferred_time_start: order?.preferred_time_start ?? '',
   preferred_time_end: order?.preferred_time_end ?? '',
+  delivery_windows: sortDeliveryWindowsUtc(order?.delivery_windows ?? []),
   delivery_plan_id: order?.delivery_plan_id ?? deliveryPlanId ?? null,
 })
 
@@ -69,7 +72,11 @@ export const buildOrderFormInitialState = ({
   payloadRestoreFormState,
 }: BuildOrderFormInitialStateParams): OrderFormState =>
   payloadRestoreFormState
-    ? { ...payloadRestoreFormState }
+    ? {
+        ...payloadRestoreFormState,
+        operation_type: payloadRestoreFormState.operation_type ?? 'dropoff',
+        delivery_windows: sortDeliveryWindowsUtc(payloadRestoreFormState.delivery_windows ?? []),
+      }
     :
   buildInitialOrderForm({
     mode,

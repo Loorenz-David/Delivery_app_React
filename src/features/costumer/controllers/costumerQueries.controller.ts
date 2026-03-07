@@ -1,6 +1,6 @@
 import { normalizeCostumerPayload } from '../domain/normalizeCostumerPayload'
 import { setVisibleCostumerIds } from '../store/costumer.patchers'
-import { useGetCostumerApi, useListCostumersApi } from '../api/costumerApi'
+import { useGetCostumerApi, useListCostumerOrdersApi, useListCostumersApi } from '../api/costumerApi'
 import { useMessageHandler } from '@/shared/message-handler'
 import { upsertCostumers } from '../store/costumer.upserters'
 import {  setCostumerListError, setCostumerListLoading, setCostumerListResult } from '../store/costumerList.store'
@@ -10,6 +10,7 @@ import type {
 } from '../dto/costumer.dto'
 import { ApiError } from '@/lib/api/ApiClient'
 import { useCallback } from 'react'
+import { upsertOrders } from '@/features/order'
 
 
 export const buildCostumerQueryKey = (query?: CostumerQueryFilters) => JSON.stringify(query ?? {})
@@ -17,6 +18,7 @@ export const buildCostumerQueryKey = (query?: CostumerQueryFilters) => JSON.stri
 
 export const useCostumerQueries = ()=>{
     const listCostumersApi = useListCostumersApi()
+    const listCostumerOrdersApi = useListCostumerOrdersApi()
     const getCostumerApi = useGetCostumerApi()
     const { showMessage } = useMessageHandler()
 
@@ -82,7 +84,8 @@ export const useCostumerQueries = ()=>{
     
             const normalized = normalizeCostumerPayload(payload)
             upsertCostumers(normalized)
-            return normalized
+
+            return Object.values(normalized.byClientId)[0]
           } catch (error) {
             const message = error instanceof ApiError ? error.message : 'Unable to load costumer.'
             const status = error instanceof ApiError ? error.status : 500
@@ -93,9 +96,37 @@ export const useCostumerQueries = ()=>{
         [getCostumerApi, showMessage],
       )
 
+    const queryCostumerByServerId = useCallback(
+      async (costumerId: number | string) => getCostumer(costumerId),
+      [getCostumer],
+    )
+
+    const queryCostumerOrdersByServerId = useCallback(
+      async (
+        costumerId: number,
+        query?: { limit?: number; offset?: number },
+      ) => {
+        try {
+          const response = await listCostumerOrdersApi(costumerId, query)
+          const payload = response.data?.order
+          if (!payload) return null
+          upsertOrders(payload)
+          return payload
+        } catch (error) {
+          const message = error instanceof ApiError ? error.message : 'Unable to load costumer orders.'
+          const status = error instanceof ApiError ? error.status : 500
+          showMessage({ status, message })
+          return null
+        }
+      },
+      [listCostumerOrdersApi, showMessage],
+    )
+
     return {
         queryCostumers,
         queryCostumerByEmail,
-        getCostumer
+        getCostumer,
+        queryCostumerByServerId,
+        queryCostumerOrdersByServerId,
     }
 }

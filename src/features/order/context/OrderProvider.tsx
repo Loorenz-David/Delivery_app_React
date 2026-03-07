@@ -6,28 +6,50 @@ import { OrderContextProvider } from './OrderContext'
 import { useOrderFlow } from '../flows/order.flow'
 import { useOrderActions } from '../actions/order.actions'
 import {   useOrderQuery } from "../store/orderQuery.store";
+import { useOrderSelectionListActions } from '../actions/orderSelection.actions'
 import { useOrderMapMarkersFlow } from '../flows/orderMapMarkers.flow'
 import { useBaseControlls, useMapManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 import { useOrderCircleSelectionFlow } from '../flows/orderCircleSelection.flow'
+import { useOrderBatchSelectionResolveFlow } from '../flows/orderBatchSelectionResolve.flow'
 import { useOrderStats } from '../store/orderList.store'
-import { useHoveredOrderClientId, useOrderMapInteractionActions } from '../store/orderMapInteractionHooks.store'
+import {
+  useHoveredOrderClientId,
+  useOrderMapInteractionActions,
+  useOrderMarkerLookup,
+} from '../store/orderMapInteractionHooks.store'
 import { useStackActionEntries } from '@/shared/stack-manager/useStackActionEntries'
 import type { Order } from '../types/order'
+import { useOrderSelectionActions, useOrderSelectionMode } from '../store/orderSelectionHooks.store'
+import { useOrderSelectionStore } from '../store/orderSelection.store'
+import { useAuthSession } from '@/features/auth/login/hooks/useAuthSelectors'
+import { useOrderGroupUIStore } from '../store/orderGroupUI.store'
 
 export const OrderProvider = ({ children }: PropsWithChildren) => {
   const orders = useVisibleOrders()
   const orderStats = useOrderStats()
   const orderActions = useOrderActions()
+  const isSelectionMode = useOrderSelectionMode()
+  const { disableSelectionMode } = useOrderSelectionActions()
   const baseControlls = useBaseControlls()
   const query = useOrderQuery()
+  const session = useAuthSession()
   const fistLoad = useRef(true)
+  const previousTeamIdRef = useRef<number | null>(null)
   const mapManager = useMapManager()
   const sectionManager = useSectionManager()
   const sectionEntries = useStackActionEntries(sectionManager)
   const hoveredClientId = useHoveredOrderClientId()
-  const { setHovered, clearHovered } = useOrderMapInteractionActions()
+  const markerLookup = useOrderMarkerLookup()
+  const { setHovered, clearHovered, openGroupOverlay, closeGroupOverlay } = useOrderMapInteractionActions()
 
   const { loadOrders } = useOrderFlow()
+  const orderSelectionActions = useOrderSelectionListActions({
+    query,
+    orderStats,
+    visibleOrders: orders,
+  })
+
+  useOrderBatchSelectionResolveFlow()
 
   const activeOrderDetailClientId = useMemo(() => {
     const openOrderDetails = sectionEntries.filter(
@@ -59,11 +81,27 @@ export const OrderProvider = ({ children }: PropsWithChildren) => {
   const handleOrderMarkerMouseLeave = useCallback((_event: MouseEvent, _order: Order) => {
     clearHovered('map')
   }, [clearHovered])
+
+  const handleGroupMarkerClick = useCallback(
+    ({ markerId, markerAnchorEl, orders: groupedOrders }: {
+      markerId: string
+      markerAnchorEl: HTMLElement
+      orders: Order[]
+    }) => {
+      openGroupOverlay({
+        markerId,
+        markerAnchorEl,
+        orderClientIds: groupedOrders.map((order) => order.client_id),
+      })
+    },
+    [openGroupOverlay],
+  )
   
 
   useOrderMapMarkersFlow({
     orders,
     onMarkerClick: orderActions.handleOrderMarkerClick,
+    onGroupMarkerClick: handleGroupMarkerClick,
     onMarkerMouseEnter: handleOrderMarkerMouseEnter,
     onMarkerMouseLeave: handleOrderMarkerMouseLeave,
     markerClassName: 'order-marker',
@@ -72,12 +110,18 @@ export const OrderProvider = ({ children }: PropsWithChildren) => {
   useOrderCircleSelectionFlow()
 
   useEffect(() => {
-    mapManager.setSelectedMarker(activeOrderDetailClientId)
-  }, [activeOrderDetailClientId, mapManager])
+    const markerId = activeOrderDetailClientId
+      ? markerLookup.markerIdByOrderClientId[activeOrderDetailClientId] ?? activeOrderDetailClientId
+      : null
+    mapManager.setSelectedMarker(markerId)
+  }, [activeOrderDetailClientId, mapManager, markerLookup.markerIdByOrderClientId])
 
   useEffect(() => {
-    mapManager.setHoveredMarker(hoveredClientId)
-  }, [hoveredClientId, mapManager])
+    const markerId = hoveredClientId
+      ? markerLookup.markerIdByOrderClientId[hoveredClientId] ?? hoveredClientId
+      : null
+    mapManager.setHoveredMarker(markerId)
+  }, [hoveredClientId, mapManager, markerLookup.markerIdByOrderClientId])
 
   useEffect(() => {
     if (fistLoad.current) {
@@ -89,19 +133,79 @@ export const OrderProvider = ({ children }: PropsWithChildren) => {
     }
   }, [query])
 
+  useEffect(() => {
+    return () => {
+      useOrderSelectionStore.getState().disableSelectionMode()
+      useOrderGroupUIStore.getState().clearGroupUI()
+      closeGroupOverlay()
+    }
+  }, [closeGroupOverlay])
+
+  useEffect(() => {
+    if (baseControlls.isBaseOpen) {
+      closeGroupOverlay()
+    }
+  }, [baseControlls.isBaseOpen, closeGroupOverlay])
+
+  useEffect(() => {
+    const teamIdRaw = (
+      session?.identity?.team_id
+      ?? session?.user?.teamId
+      ?? null
+    )
+    const teamId = Number.isFinite(Number(teamIdRaw)) ? Number(teamIdRaw) : null
+
+    if (previousTeamIdRef.current == null) {
+      previousTeamIdRef.current = teamId
+      return
+    }
+
+    if (teamId != null && previousTeamIdRef.current !== teamId) {
+      disableSelectionMode()
+    }
+
+    previousTeamIdRef.current = teamId
+  }, [disableSelectionMode, session?.identity, session?.user?.teamId])
+
+  const isOrderSelected = useCallback((order: Order) => {
+    const state = useOrderSelectionStore.getState()
+    if (typeof order.id === 'number') {
+      if (state.excludedServerIds.includes(order.id)) {
+        return false
+      }
+      return state.manualSelectedServerIds.includes(order.id)
+        || state.loadedSelectionIds.includes(order.id)
+    }
+    return state.manualSelectedClientIds.includes(order.client_id)
+  }, [])
+
 
 
   const value = useMemo(
     () => ({
       orders,
       orderActions,
+      orderSelectionActions,
+      isSelectionMode,
+      isOrderSelected,
       query,
       orderStats,
       hoveredClientId,
       handleOrderRowMouseEnter,
       handleOrderRowMouseLeave,
     }),
-    [handleOrderRowMouseEnter, handleOrderRowMouseLeave, hoveredClientId, orderActions, orderStats, orders, query],
+    [
+      handleOrderRowMouseEnter,
+      handleOrderRowMouseLeave,
+      hoveredClientId,
+      isOrderSelected,
+      isSelectionMode,
+      orderActions,
+      orderSelectionActions,
+      orderStats,
+      orders,
+      query,
+    ],
   )
 
   return <OrderContextProvider value={value}>{children}</OrderContextProvider>

@@ -8,4 +8,5 @@ export type CostumerSearchBarProps = {
   limit?: number
   initialQuery?: string
   handleStartCreate: () => void
+  selectedCostumerClientId?: string | null
 }

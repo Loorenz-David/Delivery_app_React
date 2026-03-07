@@ -30,6 +30,7 @@ export type PropsPlanFormContext = {
     planSetters: ReturnType<typeof usePlanFormSetters>
     planActions: ReturnType<typeof usePlanFormActions>
     planFormWarnings: PlanWarningsControllers
+    hasUnsavedChanges: boolean
 }
 
 export type PlanWarningsControllers = ReturnType<typeof usePlanFormWarnings>

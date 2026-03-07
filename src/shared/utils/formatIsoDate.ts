@@ -53,3 +53,28 @@ export const getIsoWeekLabel = (dateInput?: string | null) => {
 
   return `v ${weekNo}`
 }
+
+export const formatIsoDateFriendly = (value?: string | null) => {
+  if (!value) return null
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'long', // "Mar" | change to "long" for "March"
+  }).format(date)
+}
+
+export const formatIsoTime = (value?: string | null) => {
+  if (!value) return null
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+
+  return new Intl.DateTimeFormat('en', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false, // 24h format
+  }).format(date)
+}

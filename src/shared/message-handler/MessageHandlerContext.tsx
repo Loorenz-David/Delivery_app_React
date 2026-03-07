@@ -26,8 +26,8 @@ interface MessageHandlerContextValue {
 
 const MessageHandlerContext = createContext<MessageHandlerContextValue | undefined>(undefined)
 
-const MAX_MESSAGES = 3
-const MESSAGE_DURATION_MS = 10000
+const MAX_MESSAGES = 2
+const MESSAGE_DURATION_MS = 8000
 
 export function MessageHandlerProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<ManagedMessage[]>([])

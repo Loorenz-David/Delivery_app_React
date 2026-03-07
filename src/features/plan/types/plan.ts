@@ -5,6 +5,8 @@ import type { LocalDeliveryPlan } from '@/features/plan/planTypes/localDelivery/
 import type { StorePickupPlanInput } from '@/features/plan/types/storePickupPlan'
 import type { StorePickupPlan } from '@/features/plan/types/storePickupPlan'
 import type { RouteSolution } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
+import type { ServiceTime } from '@/features/plan/planTypes/localDelivery/types/serviceTime'
+import type { address } from '@/types/address'
 
 export const PLAN_TYPE_KEYS = [
   'local_delivery',
@@ -84,6 +86,20 @@ export type PlanTypeStoreFields = {
   store_pickup_plan?: StorePickupPlanInput
 }
 
+export type LocalDeliveryPlanTypeDefaults = {
+  route_solution?: {
+    start_location?: address | null
+    end_location?: address | null
+    set_start_time?: string | null
+    set_end_time?: string | null
+    stops_service_time?: ServiceTime | null
+    route_end_strategy?: 'round_trip' | 'custom_end_address' | 'end_at_last_stop'
+    driver_id?: number | null
+  }
+}
+
+export type PlanTypeDefaults = LocalDeliveryPlanTypeDefaults | Record<string, unknown>
+
 export type PlanCreatePayload = {
   client_id?: string
   label: string
@@ -91,6 +107,7 @@ export type PlanCreatePayload = {
   start_date: string
   end_date?: string | null
   order_ids?: number[]
+  plan_type_defaults?: PlanTypeDefaults
 }
 
 export type PlanUpdateFields = Partial<

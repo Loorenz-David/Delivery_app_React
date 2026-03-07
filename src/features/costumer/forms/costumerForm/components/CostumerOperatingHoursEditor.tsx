@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { CheckMarkIcon } from '@/assets/icons'
 import { CustomTimePicker } from '@/shared/inputs/CustomTimePicker'
 import { Switch } from '@/shared/inputs/Switch'
 
@@ -20,7 +21,7 @@ export const CostumerOperatingHoursEditor = ({ model }: CostumerOperatingHoursEd
   }, [model.formState.operating_hours])
 
   return (
-    <div className="flex flex-col divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)]/70 bg-[var(--color-page)]">
+    <div className="flex flex-col divide-y divide-[var(--color-border)] rounded-xl overflow-hidden border border-[var(--color-border)]/70 bg-[var(--color-page)]">
       {WEEKDAY_OPTIONS.map((day) => {
         const entry = entriesByWeekday.get(day.weekday)
         const isSelected = Boolean(entry)
@@ -52,38 +53,48 @@ const OperatingDayRow = ({
   isSelected,
   model,
 }: OperatingDayRowProps) => {
+  const toggleDaySelection = () => {
+    if (isSelected) {
+      model.formSetters.removeOperatingDay(day.weekday)
+      return
+    }
+    model.formSetters.toggleOperatingDay(day.weekday)
+  }
+
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={toggleDaySelection}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          toggleDaySelection()
+        }
+      }}
       className={`grid grid-cols-1 items-center gap-3 px-4 py-3 md:grid-cols-[140px_1fr_auto] ${
         isSelected ? 'bg-[var(--color-light-blue)]/10' : 'bg-transparent'
       }`}
     >
       <div className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => {
-            if (isSelected) {
-              model.formSetters.removeOperatingDay(day.weekday)
-            } else {
-              model.formSetters.toggleOperatingDay(day.weekday)
-            }
-          }}
-          className="h-4 w-4"
-        />
+        <span className="flex h-4 w-4 items-center justify-center rounded-full border border-blue-200 bg-blue-50">
+          {isSelected ? <CheckMarkIcon className="h-4 w-4 text-blue-600" /> : null}
+        </span>
         <span className="text-sm font-medium text-[var(--color-text)]">{day.longLabel}</span>
       </div>
 
-      <div className="min-h-[38px]">
+      <div className="min-h-[38px] flex items-center" >
         {isSelected && !entry?.is_closed ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 " onClick={(event) => event.stopPropagation()}>
             <CustomTimePicker
+              className="px-2 py-1 border-1 border-[var(--color-border-accent)] bg-white max-w-[100px]"
               selectedTime={entry?.open_time ?? null}
               onChange={(value) => model.formSetters.setOperatingDayOpenTime(day.weekday, value)}
             />
             <span className="text-xs text-[var(--color-muted)]">-</span>
             <CustomTimePicker
               selectedTime={entry?.close_time ?? null}
+              className="px-2 py-1 border-1 border-[var(--color-border-accent)] bg-white max-w-[100px]"
               onChange={(value) => model.formSetters.setOperatingDayCloseTime(day.weekday, value)}
             />
           </div>
@@ -94,9 +105,9 @@ const OperatingDayRow = ({
         ) : null}
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end" >
         {isSelected ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
             <span className="text-xs text-[var(--color-muted)]">Closed</span>
             <Switch
               value={Boolean(entry?.is_closed)}

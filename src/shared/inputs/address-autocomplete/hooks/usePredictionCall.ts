@@ -4,16 +4,15 @@ import type { EnsureServiceReturn } from '@/shared/google-maps/hooks/usePlacesAP
 import type {
   AutocompletePrediction,
   ComponentRestrictions,
-  PredictionsState
-} from '../../types'
+  PlacesServiceStatus,
+} from '@/shared/google-maps/types'
+import type { PlaceSuggestion } from '../types'
 
-
-
-export interface PlaceSuggestion {
-  description: string
-  placeId: string
-  mainText?: string
-  secondaryText?: string
+type PredictionsState = {
+  suggestions: PlaceSuggestion[]
+  status: PlacesServiceStatus | 'idle'
+  error?: string
+  isLoading: boolean
 }
 
 
@@ -44,6 +43,7 @@ export const usePredictionCall = ({
 
     function mapSuggestion(suggestion: AutocompletePrediction): PlaceSuggestion {
         return {
+            type: 'place',
             description: suggestion.description,
             placeId: suggestion.place_id,
             mainText: suggestion.structured_formatting?.main_text,

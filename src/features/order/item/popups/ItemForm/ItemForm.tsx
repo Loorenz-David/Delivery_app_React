@@ -1,24 +1,51 @@
 import type { StackComponentProps } from '@/shared/stack-manager/types'
-import { usePopupContext } from '@/shared/popups/MainPopup/PopupContext'
-import { usePopupManager } from '@/shared/resource-manager/useResourceManager'
+import { useState } from 'react'
+import {
+  FeaturePopupBody,
+  FeaturePopupClosePrompt,
+  FeaturePopupHeader,
+  FeaturePopupShell,
+  useFeaturePopupCloseController,
+} from '@/shared/popups/featurePopup'
 
 import type { ItemPopupPayload } from '../../types'
 
 import { ItemFormLayout } from './ItemForm.layout'
 import { ItemFormProvider } from './ItemForm.provider'
 
-export const ItemForm = ({ payload }: StackComponentProps<ItemPopupPayload>) => {
-  const popupManager = usePopupManager()
-  const popupBindings = usePopupContext()
+export const ItemForm = ({ payload, onClose }: StackComponentProps<ItemPopupPayload>) => {
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
-  const closeItemForm = () => {
-    popupManager.closeByKey('order.item.edit')
-    popupManager.closeByKey('order.item.create')
+  const closeController = useFeaturePopupCloseController({
+    hasUnsavedChanges,
+    onClose,
+  })
+
+  if (!payload) {
+    throw new Error('ItemForm payload is missing.')
   }
 
+  const isEdit = payload.mode === 'autonomous' && Boolean(payload.itemId)
+  const headerLabel = isEdit ? 'Edit Item' : 'Create Item'
+
   return (
-    <ItemFormProvider payload={payload} closeItemForm={closeItemForm} popupBindings={popupBindings}>
-      <ItemFormLayout />
-    </ItemFormProvider>
+    <>
+      <FeaturePopupShell onRequestClose={closeController.requestClose} size="md" variant="center">
+        <FeaturePopupHeader
+          title={headerLabel}
+          onClose={closeController.requestClose}
+        />
+        <FeaturePopupBody className="px-3 py-5">
+          <ItemFormProvider
+            payload={payload}
+            onSuccessClose={closeController.confirmClose}
+            onUnsavedChangesChange={setHasUnsavedChanges}
+          >
+            <ItemFormLayout />
+          </ItemFormProvider>
+        </FeaturePopupBody>
+      </FeaturePopupShell>
+      <FeaturePopupClosePrompt controller={closeController} />
+    </>
   )
 }

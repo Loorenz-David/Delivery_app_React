@@ -5,10 +5,12 @@ import type { Phone } from '@/types/phone'
 
 import type { Item } from '../../../item'
 import type { Order } from '../../../types/order'
+import type { OrderDeliveryWindow } from '../../../types/order'
+import type { OrderOperationTypes } from '../../../types/order'
 import type { useOrderFormWarnings } from './OrderForm.warnings'
 import type { useOrderFormActions } from '../controllers/useOrderFormSubmit.actions'
 import type { useOrderFormSetters } from './orderForm.setters'
-import type { useOrderFormItemEditorActions } from '../orderFormItemEditor.actions'
+import type { useOrderFormItemEditorActions } from '../actions/orderFormItemEditor.actions'
 import type { Costumer } from '@/features/costumer'
 
 export type OrderFormMode = 'create' | 'edit'
@@ -19,6 +21,7 @@ export type CostumerSelectionRequestResult = 'applied' | 'prompted' | 'ignored'
 export type OrderFormState = {
   client_id: string
   order_plan_objective: string | null
+  operation_type: OrderOperationTypes
   reference_number: string
   external_source: string
   tracking_number: string
@@ -33,12 +36,14 @@ export type OrderFormState = {
   latest_delivery_date: string | null
   preferred_time_start: string
   preferred_time_end: string
+  delivery_windows: OrderDeliveryWindow[]
   delivery_plan_id?: number | null
 }
 
 export type OrderFormPayload = {
   mode?: OrderFormMode
   clientId?: string
+  costumer_id?: number
   deliveryPlanId?: number | null
   restoreFormState?: OrderFormState
 }

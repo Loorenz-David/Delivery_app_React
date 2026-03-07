@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import type { RefObject } from 'react'
 
 import { hasFormChanges } from '@/shared/data-validation/compareChanges'
@@ -7,14 +6,12 @@ import type { LocalDeliveryEditFormState } from './LocalDeliveryEditForm.types'
 import type { LocalDeliveryEditFormWarnings } from './LocalDeliveryEditForm.types'
 
 type Props = {
-  registerCloseGuard: (fn: () => boolean) => void
   formWarnings: LocalDeliveryEditFormWarnings
   formState: LocalDeliveryEditFormState
   initialFormRef: RefObject<LocalDeliveryEditFormState | null>
 }
 
 export const useLocalDeliveryEditFormValidation = ({
-  registerCloseGuard,
   formWarnings,
   formState,
   initialFormRef,
@@ -36,11 +33,6 @@ export const useLocalDeliveryEditFormValidation = ({
   }
 
   const allowClose = () => !hasFormChanges(formState, initialFormRef)
-
-  useEffect(() => {
-    const unregister = registerCloseGuard(allowClose)
-    return unregister
-  }, [formState])
 
   return {
     validateForm,

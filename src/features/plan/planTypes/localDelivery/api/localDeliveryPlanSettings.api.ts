@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api/ApiClient'
 import type { ApiResult } from '@/lib/api/types'
 import type { address } from '@/types/address'
+import type { ServiceTime } from '@/features/plan/planTypes/localDelivery/types/serviceTime'
 
 import type { RouteSolution, RouteSolutionMap } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
 import type { RouteSolutionStop, RouteSolutionStopMap } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
@@ -25,6 +26,7 @@ export type LocalDeliveryPlanSettingsPayload = {
     end_location?: address | null
     set_start_time?: string | null
     set_end_time?: string | null
+    stops_service_time?: ServiceTime | null
     route_end_strategy?: 'round_trip' | 'custom_end_address' | 'end_at_last_stop'
     driver_id?: number | null
   }

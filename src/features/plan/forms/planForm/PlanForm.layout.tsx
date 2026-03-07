@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
 import { Field } from '@/shared/inputs/FieldContainer'
 import { InputField } from '@/shared/inputs/InputField'
 import { CustomDatePicker } from '@/shared/inputs/CustomDatePicker'
 import { PlanTypeDescription, PlanTypeSelector } from '../../components'
 import { InputWarning } from '@/shared/inputs/InputWarning'
-import { PopupFooter } from '@/shared/popups/MainPopup/PopupFooter'
+import { BasicButton } from '@/shared/buttons/BasicButton'
+import { ConfirmActionButton } from '@/shared/buttons/DeleteButton'
+import { FeaturePopupFooter } from '@/shared/popups/featurePopup'
 
 import { usePlanForm } from './PlanForm.context'
 
@@ -23,16 +24,6 @@ export const PlanFormLayout = ({}) => {
         planActions,
         planFormWarnings,
     } = usePlanForm()
-
-    const footerConfig = useMemo(() => {
-        return mode == 'edit'
-            ? {
-                  deleteButton: { label: 'Delete', action: planActions.handleDeletePlan },
-              }
-            : {
-                  saveButton: { label: 'Create Plan', action: planActions.handleCreatePlan },
-              }
-    }, [mode, planActions.handleCreatePlan, planActions.handleDeletePlan])
 
     return ( 
         <>
@@ -56,13 +47,13 @@ export const PlanFormLayout = ({}) => {
                    
                     >
                         <CustomDatePicker date={ planForm.start_date ? new Date( planForm.start_date ) : new Date() } 
-                            onChange={ planSetters.handleStartDate }
+                            onChange={(value) => planSetters.handleStartDate(value ?? '')}
                         />
                     </Field>
                     <Field label="To:" required={true} 
                     >
                         <CustomDatePicker date={ planForm.end_date ? new Date( planForm.end_date ) : new Date() } 
-                            onChange={ planSetters.handleEndDate }
+                            onChange={(value) => planSetters.handleEndDate(value ?? '')}
                         />
                     </Field>
                     
@@ -82,7 +73,30 @@ export const PlanFormLayout = ({}) => {
                 
                 
             </form>
-            <PopupFooter footerConfig={footerConfig} />
+            <FeaturePopupFooter>
+                {mode === 'edit' ? (
+                    <ConfirmActionButton
+                        onConfirm={planActions.handleDeletePlan}
+                        deleteContent={'Delete'}
+                        confirmContent={'Confirm Deletion'}
+                        deleteClassName={'text-sm rounded-md bg-[var(--color-page)] text-red-500 border-[text-red-500] px-2 py-2'}
+                        confirmClassName={'text-sm rounded-md bg-red-500 py-2 px-2 text-white'}
+                    />
+                ) : <span />}
+                {mode === 'create' ? (
+                    <div className="flex flex-1 justify-end">
+                        <BasicButton
+                            params={{
+                                variant: 'primary',
+                                className: 'py-2 px-5',
+                                onClick: planActions.handleCreatePlan,
+                            }}
+                        >
+                            Create Plan
+                        </BasicButton>
+                    </div>
+                ) : null}
+            </FeaturePopupFooter>
         </>
     );
 }

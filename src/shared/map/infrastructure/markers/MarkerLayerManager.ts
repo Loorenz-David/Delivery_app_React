@@ -1,6 +1,10 @@
 import type { MapOrder } from '../../domain/entities/MapOrder'
 import type { Coordinates } from '../../domain/types'
-import { applyMarkerContent, createMarkerElement } from '../../presentation/mapMarkerElement.factory'
+import {
+  applyMarkerContent,
+  applyOperationBadges,
+  createMarkerElement,
+} from '../../presentation/mapMarkerElement.factory'
 import type { MapInstanceManager } from '../core/MapInstanceManager'
 
 export type LayerMarkerRecord = {
@@ -46,6 +50,7 @@ const applyBaseMarkerAppearance = (el: HTMLElement, order: MapOrder) => {
   }
 
   applyMarkerContent(el, order.label)
+  applyOperationBadges(el, order.operationBadgeDirections)
 }
 
 export class MarkerLayerManager {

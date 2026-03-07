@@ -1,8 +1,10 @@
 import type { address, coordinates } from '@/types/address'
 import type { RouteSolution } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
+import type { ServiceTime } from '@/features/plan/planTypes/localDelivery/types/serviceTime'
 import type { DeliveryPlan } from '@/features/plan/types/plan'
 
 import type { LocalDeliveryEditFormState } from './LocalDeliveryEditForm.types'
+
 
 export const initialLocalDeliveryEditForm = (): LocalDeliveryEditFormState => ({
   local_delivery_plan_id: null,
@@ -17,8 +19,9 @@ export const initialLocalDeliveryEditForm = (): LocalDeliveryEditFormState => ({
     label: null,
     start_location: null,
     end_location: null,
-    set_start_time: null,
-    set_end_time: null,
+    set_start_time: '00:00',
+    set_end_time: '23:59',
+    stops_service_time: null,
     route_end_strategy: 'round_trip',
     driver_id: null,
     created_at: null,
@@ -56,32 +59,63 @@ const coerceAddress = (value: Record<string, unknown> | null | undefined): addre
   return null
 }
 
+const coerceServiceTime = (
+  value: ServiceTime | Record<string, unknown> | null | undefined,
+): ServiceTime | null => {
+  if (!value || typeof value !== 'object') return null
+  const candidate = value as Record<string, unknown>
+  if (
+    typeof candidate.time !== 'number'
+    || !Number.isInteger(candidate.time)
+    || candidate.time < 0
+  ) {
+    return null
+  }
+  if (
+    typeof candidate.per_item !== 'number'
+    || !Number.isInteger(candidate.per_item)
+    || candidate.per_item < 0
+  ) {
+    return null
+  }
+
+  return {
+    time: candidate.time,
+    per_item: candidate.per_item,
+  }
+}
+
 export const buildFormState = (
   localDeliveryPlanId: number,
   plan: DeliveryPlan,
   routeSolution: RouteSolution,
   createVariantOnSave: boolean,
-): LocalDeliveryEditFormState => ({
-  local_delivery_plan_id: localDeliveryPlanId,
-  delivery_plan: {
-    id: plan.id ?? undefined,
-    client_id: plan.client_id ?? null,
-    label: plan.label ?? '',
-    start_date: plan.start_date ?? '',
-    end_date: plan.end_date ?? '',
-  },
-  route_solution: {
-    id: routeSolution.id ?? undefined,
-    client_id: routeSolution.client_id ?? null,
-    label: routeSolution.label ?? null,
-    start_location: coerceAddress(routeSolution.start_location as Record<string, unknown> | null),
-    end_location: coerceAddress(routeSolution.end_location as Record<string, unknown> | null),
-    set_start_time: normalizeTimeValue(routeSolution.set_start_time),
-    set_end_time: normalizeTimeValue(routeSolution.set_end_time),
-    route_end_strategy: routeSolution.route_end_strategy ?? 'round_trip',
-    driver_id: routeSolution.driver_id ?? null,
-    created_at: routeSolution.created_at ?? null,
-    is_optimized: routeSolution.is_optimized ?? null,
-  },
-  create_variant_on_save: createVariantOnSave,
-})
+): LocalDeliveryEditFormState => {
+
+
+  return {
+    local_delivery_plan_id: localDeliveryPlanId,
+    delivery_plan: {
+      id: plan.id ?? undefined,
+      client_id: plan.client_id ?? null,
+      label: plan.label ?? '',
+      start_date: plan.start_date ?? '',
+      end_date: plan.end_date ?? '',
+    },
+    route_solution: {
+      id: routeSolution.id ?? undefined,
+      client_id: routeSolution.client_id ?? null,
+      label: routeSolution.label ?? null,
+      start_location: coerceAddress(routeSolution.start_location as Record<string, unknown> | null) ,
+      end_location: coerceAddress(routeSolution.end_location as Record<string, unknown> | null) ,
+      set_start_time: normalizeTimeValue(routeSolution.set_start_time) ?? '09:00',
+      set_end_time: normalizeTimeValue(routeSolution.set_end_time) ?? '17:00',
+      stops_service_time: coerceServiceTime(routeSolution.stops_service_time),
+      route_end_strategy: routeSolution.route_end_strategy ??  'round_trip',
+      driver_id: routeSolution.driver_id ?? null,
+      created_at: routeSolution.created_at ?? null,
+      is_optimized: routeSolution.is_optimized ?? null,
+    },
+    create_variant_on_save: createVariantOnSave,
+  }
+}

@@ -7,7 +7,7 @@ import { getCalendarDayKey } from '../domain/dayKey.utils'
 import { isSameDay } from '../domain/comparison.utils'
 import { normalizeToCalendarDay } from '../domain/normalize.utils'
 
-import { buildDayCellKeyDownHandler, CalendarDayCell } from './CalendarDayCell'
+import { CalendarDayCell } from './CalendarDayCell'
 import { CalendarGrid } from './CalendarGrid'
 import { CalendarHeader } from './CalendarHeader'
 
@@ -85,7 +85,6 @@ export const CalendarRoot = ({ model, renderHeader, renderDay }: CalendarRootPro
               isInRange: model.isInRange(day.date),
               onSelect,
               tabIndex,
-              onKeyDown: buildDayCellKeyDownHandler({ onSelect }),
               onMouseEnter:
                 model.selectionMode === 'range' && model.isRangeSelectionInProgress
                   ? () => model.setHoveredDate(day.date)

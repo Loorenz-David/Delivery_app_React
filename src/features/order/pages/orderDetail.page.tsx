@@ -1,4 +1,5 @@
 import type { StackComponentProps } from '@/shared/stack-manager/types'
+import { SlideCarousel } from '@/shared/layout/slideCarousel'
 
 import { ItemsOrderPreview } from '../item'
 
@@ -6,6 +7,7 @@ import { OrderDetailSummary } from '../components/OrderDetailSummary'
 import { OrderDetailHeader } from '../components/pageHeaders/OrderDetailHeader'
 import { OrderDetailProvider } from '../context/OrderDetailProvider'
 import { useOrderDetailContext } from '../context/OrderDetailContext'
+import { OrderDetailTimeWindows } from '../components/OrderDetailTimeWindows'
 
 export type OrderDetailPayload = {
   clientId?: string
@@ -40,14 +42,19 @@ const OrderDetailContent = () => {
 
     <div className="flex min-h-0 flex-1 h-full flex-col gap-6 pt-3 bg-[var(--color-page)]">
         <div className="flex flex-col gap-4 px-5 ">
-          {order ? 
-            <OrderDetailSummary order={order} orderState={orderState} />
-            :
-            <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 text-sm text-[var(--color-muted)]">
-              Order not found.
-            </div>
-          }
-        
+          <SlideCarousel>
+            {order ? (
+              <OrderDetailSummary order={order} orderState={orderState} />
+            ) : (
+              <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 text-sm text-[var(--color-muted)]">
+                Order not found.
+              </div>
+            )}
+
+            {order ? (
+              <OrderDetailTimeWindows order={order} />
+            ) : null}
+          </SlideCarousel>
         </div>
 
         { orderServerId !== null ? 
@@ -76,6 +83,5 @@ export const OrderDetailPage = ({ payload, onClose }: StackComponentProps<OrderD
     <OrderDetailContent />
   </OrderDetailProvider>
 )
-
 
 

@@ -1,6 +1,9 @@
 import type { Order } from '@/features/order/types/order'
 
-import { buildLocalDeliverySelectionFromClientIds } from '../localDeliveryCircleSelection.flow'
+import {
+  buildLocalDeliverySelectionFromClientIds,
+  expandLocalDeliveryClientIdsFromMarkerSelection,
+} from '../localDeliveryCircleSelection.flow'
 
 const assert = (condition: boolean, message: string) => {
   if (!condition) {
@@ -25,4 +28,24 @@ export const runLocalDeliveryCircleSelectionFlowTests = () => {
   assert(selection.serverIds[0] === 201, 'should map first synced local delivery order id')
   assert(selection.serverIds[1] === 202, 'should map second synced local delivery order id')
   assert(selection.unsyncedCount === 1, 'should count only selected orders missing server ids')
+
+  const expanded = expandLocalDeliveryClientIdsFromMarkerSelection(
+    ['route-start-abc', 'group-marker', 'single-local', 'route-end-abc'],
+    {
+      markerOrderClientIdsByMarkerId: {
+        'group-marker': ['syncedA', 'syncedB'],
+      },
+      primaryOrderClientIdByMarkerId: {
+        'group-marker': 'syncedA',
+      },
+      markerIdByOrderClientId: {
+        syncedA: 'group-marker',
+        syncedB: 'group-marker',
+      },
+    },
+  )
+
+  assert(expanded.length === 3, 'marker expansion should include grouped ids and non-boundary singles only')
+  assert(expanded.includes('syncedA') && expanded.includes('syncedB'), 'group marker should expand to grouped local ids')
+  assert(expanded.includes('single-local'), 'single local marker should stay selectable')
 }

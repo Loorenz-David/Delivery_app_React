@@ -1,13 +1,13 @@
 import {
-  resolveCustomerPanelInitialView,
-  resolveCustomerPanelViewAfterFormClose,
-  resolveCustomerPanelViewForEdit,
-  resolveDefaultCustomerLayoutMode,
-  resolveExpandedCustomerLayoutMode,
+  resolveCostumerPanelInitialView,
+  resolveCostumerPanelViewAfterFormClose,
+  resolveCostumerPanelViewForEdit,
+  resolveDefaultCostumerLayoutMode,
+  resolveExpandedCostumerLayoutMode,
   shouldShowCostumerDetailsMenu,
   shouldShowCostumerSearchBackAction,
   shouldShowCostumerSearchBar,
-} from '../components/OrderFormCustomerPanel'
+} from '../components/CostumerPanel'
 
 const assert = (condition: boolean, message: string) => {
   if (!condition) {
@@ -15,14 +15,14 @@ const assert = (condition: boolean, message: string) => {
   }
 }
 
-export const runOrderFormCustomerPanelTransitionTests = () => {
+export const runOrderFormCostumerPanelTransitionTests = () => {
   assert(
-    resolveCustomerPanelInitialView(null) === 'search',
+    resolveCostumerPanelInitialView(null) === 'search',
     'initial panel view should be search when no selected costumer exists',
   )
 
   assert(
-    resolveCustomerPanelInitialView({
+    resolveCostumerPanelInitialView({
       client_id: 'costumer-1',
       first_name: 'Martha',
       last_name: 'Jensen',
@@ -31,7 +31,7 @@ export const runOrderFormCustomerPanelTransitionTests = () => {
   )
 
   assert(
-    resolveCustomerPanelViewForEdit({
+    resolveCostumerPanelViewForEdit({
       client_id: 'costumer-1',
       first_name: 'Martha',
       last_name: 'Jensen',
@@ -40,22 +40,22 @@ export const runOrderFormCustomerPanelTransitionTests = () => {
   )
 
   assert(
-    resolveCustomerPanelViewForEdit(null) === 'search',
+    resolveCostumerPanelViewForEdit(null) === 'search',
     'edit action should fallback to search when selected costumer is missing',
   )
 
   assert(
-    resolveExpandedCustomerLayoutMode() === 'customer-expanded',
+    resolveExpandedCostumerLayoutMode() === 'customer-expanded',
     'create/edit action should use customer-expanded layout',
   )
 
   assert(
-    resolveDefaultCustomerLayoutMode() === 'default',
+    resolveDefaultCostumerLayoutMode() === 'default',
     'save/select/close transitions should return layout to default',
   )
 
   assert(
-    resolveCustomerPanelViewAfterFormClose({
+    resolveCostumerPanelViewAfterFormClose({
       previousView: 'details',
       hasSelectedCostumer: true,
     }) === 'details',
@@ -63,7 +63,7 @@ export const runOrderFormCustomerPanelTransitionTests = () => {
   )
 
   assert(
-    resolveCustomerPanelViewAfterFormClose({
+    resolveCostumerPanelViewAfterFormClose({
       previousView: 'details',
       hasSelectedCostumer: false,
     }) === 'search',

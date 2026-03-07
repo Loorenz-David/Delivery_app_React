@@ -12,7 +12,7 @@ export const buttonVariantClasses: Record<ButtonVariant, string> = {
   secondaryInvers:
     'bg-[var(--color-primary)] text-[var(--color-page)] border-1 border-[var(--color-page)] hover:bg-[var(--color-accent)] inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium',
   primary:
-    'bg-[var(--color-primary)] text-[var(--color-secondary)] hover:bg-[#4a4a4a] inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium',
+    'bg-[var(--color-primary)] text-[var(--color-secondary)] hover:bg-[#4a4a4a] inline-flex items-center justify-center rounded-lg px-2 py-1 text-sm font-medium',
   darkGray:
     'bg-[var(--color-muted)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-dark-green)]/70 inline-flex items-center justify-center  px-3 py-1.5 text-sm font-medium',
   darkBlue:

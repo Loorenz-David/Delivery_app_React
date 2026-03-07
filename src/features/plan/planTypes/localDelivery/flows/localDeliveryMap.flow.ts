@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import type { Order } from '@/features/order/types/order'
 import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
@@ -6,6 +6,15 @@ import type { RouteSolution } from '@/features/plan/planTypes/localDelivery/type
 import { MAP_MARKER_LAYERS, type MapOrder } from '@/shared/map'
 import { useMapManager, useSectionManager } from '@/shared/resource-manager/useResourceManager'
 import type { BoundaryLocationMeta } from '@/features/plan/planTypes/localDelivery/domain/getLocalDeliveryBoundaryLocations'
+import { buildLocalDeliveryStopAddressGroups } from '@/features/plan/planTypes/localDelivery/domain/localDeliveryAddressGroup.flow'
+import {
+  resolveOrderGroupOperationBadgeDirections,
+  resolveOrderOperationBadgeDirections,
+} from '@/features/order/domain/orderOperationBadgeDirections'
+import {
+  useLocalDeliveryMapInteractionActions,
+} from '@/features/plan/planTypes/localDelivery/store/localDeliveryMapInteractionHooks.store'
+import type { LocalDeliveryMarkerGroupLookup } from '@/features/plan/planTypes/localDelivery/store/localDeliveryMapInteraction.store'
 
 type LocalDeliveryMapParams = {
   orders: Order[]
@@ -18,6 +27,52 @@ type LocalDeliveryMapParams = {
   }
 }
 
+const LOCAL_DELIVERY_GROUP_MARKER_PREFIX = 'route_stop_group_marker:'
+
+const hasValidCoordinates = (order: Order): boolean => {
+  const coordinates = order.client_address?.coordinates
+  if (!coordinates) return false
+  return (
+    typeof coordinates.lat === 'number'
+    && typeof coordinates.lng === 'number'
+    && Number.isFinite(coordinates.lat)
+    && Number.isFinite(coordinates.lng)
+  )
+}
+
+const buildStopOrderLabel = (stopOrder: number | null | undefined): string | undefined =>
+  typeof stopOrder === 'number' ? String(stopOrder) : undefined
+
+const buildStopRangeLabel = (firstStopOrder: number | null, lastStopOrder: number | null): string | undefined => {
+  if (typeof firstStopOrder !== 'number' || typeof lastStopOrder !== 'number') return undefined
+  return firstStopOrder === lastStopOrder
+    ? String(firstStopOrder)
+    : `${firstStopOrder} to ${lastStopOrder}`
+}
+
+const serializeLookup = (lookup: LocalDeliveryMarkerGroupLookup): string => {
+  const markerIds = Object.keys(lookup.markerOrderClientIdsByMarkerId).sort()
+  const parts: string[] = []
+
+  markerIds.forEach((markerId) => {
+    const orderClientIds = lookup.markerOrderClientIdsByMarkerId[markerId] ?? []
+    const primary = lookup.primaryOrderClientIdByMarkerId[markerId] ?? ''
+    parts.push(`${markerId}|${primary}|${orderClientIds.join(',')}`)
+  })
+
+  return parts.join('::')
+}
+
+export const resolveLocalDeliveryOperationBadgeDirections = (order: Order) =>
+  resolveOrderOperationBadgeDirections(order.operation_type)
+
+export const resolveLocalDeliveryGroupOperationBadgeDirections = (
+  entries: Array<{ order: Order }>,
+) =>
+  resolveOrderGroupOperationBadgeDirections(
+    entries.map((entry) => entry.order.operation_type),
+  )
+
 
 export const useLocalDeliveryMapFlow = ({
   orders,
@@ -28,6 +83,8 @@ export const useLocalDeliveryMapFlow = ({
 }: LocalDeliveryMapParams) => {
   const mapManager = useMapManager()
   const sectionManager = useSectionManager()
+  const lookupSignatureRef = useRef<string>('')
+  const { setMarkerLookup, clearMarkerLookup, openGroupOverlay, closeGroupOverlay } = useLocalDeliveryMapInteractionActions()
 
   const handleClickMarker = (element:MouseEvent, order:Order) =>{
     element
@@ -39,6 +96,9 @@ export const useLocalDeliveryMapFlow = ({
   }
   useEffect(() => {
     const mapOrders: MapOrder[] = []
+    const markerOrderClientIdsByMarkerId: Record<string, string[]> = {}
+    const primaryOrderClientIdByMarkerId: Record<string, string> = {}
+    const markerIdByOrderClientId: Record<string, string> = {}
     const solutionClientId = selectedRouteSolution?.client_id ?? 'unknown'
     
     const startMarker = buildStartEndMarker({
@@ -63,27 +123,103 @@ export const useLocalDeliveryMapFlow = ({
       mapOrders.push(endMarker)
     }
 
-    const orderMarkers = orders
-      .map((order): MapOrder | null => {
-        const coordinates = order.client_address?.coordinates
-        if (!coordinates || typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number') {
-          return null
-        }
-        const orderId = order.client_id
+    const stopEntries = orders
+      .map((order) => ({
+        order,
+        stop: order.id != null ? stopByOrderId.get(order.id) : undefined,
+      }))
+      .filter(
+        (entry): entry is { order: Order; stop: RouteSolutionStop } =>
+          Boolean(entry.stop) && typeof entry.stop?.stop_order === 'number',
+      )
+      .sort(
+        (left, right) =>
+          (left.stop.stop_order ?? Number.POSITIVE_INFINITY)
+          - (right.stop.stop_order ?? Number.POSITIVE_INFINITY),
+      )
+
+    const groupedStops = buildLocalDeliveryStopAddressGroups(stopEntries)
+    const representedClientIds = new Set<string>()
+
+    groupedStops.forEach((group) => {
+      const markerRepresentative = group.entries.find((entry) => hasValidCoordinates(entry.order))
+      if (!markerRepresentative?.order.client_address?.coordinates) {
+        return
+      }
+
+      const isGroupedMarker = group.entries.length > 1
+      const markerId = isGroupedMarker
+        ? `${LOCAL_DELIVERY_GROUP_MARKER_PREFIX}${group.key}`
+        : markerRepresentative.order.client_id
+      const orderClientIds = group.entries.map((entry) => entry.order.client_id)
+
+      markerOrderClientIdsByMarkerId[markerId] = orderClientIds
+      primaryOrderClientIdByMarkerId[markerId] = markerRepresentative.order.client_id
+      orderClientIds.forEach((clientId) => {
+        markerIdByOrderClientId[clientId] = markerId
+        representedClientIds.add(clientId)
+      })
+
+      mapOrders.push({
+        id: markerId,
+        onClick: (event: MouseEvent) => {
+          if (isGroupedMarker) {
+            const markerAnchorEl = event.currentTarget as HTMLElement | null
+            if (markerAnchorEl) {
+              openGroupOverlay({
+                markerId,
+                markerAnchorEl,
+                orderClientIds,
+              })
+              return
+            }
+          }
+          handleClickMarker(event, markerRepresentative.order)
+        },
+        coordinates: markerRepresentative.order.client_address.coordinates,
+        markerColor: '#0034c1',
+        delivery_plan_id: markerRepresentative.order.delivery_plan_id ?? null,
+        label: isGroupedMarker
+          ? buildStopRangeLabel(group.firstStopOrder, group.lastStopOrder)
+          : buildStopOrderLabel(markerRepresentative.stop.stop_order),
+        operationBadgeDirections: isGroupedMarker
+          ? resolveLocalDeliveryGroupOperationBadgeDirections(group.entries)
+          : resolveLocalDeliveryOperationBadgeDirections(markerRepresentative.order),
+      })
+    })
+
+    orders
+      .filter((order) => !representedClientIds.has(order.client_id))
+      .forEach((order) => {
+        if (!hasValidCoordinates(order) || !order.client_address?.coordinates) return
+
+        const markerId = order.client_id
+        markerOrderClientIdsByMarkerId[markerId] = [order.client_id]
+        primaryOrderClientIdByMarkerId[markerId] = order.client_id
+        markerIdByOrderClientId[order.client_id] = markerId
+
         const stop = order.id != null ? stopByOrderId.get(order.id) : undefined
-        return {
-          id: orderId,
-          onClick: (e: MouseEvent) => handleClickMarker(e, order),
-          coordinates,
+        mapOrders.push({
+          id: markerId,
+          onClick: (event: MouseEvent) => handleClickMarker(event, order),
+          coordinates: order.client_address.coordinates,
           markerColor: '#0034c1',
           delivery_plan_id: order.delivery_plan_id ?? null,
-          ...(stop?.stop_order != null && { label: String(stop.stop_order) }),
-          // status: order.order_state_id != null ? String(order.order_state_id) : undefined,
-        }
+          operationBadgeDirections: resolveLocalDeliveryOperationBadgeDirections(order),
+          ...(typeof stop?.stop_order === 'number' ? { label: String(stop.stop_order) } : {}),
+        })
       })
-      .filter((order): order is MapOrder => order !== null)
 
-    mapOrders.push(...orderMarkers)
+    const lookup: LocalDeliveryMarkerGroupLookup = {
+      markerOrderClientIdsByMarkerId,
+      primaryOrderClientIdByMarkerId,
+      markerIdByOrderClientId,
+    }
+    const nextLookupSignature = serializeLookup(lookup)
+    if (lookupSignatureRef.current !== nextLookupSignature) {
+      lookupSignatureRef.current = nextLookupSignature
+      setMarkerLookup(lookup)
+    }
 
     mapManager.setMarkerLayer(MAP_MARKER_LAYERS.localDelivery, mapOrders)
     mapManager.setMarkerLayerVisibility(MAP_MARKER_LAYERS.localDelivery, isActive)
@@ -95,21 +231,36 @@ export const useLocalDeliveryMapFlow = ({
       mapManager.showRoute(null)
     }
 
-  }, [boundaryLocations, isActive, mapManager, orders, selectedRouteSolution, stopByOrderId])
+  }, [
+    boundaryLocations,
+    isActive,
+    mapManager,
+    openGroupOverlay,
+    orders,
+    selectedRouteSolution,
+    setMarkerLookup,
+    stopByOrderId,
+  ])
 
   useEffect(() => {
     if (isActive) return
     mapManager.clearMarkerLayer(MAP_MARKER_LAYERS.localDelivery)
     mapManager.showRoute(null)
     mapManager.reframeToVisibleArea()
-  }, [isActive, mapManager])
+    closeGroupOverlay()
+    lookupSignatureRef.current = ''
+    clearMarkerLookup()
+  }, [clearMarkerLookup, closeGroupOverlay, isActive, mapManager])
 
   useEffect(() => {
     return () => {
       mapManager.clearMarkerLayer(MAP_MARKER_LAYERS.localDelivery)
       mapManager.showRoute(null)
+      closeGroupOverlay()
+      lookupSignatureRef.current = ''
+      clearMarkerLookup()
     }
-  }, [mapManager])
+  }, [clearMarkerLookup, closeGroupOverlay, mapManager])
 }
 
 
@@ -118,7 +269,7 @@ const handleClickStartEndMarker = (_element: MouseEvent, _marker: string) => {
   // Marker clicks for start/end are intentionally no-op for now.
 }
 
-const buildStartEndMarker = ({
+export const buildStartEndMarker = ({
   label,
   status,
   idPrefix,

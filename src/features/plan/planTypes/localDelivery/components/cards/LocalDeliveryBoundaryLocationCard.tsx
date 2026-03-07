@@ -13,6 +13,7 @@ type LocalDeliveryBoundaryLocationCardProps = {
   planStartDate?: string | null
   warningRegistry: RouteSolutionWarningRegistry
   localDeliveryActions: ReturnType<typeof useLocalDeliveryActions>
+  containerClassName?:string
 }
 
 export const LocalDeliveryBoundaryLocationCard = ({
@@ -23,11 +24,12 @@ export const LocalDeliveryBoundaryLocationCard = ({
   planStartDate,
   warningRegistry,
   localDeliveryActions,
+  containerClassName
 }: LocalDeliveryBoundaryLocationCardProps) => {
   const streetAddress = address?.street_address ?? '—'
-
+  
   return (
-    <div className="flex justify-between rounded-2xl border border-[var(--color-muted)]/30 bg-white p-4">
+    <div className={`flex justify-between   p-4 ${containerClassName}`}>
       <div className="flex flex-col gap-1 ">
         <span className="text-[0.6rem] font-semibold uppercase tracking-wide text-[var(--color-text)]/80">
           {label}

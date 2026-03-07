@@ -1,4 +1,3 @@
-import { usePopupManager } from '@/shared/resource-manager/useResourceManager'
 import { useLocalDeliveryPlanByServerId } from '@/features/plan/planTypes/localDelivery/store/useLocalDeliveryPlan.selector'
 import { usePlanByServerId } from '@/features/plan/store/usePlan.selector'
 import {
@@ -8,9 +7,7 @@ import {
 
 import type { PopupPayload } from './LocalDeliveryEditForm.types'
 
-export const useLocalDeliveryEditFormContextData = () => {
-  const popupManager = usePopupManager()
-  const entryPayload = popupManager.getEntryPayload('LocalDeliveryEditForm') as PopupPayload
+export const useLocalDeliveryEditFormContextData = (entryPayload?: PopupPayload) => {
 
   const rawLocalDeliveryPlanId =
     entryPayload?.localDeliveryPlanId ?? entryPayload?.local_delivery_plan_id ?? null

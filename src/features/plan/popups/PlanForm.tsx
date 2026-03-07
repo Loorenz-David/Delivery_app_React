@@ -1,8 +1,7 @@
-import { PlanFormFeature } from '@/features/plan/forms/planForm/PlanForm'
-import { usePlanFormPopupConfig } from './planFormPopupConfig.hook'
+import type { StackComponentProps } from '@/shared/stack-manager/types'
+import type { PopupPayload } from '@/features/plan/forms/planForm/PlanForm.types'
+import { PlanFormPopup } from './PlanFormPopup'
 
-export const PlanForm = () => {
-  usePlanFormPopupConfig()
-
-  return <PlanFormFeature />
-}
+export const PlanForm = ({ payload, onClose }: StackComponentProps<PopupPayload>) => (
+  <PlanFormPopup payload={payload} onClose={onClose} />
+)

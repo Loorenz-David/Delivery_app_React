@@ -10,6 +10,7 @@ const assert = (condition: boolean, message: string) => {
 const buildState = (): OrderFormState => ({
   client_id: 'order-client-1',
   order_plan_objective: null,
+  operation_type: 'dropoff',
   reference_number: 'REF-1',
   external_source: '',
   tracking_number: '',
@@ -24,6 +25,7 @@ const buildState = (): OrderFormState => ({
   latest_delivery_date: null,
   preferred_time_start: '',
   preferred_time_end: '',
+  delivery_windows: [],
   delivery_plan_id: null,
 })
 

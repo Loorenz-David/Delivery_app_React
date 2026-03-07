@@ -3,6 +3,13 @@ import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
 import type { ExternalFormData } from '@/features/externalForm/domain/externalForm.types'
 import type { address } from '@/types/address'
 import type { Phone } from '@/types/phone'
+import type { OrderDeliveryWindow } from '../../../types/order'
+import type { OrderOperationTypes } from '../../../types/order'
+import {
+  deriveLegacyFieldsFromDeliveryWindows,
+  resolveOrderFormTimeZone,
+  sortDeliveryWindowsUtc,
+} from '../flows/orderFormDeliveryWindows.flow'
 
 import type { OrderFormState, OrderFormWarnings } from './OrderForm.types'
 
@@ -48,6 +55,12 @@ const normalizeDateBoundary = (
   return date.toISOString()
 }
 
+const normalizeOperationType = (value: string | number): OrderOperationTypes => {
+  if (value === 'pickup') return 'pickup'
+  if (value === 'pickup_dropoff' || value === 'pickup-dropoff') return 'pickup_dropoff'
+  return 'dropoff'
+}
+
 export const useOrderFormSetters = ({
   setFormState,
   warnings,
@@ -55,6 +68,7 @@ export const useOrderFormSetters = ({
   setFormState: Dispatch<SetStateAction<OrderFormState>>
   warnings: OrderFormWarnings
 }) => {
+  const timeZone = resolveOrderFormTimeZone()
   const validateDateRange = (state: OrderFormState) => {
     warnings.dateRangeWarning.validate({
       earliest_delivery_date: state.earliest_delivery_date,
@@ -74,6 +88,11 @@ export const useOrderFormSetters = ({
 
   const handleOrderPlanObjective = (value: string | null) => {
     updateFormState((prev) => ({ ...prev, order_plan_objective: value }))
+  }
+
+  const handleOperationType = (value: string | number) => {
+    const normalized = normalizeOperationType(value)
+    updateFormState((prev) => ({ ...prev, operation_type: normalized }))
   }
 
   const handleReference = (event: ChangeEvent<HTMLInputElement>) => {
@@ -161,8 +180,22 @@ export const useOrderFormSetters = ({
     }))
   }
 
+  const handleDeliveryWindows = (windows: OrderDeliveryWindow[]) => {
+    const sorted = sortDeliveryWindowsUtc(windows)
+    const legacy = deriveLegacyFieldsFromDeliveryWindows(sorted, timeZone)
+    updateFormState((prev) => ({
+      ...prev,
+      delivery_windows: sorted,
+      earliest_delivery_date: legacy.earliest_delivery_date,
+      latest_delivery_date: legacy.latest_delivery_date,
+      preferred_time_start: legacy.preferred_time_start,
+      preferred_time_end: legacy.preferred_time_end,
+    }))
+  }
+
   return {
     handleOrderPlanObjective,
+    handleOperationType,
     handleReference,
     handleExternalSource,
     handleTrackingNumber,
@@ -177,6 +210,7 @@ export const useOrderFormSetters = ({
     handleLatestDate,
     handlePreferredTimeStart,
     handlePreferredTimeEnd,
+    handleDeliveryWindows,
     mergeExternalClientData,
   }
 }

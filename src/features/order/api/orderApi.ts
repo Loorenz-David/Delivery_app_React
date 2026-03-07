@@ -12,6 +12,7 @@ import type {
   OrderUpdateFields,
 } from '../types/order'
 import type { OrderPagination, OrderQueryFilters, OrderStats } from '../types/orderMeta'
+import type { OrderBatchMoveResponse as BatchMoveResponse, OrderBatchSelectionPayload as BatchSelectionPayload, OrderBatchSelectionResolveResponse as BatchSelectionResolveResponse } from '../types/orderBatchSelection'
 
 export type OrderListResponse = {
   order: OrderMap
@@ -100,11 +101,32 @@ export const updateOrderDeliveryPlan = (
     method: 'PATCH',
   })
 
+export const resolveOrderBatchSelection = (
+  selection: BatchSelectionPayload,
+): Promise<ApiResult<BatchSelectionResolveResponse>> =>
+  apiClient.request<BatchSelectionResolveResponse>({
+    path: '/orders/selection/resolve',
+    method: 'POST',
+    data: { selection },
+  })
+
+export const updateOrdersDeliveryPlanBatch = (
+  planId: number | string,
+  selection: BatchSelectionPayload,
+): Promise<ApiResult<BatchMoveResponse>> =>
+  apiClient.request<BatchMoveResponse>({
+    path: `/orders/plan/${planId}/batch`,
+    method: 'PATCH',
+    data: { selection },
+  })
+
 export const useGetOrders = () => listOrders
 export const useGetOrder = () => getOrder
 export const useCreateOrder = () => createOrder
 export const useUpdateOrder = () => updateOrder
 export const useDeleteOrder = () => deleteOrder
 export const useUpdateOrderDeliveryPlan = () => updateOrderDeliveryPlan
+export const useResolveOrderBatchSelection = () => resolveOrderBatchSelection
+export const useUpdateOrdersDeliveryPlanBatch = () => updateOrdersDeliveryPlanBatch
 export const useArchiveOrder = ()=> archiveOrder
 export const useUnarchiveOrder = () => unarchiveOrder

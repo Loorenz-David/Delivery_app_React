@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import type { ReactNode} from 'react'
-import { usePopupContext } from '@/shared/popups/MainPopup/PopupContext'
+import { hasFormChanges } from '@/shared/data-validation/compareChanges'
 import { makeInitialFormCopy } from '@/shared/data-validation/initialFormSnapshot'
 import { PlanFormContextProvider } from './PlanForm.context'
 import { usePlanFormSetters } from './planForm.setters'
@@ -10,14 +10,22 @@ import { usePlanFormValidation } from './PlanForm.validation'
 import type { DeliveryPlan } from '../../types/plan'
 import { usePlanFormContextData } from './PlanFormContextData'
 import { usePlanFormBootstrapFlow } from './planFormBootstrap.flow'
+import type { PopupPayload } from './PlanForm.types'
 
 
 
 type PlanFormProvider = {
     children: ReactNode
-
+    payload?: PopupPayload
+    onSuccessClose?: () => void | Promise<void>
+    onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void
 }
-export const PlanFormProvider = ({ children }:PlanFormProvider) => {
+export const PlanFormProvider = ({
+    children,
+    payload,
+    onSuccessClose,
+    onUnsavedChangesChange,
+}:PlanFormProvider) => {
     const { initialPlanForm } = usePlanFormBootstrapFlow()
 
     const [ planForm, setPlanForm ] = useState<DeliveryPlan > (initialPlanForm)
@@ -26,9 +34,7 @@ export const PlanFormProvider = ({ children }:PlanFormProvider) => {
     const planFormWarnings = usePlanFormWarnings()
     const planSetters = usePlanFormSetters( {setPlanForm, planFormWarnings } )
     
-    const { registerCloseGuard } = usePopupContext()
     const { planValidateForm } = usePlanFormValidation({
-        registerCloseGuard,
         planFormWarnings,
         planForm,
         initialPlanFormRef,
@@ -40,30 +46,52 @@ export const PlanFormProvider = ({ children }:PlanFormProvider) => {
         source,
         planData,
         selectedOrderServerIds,
-    } = usePlanFormContextData()
+    } = usePlanFormContextData(payload)
  
-     const planActions = usePlanFormActions({
+     const rawPlanActions = usePlanFormActions({
         planForm,
         planValidateForm,
         source,
         selectedOrderServerIds,
     })
 
-    useEffect(()=>{
+    const planActions = {
+        ...rawPlanActions,
+        handleCreatePlan: async (): Promise<boolean> => {
+            const succeeded = await rawPlanActions.handleCreatePlan()
+            if (succeeded) {
+                await onSuccessClose?.()
+            }
+            return succeeded
+        },
+        handleDeletePlan: async (): Promise<boolean> => {
+            const succeeded = await rawPlanActions.handleDeletePlan()
+            if (succeeded) {
+                await onSuccessClose?.()
+            }
+            return succeeded
+        },
+    }
 
-        if (!hasPlan){
-            makeInitialFormCopy( initialPlanFormRef, planForm )
+    useEffect(() => {
+        if (!hasPlan) {
+            makeInitialFormCopy(initialPlanFormRef, initialPlanForm)
             return
         }
-        
-        planData && setPlanForm( planData )
 
-        makeInitialFormCopy( initialPlanFormRef, planData )
+        if (!planData) {
+            return
+        }
 
-        
-    },[hasPlan])
+        setPlanForm(planData)
+        makeInitialFormCopy(initialPlanFormRef, planData)
+    }, [hasPlan, initialPlanForm, planData])
 
+    const hasUnsavedChanges = hasFormChanges(planForm, initialPlanFormRef)
 
+    useEffect(() => {
+        onUnsavedChangesChange?.(hasUnsavedChanges)
+    }, [hasUnsavedChanges, onUnsavedChangesChange])
 
 
     const value = {
@@ -71,7 +99,8 @@ export const PlanFormProvider = ({ children }:PlanFormProvider) => {
         mode,
         planFormWarnings,
         planSetters,
-        planActions
+        planActions,
+        hasUnsavedChanges
 
     }
 

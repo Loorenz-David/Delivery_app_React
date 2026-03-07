@@ -22,6 +22,7 @@ type PropsConfrimPopup = {
    matchReferenceWidth?: boolean 
    removeFlip?:boolean
    closeOnInsideClick?:boolean
+   outsidePressEvent?: 'pointerdown' | 'mousedown' | 'click'
 }
 
 export const FloatingPopover = ({
@@ -34,7 +35,8 @@ export const FloatingPopover = ({
     crossOffSetNum,
     matchReferenceWidth,
     removeFlip,
-    closeOnInsideClick
+    closeOnInsideClick,
+    outsidePressEvent
 }: PropsConfrimPopup) => {
 
     const {
@@ -62,7 +64,9 @@ export const FloatingPopover = ({
         ],
         whileElementsMounted: autoUpdate
     })
-    const dismiss = useDismiss( context, {outsidePressEvent:'mousedown'})
+    const dismiss = useDismiss(context, {
+        outsidePressEvent: outsidePressEvent ?? 'mousedown'
+    })
     const { getReferenceProps, getFloatingProps } = useInteractions([ dismiss ])
     return ( 
         <div className={`${classes} flex-1`}>

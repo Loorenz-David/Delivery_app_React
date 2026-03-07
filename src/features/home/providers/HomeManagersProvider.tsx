@@ -1,7 +1,7 @@
 import type { ComponentType, ReactNode } from 'react'
 import { useEffect, useMemo } from 'react'
 
-import { DndContext, DragOverlay, closestCenter, pointerWithin } from '@dnd-kit/core'
+import { DndContext, DragOverlay } from '@dnd-kit/core'
 
 
 import { usePlanOrderDndController } from '@/features/plan/hooks/usePlanOrderDndController'
@@ -16,28 +16,19 @@ import { useMap } from '@/shared/map'
 
 
 import { SectionPanel } from '@/shared/section-panel/SectionPanel'
-import { MainPopup } from '@/shared/popups/MainPopup/MainPopup'
 
-import { OrderCard } from '@/features/order/components/OrderCard'
+import { OrderCard } from '@/features/order/components/cards/OrderCard'
+import { OrderBatchDragOverlayCard } from '@/features/order/components/cards/OrderBatchDragOverlayCard'
+import { OrderGroupDragOverlayCard } from '@/features/order/components/cards/OrderGroupDragOverlayCard'
 import { RouteStopDragOverlay } from '@/features/plan/planTypes/localDelivery/components/overlays/RouteStopDragOverlay'
+import { RouteStopGroupDragOverlay } from '@/features/plan/planTypes/localDelivery/components/overlays/RouteStopGroupDragOverlay'
+import { homeCollisionDetection } from '@/features/home/dnd/collisionStrategies'
 
 import type{ PayloadBase } from '../types/types'
 import { useBaseControlls } from '../hooks/useBaseControlls'
-import { homePopupRegistry, loadingPopupRegistry } from '../registry/homePopups'
+import { homePopupRegistry } from '../registry/homePopups'
 import { homeSectionRegistry } from '../registry/homeSections'
-import { LoadingPopup } from '@/shared/popups/loadingPopup/loadingPopup'
 import { useMobile } from '@/app/contexts/MobileContext'
-
-const collisionDetection = (args: Parameters<typeof pointerWithin>[0]) => {
-    const pointerCollisions = pointerWithin(args)
-    if (pointerCollisions.length > 0) {
-        return pointerCollisions
-    }
-
-    return closestCenter(args)
-}
-
-
 
 type ExtractPayload<T> = T extends ComponentType<StackComponentProps<infer P>>
   ? P
@@ -58,7 +49,6 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
     const popupManager = useMemo(
         () =>
         new StackActionManager<HomePopupPayloads>({
-            //blueprint: MainPopup,
             stackRegistry: homePopupRegistry,
         }),
         [],
@@ -96,13 +86,29 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
         }
     },[isMobile])
 
-    const { onDragStart, onDragOver, onDragEnd, onDragCancel, activeDrag, droppedInPlan, sensors }  = usePlanOrderDndController()
+    const {
+        onDragStart,
+        onDragOver,
+        onDragEnd,
+        onDragCancel,
+        activeDrag,
+        droppedInPlan,
+        routeReorderPreview,
+        sensors,
+    }  = usePlanOrderDndController()
 
     return (
-       <ResourcesManagerProvider managers={{ sectionManager, mapManager, popupManager, baseControlls, droppedInPlan }}>
-            <DndContext
-                sensors={sensors}
-                collisionDetection={collisionDetection}
+       <ResourcesManagerProvider managers={{
+            sectionManager,
+            mapManager,
+            popupManager,
+            baseControlls,
+            droppedInPlan,
+            routeReorderPreview,
+        }}>
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={homeCollisionDetection}
                 autoScroll={{
                     enabled: true,
                     threshold: { x: 0.1, y: 0.2 },
@@ -129,6 +135,29 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
                     ) : activeDrag?.type === 'order' ? (
                         <div className="pointer-events-none cursor-grabbing">
                             <OrderCard order={activeDrag.order} />
+                        </div>
+                    ) : activeDrag?.type === 'order_batch' ? (
+                        <div className="pointer-events-none cursor-grabbing">
+                            <OrderBatchDragOverlayCard
+                                selectedCount={activeDrag.selectedCount}
+                                isLoading={activeDrag.isLoading}
+                            />
+                        </div>
+                    ) : activeDrag?.type === 'order_group' ? (
+                        <div className="pointer-events-none cursor-grabbing">
+                            <OrderGroupDragOverlayCard
+                                count={activeDrag.count}
+                                label={activeDrag.label}
+                            />
+                        </div>
+                    ) : activeDrag?.type === 'route_stop_group' ? (
+                        <div className="pointer-events-none cursor-grabbing">
+                            <RouteStopGroupDragOverlay
+                                count={activeDrag.count}
+                                label={activeDrag.label}
+                                firstStopOrder={activeDrag.firstStopOrder}
+                                lastStopOrder={activeDrag.lastStopOrder}
+                            />
                         </div>
                     ) : null}
                 </DragOverlay>
