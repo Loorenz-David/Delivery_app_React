@@ -35,8 +35,10 @@ export const OrderFormDesktopLayout = ({
       >
         <OrderFormHeader
           label={model.label}
+          operationType={model.formState.operation_type}
           orderReference={model.formState.reference_number}
           isMobile={false}
+          onSelectOperationType={model.formSetters.handleOperationType}
           onClose={model.closeController.requestClose}
         />
 

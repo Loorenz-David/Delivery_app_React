@@ -4,6 +4,10 @@ import { MAP_MARKER_LAYERS, type MapOrder } from '@/shared/map'
 import { useMapManager } from '@/shared/resource-manager/useResourceManager'
 import { buildOrderAddressGroups } from '@/features/order/domain/orderAddressGroup.flow'
 import {
+  resolveOrderGroupOperationBadgeDirections,
+  resolveOrderOperationBadgeDirections,
+} from '@/features/order/domain/orderOperationBadgeDirections'
+import {
   useOrderMapInteractionActions,
 } from '@/features/order/store/orderMapInteractionHooks.store'
 import type { OrderMarkerGroupLookup } from '@/features/order/store/orderMapInteraction.store'
@@ -112,6 +116,12 @@ export const buildOrderMarkers = ({
       className: markerClassName,
       interactionVariant: 'order',
       label: group.orders.length > 1 ? String(group.orders.length) : undefined,
+      operationBadgeDirections:
+        group.orders.length > 1
+          ? resolveOrderGroupOperationBadgeDirections(
+            group.orders.map((order) => order.operation_type),
+          )
+          : resolveOrderOperationBadgeDirections(primaryOrder.operation_type),
       onClick: (event: MouseEvent) => {
         if (group.orders.length > 1 && onGroupMarkerClick) {
           const markerAnchorEl = event.currentTarget as HTMLElement | null

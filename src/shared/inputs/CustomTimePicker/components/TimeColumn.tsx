@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import { useSnapScroll } from '../hooks/useSnapScroll'
 
@@ -40,6 +40,7 @@ export const TimeColumn = ({
   const {
     scrollRef,
     selectedIndex,
+    scrollToValue,
     onWheel,
     onScroll,
     onPointerEnter,
@@ -50,6 +51,13 @@ export const TimeColumn = ({
     itemHeight,
     onChange,
   })
+
+  const setScrollNode = useCallback((node: HTMLDivElement | null) => {
+    scrollRef.current = node
+    if (node) {
+      scrollToValue(value, 'auto')
+    }
+  }, [scrollRef, scrollToValue, value])
 
   return (
     <div className="relative flex min-w-0 flex-1 flex-col">
@@ -69,7 +77,7 @@ export const TimeColumn = ({
         />
 
         <div
-          ref={scrollRef}
+          ref={setScrollNode}
           role="listbox"
           aria-label={label}
           className="h-full overflow-y-auto"

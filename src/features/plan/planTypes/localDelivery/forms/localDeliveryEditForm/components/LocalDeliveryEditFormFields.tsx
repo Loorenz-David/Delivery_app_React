@@ -4,6 +4,7 @@ import { LocalDeliveryEditFormCreateVariantToggle } from './LocalDeliveryEditFor
 import { LocalDeliveryEditFormDriverField } from './LocalDeliveryEditFormDriverField'
 import { LocalDeliveryEditFormPlanLabelField } from './LocalDeliveryEditFormPlanLabelField'
 import { LocalDeliveryEditFormRouteSections } from './LocalDeliveryEditFormRouteSections'
+import { LocalDeliveryEditFormStopsServiceTimeField } from './LocalDeliveryEditFormStopsServiceTimeField'
 
 export const LocalDeliveryEditFormFields = ({
   includePlanMeta = true,
@@ -17,6 +18,7 @@ export const LocalDeliveryEditFormFields = ({
     >
       {includePlanMeta ? <LocalDeliveryEditFormPlanLabelField /> : null}
       <LocalDeliveryEditFormRouteSections />
+      {includePlanMeta ? <LocalDeliveryEditFormStopsServiceTimeField /> : null}
       {includePlanMeta ? <LocalDeliveryEditFormDriverField /> : null}
       {includePlanMeta ? <LocalDeliveryEditFormCreateVariantToggle /> : null}
     </motion.form>

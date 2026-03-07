@@ -22,6 +22,7 @@ const okResult = <T>(data: T) => ({
 const buildBaseFormState = (): OrderFormState => ({
   client_id: 'order-client-1',
   order_plan_objective: 'local_delivery',
+  operation_type: 'dropoff',
   reference_number: 'REF-100',
   external_source: '',
   tracking_number: '',

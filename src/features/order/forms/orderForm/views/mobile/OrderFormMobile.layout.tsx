@@ -17,7 +17,9 @@ export const OrderFormMobileLayout = ({
       <div className="relative flex w-full min-h-0 flex-col bg-[var(--color-page)]">
         <OrderFormHeader
           label={model.label}
+          operationType={model.formState.operation_type}
           isMobile={true}
+          onSelectOperationType={model.formSetters.handleOperationType}
           onClose={model.closeController.requestClose}
         />
 

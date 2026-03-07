@@ -1,4 +1,5 @@
 import { sessionStorage } from '@/features/auth/login/store/sessionStorage'
+import type { ServiceTime } from '@/features/plan/planTypes/localDelivery/types/serviceTime'
 import type { address } from '@/types/address'
 
 export type RouteEndStrategy = 'round_trip' | 'custom_end_address' | 'end_at_last_stop'
@@ -10,6 +11,7 @@ export type LocalDeliveryEditFormPreferences = {
   start_location: address | null
   end_location: address | null
   driver_id: number | null
+  stops_service_time: ServiceTime | null
 }
 
 const STORAGE_NAMESPACE = 'plan.localDelivery.editForm.preferences.v1'
@@ -22,6 +24,7 @@ const DEFAULT_PREFERENCES: LocalDeliveryEditFormPreferences = {
   start_location: null,
   end_location: null,
   driver_id: null,
+  stops_service_time: null,
 }
 
 const isBrowser = typeof window !== 'undefined'
@@ -72,6 +75,19 @@ const normalizeDriverId = (value: unknown): number | null => {
   return value > 0 ? value : null
 }
 
+const normalizeServiceTime = (value: unknown): ServiceTime | null => {
+  if (!value || typeof value !== 'object') return null
+  const candidate = value as Record<string, unknown>
+  const rawTime = candidate.time
+  const rawPerItem = candidate.per_item
+  if (typeof rawTime !== 'number' || !Number.isInteger(rawTime) || rawTime < 0) return null
+  if (typeof rawPerItem !== 'number' || !Number.isInteger(rawPerItem) || rawPerItem < 0) return null
+  return {
+    time: rawTime,
+    per_item: rawPerItem,
+  }
+}
+
 const sanitizePreferences = (raw: unknown): LocalDeliveryEditFormPreferences => {
   if (!raw || typeof raw !== 'object') {
     return DEFAULT_PREFERENCES
@@ -86,6 +102,7 @@ const sanitizePreferences = (raw: unknown): LocalDeliveryEditFormPreferences => 
     start_location: isValidAddress(candidate.start_location) ? candidate.start_location : null,
     end_location: isValidAddress(candidate.end_location) ? candidate.end_location : null,
     driver_id: normalizeDriverId(candidate.driver_id),
+    stops_service_time: normalizeServiceTime(candidate.stops_service_time),
   }
 }
 
@@ -167,4 +184,10 @@ export const clearInvalidLocalDeliveryEditFormPreferences = (): void => {
   } catch {
     // Ignore storage removal errors.
   }
+}
+
+export const saveStopsServiceTimePreference = (value: ServiceTime | null): void => {
+  persistPreferences({
+    stops_service_time: normalizeServiceTime(value),
+  })
 }

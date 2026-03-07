@@ -6,6 +6,7 @@ import type { Phone } from '@/types/phone'
 import type { Item } from '../../../item'
 import type { Order } from '../../../types/order'
 import type { OrderDeliveryWindow } from '../../../types/order'
+import type { OrderOperationTypes } from '../../../types/order'
 import type { useOrderFormWarnings } from './OrderForm.warnings'
 import type { useOrderFormActions } from '../controllers/useOrderFormSubmit.actions'
 import type { useOrderFormSetters } from './orderForm.setters'
@@ -20,6 +21,7 @@ export type CostumerSelectionRequestResult = 'applied' | 'prompted' | 'ignored'
 export type OrderFormState = {
   client_id: string
   order_plan_objective: string | null
+  operation_type: OrderOperationTypes
   reference_number: string
   external_source: string
   tracking_number: string

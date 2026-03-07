@@ -5,6 +5,7 @@ import type { Order } from '../../types/order'
 import { StateCard } from '@/shared/layout/StateCard'
 import { ConfirmActionButton } from '@/shared/buttons/DeleteButton'
 import { OrderMissingInfoNotifier } from '../OrderMissingInfoNotifier'
+import { OrderOperationTypeBadges } from './OrderOperationTypeBadges'
 
 type OrderCardProps = {
   order: Order
@@ -33,7 +34,10 @@ export const OrderCard = ({ order, onOpen, onArchive, onUnarchive, isHovered = f
       
       <div className="flex items-end justify-between gap-3">
         <div className="flex gap-3">
-          <span className="truncate text-base font-semibold text-[var(--color-text)]">{orderLabel}</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="truncate text-base font-semibold text-[var(--color-text)]">{orderLabel}</span>
+            <OrderOperationTypeBadges operationType={order.operation_type} />
+          </div>
           {external_source && (
             <div className="flex items-center justify-center">
               <span className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[0.5rem] uppercase tracking-wide text-[var(--color-muted)]">

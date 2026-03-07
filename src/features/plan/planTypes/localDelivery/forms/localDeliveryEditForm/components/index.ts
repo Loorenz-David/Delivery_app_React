@@ -5,4 +5,5 @@ export { LocalDeliveryEditFormCreateVariantToggle } from './LocalDeliveryEditFor
 export { LocalDeliveryEditFormDriverField } from './LocalDeliveryEditFormDriverField'
 export { LocalDeliveryEditFormPlanLabelField } from './LocalDeliveryEditFormPlanLabelField'
 export { LocalDeliveryEditFormRouteSections } from './LocalDeliveryEditFormRouteSections'
+export { LocalDeliveryEditFormStopsServiceTimeField } from './LocalDeliveryEditFormStopsServiceTimeField'
 export { LocalDeliveryEditFormSectionGroup } from './LocalDeliveryEditFormSectionGroup'

@@ -18,6 +18,7 @@ export const normalizeLocalDeliveryEditFormToSettingsPayload = (
     id: formState.route_solution.id,
     set_start_time: formState.route_solution.set_start_time,
     set_end_time: formState.route_solution.set_end_time,
+    stops_service_time: formState.route_solution.stops_service_time,
     start_location: formState.route_solution.start_location,
     end_location: formState.route_solution.end_location,
     route_end_strategy: formState.route_solution.route_end_strategy,

@@ -1,16 +1,56 @@
 import type { MapOrder } from '../domain/entities/MapOrder'
+import type { MapMarkerOperationDirection } from '../domain/entities/MapOrder'
+
+const CONTENT_CLASS = 'map-marker__content'
+const BADGES_CLASS = 'map-marker__operation-badges'
+
+const ensureMarkerContentElement = (el: HTMLElement): HTMLElement => {
+  const existing = el.querySelector(`.${CONTENT_CLASS}`) as HTMLElement | null
+  if (existing) return existing
+
+  const content = document.createElement('span')
+  content.className = CONTENT_CLASS
+  el.appendChild(content)
+  return content
+}
 
 export function applyMarkerContent(el: HTMLElement, label?: string) {
+  const content = ensureMarkerContentElement(el)
   const nextLabel = label ?? ''
   if (nextLabel) {
-    el.textContent = nextLabel
+    content.textContent = nextLabel
     return
   }
 
-  el.textContent = ''
+  content.textContent = ''
   const dot = document.createElement('span')
   dot.className = 'map-marker__dot'
-  el.appendChild(dot)
+  content.appendChild(dot)
+}
+
+export function applyOperationBadges(
+  el: HTMLElement,
+  directions?: MapMarkerOperationDirection[],
+) {
+  const previous = el.querySelector(`.${BADGES_CLASS}`)
+  if (previous) {
+    previous.remove()
+  }
+
+  if (!directions?.length) {
+    return
+  }
+
+  const badges = document.createElement('span')
+  badges.className = BADGES_CLASS
+
+  directions.forEach((direction) => {
+    const badge = document.createElement('span')
+    badge.className = `map-marker__operation-badge map-marker__operation-badge--${direction}`
+    badges.appendChild(badge)
+  })
+
+  el.appendChild(badges)
 }
 
 export function createMarkerElement(order: MapOrder) {
@@ -36,6 +76,7 @@ export function createMarkerElement(order: MapOrder) {
   }
 
   applyMarkerContent(el, order.label)
+  applyOperationBadges(el, order.operationBadgeDirections)
 
   return el
 }

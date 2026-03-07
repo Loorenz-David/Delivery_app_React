@@ -1,8 +1,12 @@
+import type { ServiceTime } from '@/features/plan/planTypes/localDelivery/types/serviceTime'
+
 export type RouteSolutionStop = {
   id?: number
   client_id: string
   order_id?: number | null
   route_solution_id?: number | null
+  service_duration?: string | null
+  service_time?: ServiceTime | null
   stop_order?: number | null
   eta_status?: string | null
   in_range?: boolean | null

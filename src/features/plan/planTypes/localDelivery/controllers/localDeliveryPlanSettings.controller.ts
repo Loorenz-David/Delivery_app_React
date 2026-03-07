@@ -6,6 +6,15 @@ import { useMessageHandler } from '@/shared/message-handler'
 import {
   localDeliveryPlanSettingsApi,
 } from '@/features/plan/planTypes/localDelivery/api/localDeliveryPlanSettings.api'
+import {
+  saveDriverIdPreference,
+  saveEndLocationPreference,
+  saveEndTimePreference,
+  saveRouteEndStrategyPreference,
+  saveStartLocationPreference,
+  saveStartTimePreference,
+  saveStopsServiceTimePreference,
+} from '@/features/plan/planTypes/localDelivery/forms/localDeliveryEditForm/localDeliveryEditForm.storage'
 import { normalizeLocalDeliveryEditFormToSettingsPayload } from '@/features/plan/planTypes/localDelivery/api/mappers/localDeliveryPlanSettings.mapper'
 import { normalizeByClientIdArray } from '@/features/plan/planTypes/localDelivery/api/mappers/routeSolutionPayload.mapper'
 import type { DeliveryPlan } from '@/features/plan/types/plan'
@@ -54,6 +63,19 @@ const applyResponsePayload = (
   const selected = solutions.find((solution) => solution.is_selected && solution.id)
   if (selected?.id) {
     setSelectedRouteSolution(selected.id, selected.local_delivery_plan_id ?? null)
+  }
+
+  const persistedSource = selected ?? solutions[0]
+  if (persistedSource) {
+    saveStartTimePreference(persistedSource.set_start_time ?? null)
+    saveEndTimePreference(persistedSource.set_end_time ?? null)
+    if (persistedSource.route_end_strategy) {
+      saveRouteEndStrategyPreference(persistedSource.route_end_strategy)
+    }
+    saveStartLocationPreference(persistedSource.start_location ?? null)
+    saveEndLocationPreference(persistedSource.end_location ?? null)
+    saveDriverIdPreference(persistedSource.driver_id ?? null)
+    saveStopsServiceTimePreference(persistedSource.stops_service_time ?? null)
   }
 
   const stops = normalizeByClientIdArray(payload.route_solution_stops)

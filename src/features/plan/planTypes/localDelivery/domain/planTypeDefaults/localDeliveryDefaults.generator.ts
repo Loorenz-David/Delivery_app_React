@@ -8,6 +8,7 @@ import {
   PLAN_DEFAULT_SET_END_TIME_KEY,
   PLAN_DEFAULT_SET_START_TIME_KEY,
   PLAN_DEFAULT_START_LOCATION_KEY,
+  PLAN_DEFAULT_STOPS_SERVICE_TIME_KEY,
 } from '@/features/plan/constants/planTypeDefaults.constants'
 import { loadLocalDeliveryEditFormPreferences } from '@/features/plan/planTypes/localDelivery/forms/localDeliveryEditForm/localDeliveryEditForm.storage'
 import type { LocalDeliveryPlanTypeDefaults } from '@/features/plan/types/plan'
@@ -38,6 +39,7 @@ export const buildLocalDeliveryPlanTypeDefaults = async (
       [PLAN_DEFAULT_START_LOCATION_KEY]: startLocation,
       [PLAN_DEFAULT_END_LOCATION_KEY]: endLocation,
       [PLAN_DEFAULT_DRIVER_ID_KEY]: stored.driver_id ?? null,
+      [PLAN_DEFAULT_STOPS_SERVICE_TIME_KEY]: stored.stops_service_time ?? null,
     },
   }
 }

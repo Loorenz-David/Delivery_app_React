@@ -1,4 +1,5 @@
 import type { address } from '@/types/address'
+import type { ServiceTime } from '@/features/plan/planTypes/localDelivery/types/serviceTime'
 
 import { useLocalDeliveryEditFormWarnings } from './LocalDeliveryEditForm.warnings'
 import { useLocalDeliveryEditFormActions } from './localDeliveryEditForm.actions'
@@ -26,6 +27,7 @@ export type LocalDeliveryEditFormState = {
     end_location: address | null
     set_start_time: string | null
     set_end_time: string | null
+    stops_service_time: ServiceTime | null
     route_end_strategy: 'round_trip' | 'custom_end_address' | 'end_at_last_stop'
     driver_id: number | null
     created_at?: string | null

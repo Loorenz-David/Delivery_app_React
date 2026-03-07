@@ -1,4 +1,5 @@
 import type { address } from '@/types/address'
+import type { ServiceTime } from '@/features/plan/planTypes/localDelivery/types/serviceTime'
 
 export type RouteSolutionWarningBase = {
   type?: string
@@ -37,6 +38,7 @@ export type RouteSolution = {
   route_end_strategy: "round_trip" | "custom_end_address" | "end_at_last_stop"
   set_start_time?: string | null
   set_end_time?: string | null
+  stops_service_time?: ServiceTime | null
   driver_id?: number | null
   local_delivery_plan_id?: number | null
   has_route_warnings?: boolean

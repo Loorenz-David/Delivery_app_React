@@ -27,6 +27,7 @@ export const normalizeFormStateForSave = (state: OrderFormState): OrderUpdateFie
 
   return {
     client_id: state.client_id,
+    operation_type: state.operation_type,
     order_plan_objective:
     state.delivery_plan_id == null ? toNullableString(state.order_plan_objective) : null,
     reference_number: state.reference_number.trim(),

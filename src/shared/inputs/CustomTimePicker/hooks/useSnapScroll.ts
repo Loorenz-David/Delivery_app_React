@@ -114,8 +114,12 @@ export const useSnapScroll = ({
       const nearestIndex = Math.round(node.scrollTop / itemHeight)
       const clampedIndex = Math.max(0, Math.min(values.length - 1, nearestIndex))
       setVisualIndex(clampedIndex)
+      const nextValue = values[clampedIndex]
+      if (nextValue !== value) {
+        onChange(nextValue)
+      }
     }
-  }, [itemHeight, values.length])
+  }, [itemHeight, onChange, value, values])
 
   useEffect(() => {
     const node = scrollRef.current

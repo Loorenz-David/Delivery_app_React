@@ -10,6 +10,7 @@ import { formatRouteTime } from '@/features/plan/planTypes/localDelivery/utils/f
 import { useOrderActions } from '@/features/order'
 import { LottieSpinner } from '@/shared/spiners'
 import { StopOrderAvatar } from './StopOrderAvatar'
+import { OrderOperationTypeBadges } from '@/features/order/components/cards/OrderOperationTypeBadges'
 
 type LocalDeliveryOrderCardProps = {
     order: Order;
@@ -53,9 +54,12 @@ export const LocalDeliveryOrderCard = ({ order, stop, displayStopOrder, planStar
                 <div className="flex min-w-0 flex-col gap-2 flex-1 pl-1">
                         <div className="flex justify-between">
                             <div className="flex gap-3">
-                                <span className="text-base font-semibold text-[var(--color-text)]">
-                                    {orderLabel}
-                                </span>
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <span className="text-base font-semibold text-[var(--color-text)]">
+                                        {orderLabel}
+                                    </span>
+                                    <OrderOperationTypeBadges operationType={order.operation_type} />
+                                </div>
                                 {order.external_source && (
                                 <div className="flex items-center justify-center">
                                     <span className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[0.5rem] uppercase tracking-wide text-[var(--color-muted)]">

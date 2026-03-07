@@ -10,7 +10,7 @@ export const useExecutePlanDndIntent = () => {
   const { updateRouteStopPositionOptimistic, updateRouteStopGroupPositionOptimistic } = useRouteSolutionStopMutations()
 
   const execute = async (intent: PlanDndIntent) => {
-    console.log(intent, 'the intent')
+
     if (!intent) {
       return { droppedPlanClientId: null as string | null }
     }

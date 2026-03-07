@@ -9,6 +9,7 @@ import {
   saveRouteEndStrategyPreference,
   saveStartLocationPreference,
   saveStartTimePreference,
+  saveStopsServiceTimePreference,
 } from './localDeliveryEditForm.storage'
 
 type SetFormState = Dispatch<SetStateAction<LocalDeliveryEditFormState>>
@@ -189,6 +190,36 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
     }))
   }
 
+  const handleStopsServiceTimeTime = (value: number) => {
+    setFormState((prev) => {
+      const current = prev.route_solution.stops_service_time ?? { time: 0, per_item: 0 }
+      const nextServiceTime = {
+        ...current,
+        time: Math.max(0, Math.trunc(value)),
+      }
+      saveStopsServiceTimePreference(nextServiceTime)
+      return {
+        ...prev,
+        route_solution: { ...prev.route_solution, stops_service_time: nextServiceTime },
+      }
+    })
+  }
+
+  const handleStopsServiceTimePerItem = (value: number) => {
+    setFormState((prev) => {
+      const current = prev.route_solution.stops_service_time ?? { time: 0, per_item: 0 }
+      const nextServiceTime = {
+        ...current,
+        per_item: Math.max(0, Math.trunc(value)),
+      }
+      saveStopsServiceTimePreference(nextServiceTime)
+      return {
+        ...prev,
+        route_solution: { ...prev.route_solution, stops_service_time: nextServiceTime },
+      }
+    })
+  }
+
   return {
     handlePlanLabel,
     handlePlanStartDate,
@@ -200,5 +231,7 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
     handleRouteEndStrategy,
     handleDriverSelection,
     handleCreateVariantToggle,
+    handleStopsServiceTimeTime,
+    handleStopsServiceTimePerItem,
   }
 }

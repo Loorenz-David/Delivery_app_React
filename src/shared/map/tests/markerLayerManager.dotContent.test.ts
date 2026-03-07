@@ -68,6 +68,38 @@ export const runMarkerLayerManagerDotContentTests = () => {
     manager.setLayerMarkers(MAP_MARKER_LAYERS.orders, [buildOrder('order-1')])
     const revertedToDot = getMarkerElement(manager, MAP_MARKER_LAYERS.orders, 'order-1')
     assert(!!revertedToDot.querySelector('.map-marker__dot'), 'dot should return when label is removed')
+
+    manager.setLayerMarkers(
+      MAP_MARKER_LAYERS.orders,
+      [buildOrder('order-1', { operationBadgeDirections: ['up'] })],
+    )
+    const withPickupBadge = getMarkerElement(manager, MAP_MARKER_LAYERS.orders, 'order-1')
+    assert(
+      !!withPickupBadge.querySelector('.map-marker__operation-badge--up'),
+      'pickup marker should render up operation badge',
+    )
+    assert(
+      !withPickupBadge.querySelector('.map-marker__operation-badge--down'),
+      'pickup marker should not render down operation badge',
+    )
+
+    manager.setLayerMarkers(
+      MAP_MARKER_LAYERS.orders,
+      [buildOrder('order-1', { operationBadgeDirections: ['up', 'down'] })],
+    )
+    const withBothBadges = getMarkerElement(manager, MAP_MARKER_LAYERS.orders, 'order-1')
+    assert(
+      !!withBothBadges.querySelector('.map-marker__operation-badge--up')
+      && !!withBothBadges.querySelector('.map-marker__operation-badge--down'),
+      'pickup_dropoff marker should render both operation badges',
+    )
+
+    manager.setLayerMarkers(MAP_MARKER_LAYERS.orders, [buildOrder('order-1')])
+    const withoutBadges = getMarkerElement(manager, MAP_MARKER_LAYERS.orders, 'order-1')
+    assert(
+      !withoutBadges.querySelector('.map-marker__operation-badges'),
+      'operation badges should be removed when marker has no operation directions',
+    )
   }
 
   {
@@ -84,4 +116,3 @@ export const runMarkerLayerManagerDotContentTests = () => {
     )
   }
 }
-

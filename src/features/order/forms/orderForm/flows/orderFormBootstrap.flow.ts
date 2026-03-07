@@ -46,6 +46,7 @@ export const buildInitialOrderForm = ({
 }): OrderFormState => ({
   client_id: order?.client_id ?? buildClientId('order'),
   order_plan_objective: order?.order_plan_objective ?? null,
+  operation_type: order?.operation_type ?? 'dropoff',
   reference_number: order?.reference_number ?? (mode === 'create' ? buildReferenceNumber() : ''),
   external_source: order?.external_source ?? '',
   tracking_number: order?.tracking_number ?? '',
@@ -73,6 +74,7 @@ export const buildOrderFormInitialState = ({
   payloadRestoreFormState
     ? {
         ...payloadRestoreFormState,
+        operation_type: payloadRestoreFormState.operation_type ?? 'dropoff',
         delivery_windows: sortDeliveryWindowsUtc(payloadRestoreFormState.delivery_windows ?? []),
       }
     :

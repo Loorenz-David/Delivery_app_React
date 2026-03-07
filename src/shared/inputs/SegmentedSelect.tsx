@@ -11,6 +11,7 @@ type SegmentedSelectStyleConfig = {
   containerBg?: string
   selectedBg?: string
   textColor?: string
+  buttonPadding?:string
   selectedTextColor?: string
   textSize?: string | number
 }
@@ -28,13 +29,12 @@ const DEFAULT_STYLE: Required<SegmentedSelectStyleConfig> = {
   textColor: '#555',
   selectedTextColor: '#007bff',
   containerPadding: '4px',
+  buttonPadding:'8px 12px',
   textSize: '15px',
 }
 
-const toPaddingValue = (value: string | number) =>
-  typeof value === 'number' ? `${value}px` : value
 
-const toFontSizeValue = (value: string | number) =>
+const toSizeValue = (value: string | number) =>
   typeof value === 'number' ? `${value}px` : value
 
 const SegmentedSelect = ({
@@ -55,7 +55,7 @@ const SegmentedSelect = ({
       style={{
         position: 'relative',
         background: styles.containerBg,
-        padding: toPaddingValue(styles.containerPadding),
+        padding: toSizeValue(styles.containerPadding),
       }}
     >
       {options.map((option) => {
@@ -69,10 +69,10 @@ const SegmentedSelect = ({
             style={{
               border: 'none',
               background: 'transparent',
-              padding: '8px 12px',
+              padding: styles.buttonPadding,
               color: isSelected ? styles.selectedTextColor : styles.textColor,
               fontWeight: 600,
-              fontSize: toFontSizeValue(styles.textSize),
+              fontSize: toSizeValue(styles.textSize),
               zIndex: 1,
             }}
           >

@@ -9,6 +9,7 @@ import type { address } from '@/types/address'
 import type { Phone } from '@/types/phone'
 
 import type { OrderUpdateFields } from '../types/order'
+import type { OrderOperationTypes } from '../types/order'
 import {
   MAX_ORDER_DELIVERY_WINDOWS,
   sortDeliveryWindowsUtc,
@@ -20,6 +21,9 @@ export const useOrderValidation = () => {
 
   const validateOrderPlanObjective = (value: string | null | undefined) =>
     !value || validateString(value)
+
+  const validateOperationType = (value: OrderOperationTypes | null | undefined) =>
+    value === 'pickup' || value === 'dropoff' || value === 'pickup_dropoff'
 
   const validateTrackingNumber = (value: string | null | undefined) =>
     !value || validateString(value)
@@ -117,6 +121,12 @@ export const useOrderValidation = () => {
 
     if ('order_plan_objective' in fields) {
       if (!validateOrderPlanObjective(fields.order_plan_objective)) {
+        return false
+      }
+    }
+
+    if ('operation_type' in fields) {
+      if (!validateOperationType(fields.operation_type)) {
         return false
       }
     }
@@ -235,6 +245,7 @@ export const useOrderValidation = () => {
   return {
     validateReferenceNumber,
     validateOrderPlanObjective,
+    validateOperationType,
     validateTrackingNumber,
     validateTrackingLink,
     validateExternalSource,

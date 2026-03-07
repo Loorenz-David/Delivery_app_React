@@ -11,6 +11,11 @@ export type OrderDeliveryWindowType =
   | 'DATE_RANGE'
   | 'FULL_RANGE'
 
+export type OrderOperationTypes =
+  | 'pickup'
+  | 'dropoff'
+  | 'pickup_dropoff'
+
 export type OrderDeliveryWindow = {
   id?: number
   client_id?: string | null
@@ -19,10 +24,12 @@ export type OrderDeliveryWindow = {
   window_type: OrderDeliveryWindowType
 }
 
+
 export type Order = {
   id?: number
   client_id: string
   order_plan_objective?: string | null
+  operation_type?: OrderOperationTypes | null
   reference_number?: string | null
   external_order_id?: string | null
   external_source?: string | null

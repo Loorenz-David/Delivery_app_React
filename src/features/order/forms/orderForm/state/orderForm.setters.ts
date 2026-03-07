@@ -4,6 +4,7 @@ import type { ExternalFormData } from '@/features/externalForm/domain/externalFo
 import type { address } from '@/types/address'
 import type { Phone } from '@/types/phone'
 import type { OrderDeliveryWindow } from '../../../types/order'
+import type { OrderOperationTypes } from '../../../types/order'
 import {
   deriveLegacyFieldsFromDeliveryWindows,
   resolveOrderFormTimeZone,
@@ -54,6 +55,12 @@ const normalizeDateBoundary = (
   return date.toISOString()
 }
 
+const normalizeOperationType = (value: string | number): OrderOperationTypes => {
+  if (value === 'pickup') return 'pickup'
+  if (value === 'pickup_dropoff' || value === 'pickup-dropoff') return 'pickup_dropoff'
+  return 'dropoff'
+}
+
 export const useOrderFormSetters = ({
   setFormState,
   warnings,
@@ -81,6 +88,11 @@ export const useOrderFormSetters = ({
 
   const handleOrderPlanObjective = (value: string | null) => {
     updateFormState((prev) => ({ ...prev, order_plan_objective: value }))
+  }
+
+  const handleOperationType = (value: string | number) => {
+    const normalized = normalizeOperationType(value)
+    updateFormState((prev) => ({ ...prev, operation_type: normalized }))
   }
 
   const handleReference = (event: ChangeEvent<HTMLInputElement>) => {
@@ -183,6 +195,7 @@ export const useOrderFormSetters = ({
 
   return {
     handleOrderPlanObjective,
+    handleOperationType,
     handleReference,
     handleExternalSource,
     handleTrackingNumber,

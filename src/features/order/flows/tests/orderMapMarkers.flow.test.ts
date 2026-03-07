@@ -59,6 +59,58 @@ export const runOrderMapMarkersFlowTests = () => {
   }
 
   {
+    const { markers } = buildOrderMarkers({
+      orders: [createOrder({ client_id: 'pickup-order', operation_type: 'pickup' })],
+      markerClassName: 'order-marker',
+      onMarkerClick: () => undefined,
+    })
+    assert(
+      markers[0].operationBadgeDirections?.includes('up') === true
+      && markers[0].operationBadgeDirections?.includes('down') !== true,
+      'pickup order marker should render only up direction',
+    )
+  }
+
+  {
+    const { markers } = buildOrderMarkers({
+      orders: [createOrder({ client_id: 'dropoff-order', operation_type: 'dropoff' })],
+      markerClassName: 'order-marker',
+      onMarkerClick: () => undefined,
+    })
+    assert(
+      markers[0].operationBadgeDirections?.includes('down') === true
+      && markers[0].operationBadgeDirections?.includes('up') !== true,
+      'dropoff order marker should render only down direction',
+    )
+  }
+
+  {
+    const { markers } = buildOrderMarkers({
+      orders: [createOrder({ client_id: 'both-order', operation_type: 'pickup_dropoff' })],
+      markerClassName: 'order-marker',
+      onMarkerClick: () => undefined,
+    })
+    assert(
+      markers[0].operationBadgeDirections?.includes('up') === true
+      && markers[0].operationBadgeDirections?.includes('down') === true,
+      'pickup_dropoff order marker should render both directions',
+    )
+  }
+
+  {
+    const { markers } = buildOrderMarkers({
+      orders: [createOrder({ client_id: 'legacy-both-order', operation_type: 'pickup-dropoff' as never })],
+      markerClassName: 'order-marker',
+      onMarkerClick: () => undefined,
+    })
+    assert(
+      markers[0].operationBadgeDirections?.includes('up') === true
+      && markers[0].operationBadgeDirections?.includes('down') === true,
+      'legacy pickup-dropoff operation should still resolve both directions',
+    )
+  }
+
+  {
     let clickedOrderClientId: string | null = null
     const clickEvent = {} as MouseEvent
 
@@ -100,6 +152,11 @@ export const runOrderMapMarkersFlowTests = () => {
 
     assert(markers.length === 1, 'same-address orders should render a single grouped marker')
     assert(markers[0].label === '2', 'grouped marker should display grouped order count label')
+    assert(
+      markers[0].operationBadgeDirections?.includes('up') === true
+      && markers[0].operationBadgeDirections?.includes('down') === true,
+      'grouped marker should resolve operation directions as union of grouped orders',
+    )
 
     const markerId = String(markers[0].id)
     assert(

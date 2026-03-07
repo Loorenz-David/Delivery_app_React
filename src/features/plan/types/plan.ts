@@ -5,6 +5,7 @@ import type { LocalDeliveryPlan } from '@/features/plan/planTypes/localDelivery/
 import type { StorePickupPlanInput } from '@/features/plan/types/storePickupPlan'
 import type { StorePickupPlan } from '@/features/plan/types/storePickupPlan'
 import type { RouteSolution } from '@/features/plan/planTypes/localDelivery/types/routeSolution'
+import type { ServiceTime } from '@/features/plan/planTypes/localDelivery/types/serviceTime'
 import type { address } from '@/types/address'
 
 export const PLAN_TYPE_KEYS = [
@@ -91,6 +92,7 @@ export type LocalDeliveryPlanTypeDefaults = {
     end_location?: address | null
     set_start_time?: string | null
     set_end_time?: string | null
+    stops_service_time?: ServiceTime | null
     route_end_strategy?: 'round_trip' | 'custom_end_address' | 'end_at_last_stop'
     driver_id?: number | null
   }

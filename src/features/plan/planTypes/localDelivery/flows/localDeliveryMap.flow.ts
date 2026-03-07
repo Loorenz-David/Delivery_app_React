@@ -8,6 +8,10 @@ import { useMapManager, useSectionManager } from '@/shared/resource-manager/useR
 import type { BoundaryLocationMeta } from '@/features/plan/planTypes/localDelivery/domain/getLocalDeliveryBoundaryLocations'
 import { buildLocalDeliveryStopAddressGroups } from '@/features/plan/planTypes/localDelivery/domain/localDeliveryAddressGroup.flow'
 import {
+  resolveOrderGroupOperationBadgeDirections,
+  resolveOrderOperationBadgeDirections,
+} from '@/features/order/domain/orderOperationBadgeDirections'
+import {
   useLocalDeliveryMapInteractionActions,
 } from '@/features/plan/planTypes/localDelivery/store/localDeliveryMapInteractionHooks.store'
 import type { LocalDeliveryMarkerGroupLookup } from '@/features/plan/planTypes/localDelivery/store/localDeliveryMapInteraction.store'
@@ -58,6 +62,16 @@ const serializeLookup = (lookup: LocalDeliveryMarkerGroupLookup): string => {
 
   return parts.join('::')
 }
+
+export const resolveLocalDeliveryOperationBadgeDirections = (order: Order) =>
+  resolveOrderOperationBadgeDirections(order.operation_type)
+
+export const resolveLocalDeliveryGroupOperationBadgeDirections = (
+  entries: Array<{ order: Order }>,
+) =>
+  resolveOrderGroupOperationBadgeDirections(
+    entries.map((entry) => entry.order.operation_type),
+  )
 
 
 export const useLocalDeliveryMapFlow = ({
@@ -168,6 +182,9 @@ export const useLocalDeliveryMapFlow = ({
         label: isGroupedMarker
           ? buildStopRangeLabel(group.firstStopOrder, group.lastStopOrder)
           : buildStopOrderLabel(markerRepresentative.stop.stop_order),
+        operationBadgeDirections: isGroupedMarker
+          ? resolveLocalDeliveryGroupOperationBadgeDirections(group.entries)
+          : resolveLocalDeliveryOperationBadgeDirections(markerRepresentative.order),
       })
     })
 
@@ -188,6 +205,7 @@ export const useLocalDeliveryMapFlow = ({
           coordinates: order.client_address.coordinates,
           markerColor: '#0034c1',
           delivery_plan_id: order.delivery_plan_id ?? null,
+          operationBadgeDirections: resolveLocalDeliveryOperationBadgeDirections(order),
           ...(typeof stop?.stop_order === 'number' ? { label: String(stop.stop_order) } : {}),
         })
       })
@@ -251,7 +269,7 @@ const handleClickStartEndMarker = (_element: MouseEvent, _marker: string) => {
   // Marker clicks for start/end are intentionally no-op for now.
 }
 
-const buildStartEndMarker = ({
+export const buildStartEndMarker = ({
   label,
   status,
   idPrefix,
