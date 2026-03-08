@@ -61,7 +61,7 @@ const MeasuredOrderRow = ({
   return (
     <div
       ref={rowRef}
-      className="absolute left-0 right-0"
+      className="absolute left-0 right-0 px-2"
       style={{ top }}
     >
       {children}
@@ -217,6 +217,7 @@ export const OrderList = ({
       style={{ height: totalHeight }}
       data-measure-version={measureVersion}
     >
+      
       {visibleRows.map((row) => (
         <MeasuredOrderRow
           key={row.key}

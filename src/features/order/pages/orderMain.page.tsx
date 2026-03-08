@@ -52,7 +52,7 @@ const OrderMainContent = ({ scrollContainerRef }: { scrollContainerRef: RefObjec
         orderStats={orderStats}
 
       />
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-thin p-2">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-thin ">
         <OrderList
           orders={orders}
           scrollContainerRef={scrollContainerRef}

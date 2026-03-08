@@ -15,6 +15,7 @@ import {
   useLocalDeliverySelectionMode,
   useSelectedLocalDeliveryOrdersSummary,
 } from '../../store/localDeliverySelectionHooks.store'
+import { LocalDeliveryStatsOverlay } from './LocalDeliveryStatsOverlay/LocalDeliveryStatsOverlay'
 import { LocalDeliveryMarkerGroupOverlay } from './LocalDeliveryMarkerGroupOverlay'
 
 export const LocalDeliveryMapOverlay = () => {
@@ -56,6 +57,7 @@ export const LocalDeliveryMapOverlay = () => {
 
   return (
     <>
+      <LocalDeliveryStatsOverlay />
       <MapMultiSelectOverlay
         isSelectionMode={isSelectionMode}
         enableSelectionMode={enableSelectionMode}
