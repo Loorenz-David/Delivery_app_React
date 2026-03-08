@@ -4,13 +4,15 @@ import type { DeliveryPlanState } from '@/features/plan/types/planState'
 
 
 import { createEntityStore } from '@/shared/store/StoreFactory'
-import { selectAll, selectByClientId, selectByServerId } from '@/shared/store/entitySelectors'
+import { selectAll, selectByClientId, selectByServerId, selectVisible } from '@/shared/store/entitySelectors'
 import { useDeliveryPlanStateStore } from '@/features/plan/store/planState.store'
 
 export const usePlanStore = createEntityStore<DeliveryPlan>()
 
 const selectPlansInternal = selectAll<DeliveryPlan>()
 export const selectAllPlans = (state: EntityTable<DeliveryPlan>) => selectPlansInternal(state)
+const selectVisiblePlansInternal = selectVisible<DeliveryPlan>()
+export const selectVisiblePlans = (state: EntityTable<DeliveryPlan>) => selectVisiblePlansInternal(state)
 
 export const selectPlanByClientId = (clientId: string | null | undefined) =>
   (state: EntityTable<DeliveryPlan>) =>
@@ -59,6 +61,22 @@ export const removePlan = (clientId: string) =>
 
 export const clearPlans = () =>
   usePlanStore.getState().clear()
+
+export const setVisiblePlans = (clientIds: string[] | null) =>
+  usePlanStore.getState().setVisibleIds(clientIds)
+
+export const appendVisiblePlans = (clientIds: string[]) => {
+  if (clientIds.length === 0) return
+
+  const { visibleIds, setVisibleIds } = usePlanStore.getState()
+  const existingIds = visibleIds ?? []
+  const existingIdSet = new Set(existingIds)
+  const dedupedIncoming = clientIds.filter((clientId) => !existingIdSet.has(clientId))
+
+  if (dedupedIncoming.length === 0) return
+
+  setVisibleIds([...existingIds, ...dedupedIncoming])
+}
 
 export const setDeliveryPlanStateId = (clientId: string, stateId: number | null) =>
   usePlanStore.getState().update(clientId, (plan) => ({

@@ -5,8 +5,9 @@ import { ApiError } from '@/lib/api/ApiClient'
 import { useMessageHandler } from '@/shared/message-handler'
 import { useAddressCurrentLocationFlow } from '@/shared/inputs/address-autocomplete/hooks/useAddressCurrentLocationFlow'
 import { planApi } from '@/features/plan/api/plan.api'
-import { useOrderPlanPatchController } from '@/features/order'
+import { useOrderFlow, useOrderPlanPatchController } from '@/features/order'
 import { resolvePlanTypeDefaults } from '@/features/plan/domain/planTypeDefaults/planTypeDefaults.registry'
+import { getQueryFilters, getQuerySearch } from '@/features/order/store/orderQuery.store'
 import type {
   DeliveryPlan,
   DeliveryPlanFields,
@@ -123,7 +124,12 @@ const resolveError = (error: unknown, fallback: string) => ({
 
 export function usePlanController() {
   const { showMessage } = useMessageHandler()
-  const { patchOrdersPlanByServerIds } = useOrderPlanPatchController()
+  const {
+    patchOrdersPlanByServerIds,
+    clearOrdersPlanByPlanId,
+    restoreOrdersPlanLinks,
+  } = useOrderPlanPatchController()
+  const { loadOrders } = useOrderFlow()
   const { getCurrentLocationAddress } = useAddressCurrentLocationFlow()
 
 
@@ -156,7 +162,10 @@ export function usePlanController() {
         }
         const planTypeDefaults = await resolvePlanTypeDefaults(
           planTypeKey,
-          { getCurrentLocationAddress },
+          {
+            getCurrentLocationAddress,
+            planStartDate: normalizedStartDate,
+          },
         )
 
         const planPayloadApi: PlanCreatePayload = {
@@ -251,9 +260,14 @@ export function usePlanController() {
       if (planTypeInstance) {
         removePlanType(plan.plan_type, planTypeInstance.client_id)
       }
+      const clearedOrderLinks = clearOrdersPlanByPlanId(plan.id)
 
       try {
         await planApi.deletePlan({ target_id: plan.id })
+        void loadOrders({
+          q: getQuerySearch(),
+          filters: getQueryFilters(),
+        }, false)
         return true
       } catch (error) {
         const resolved = resolveError(error, 'Unable to delete delivery plan.')
@@ -262,11 +276,12 @@ export function usePlanController() {
         if (previousPlanType) {
           insertPlanType(plan.plan_type, previousPlanType)
         }
+        restoreOrdersPlanLinks(clearedOrderLinks.previousByClientId)
         showMessage({ status: resolved.status, message: resolved.message })
         return null
       }
     },
-    [showMessage],
+    [clearOrdersPlanByPlanId, loadOrders, restoreOrdersPlanLinks, showMessage],
   )
 
 

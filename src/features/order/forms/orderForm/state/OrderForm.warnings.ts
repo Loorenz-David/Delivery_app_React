@@ -2,6 +2,7 @@ import { useInputWarning } from '@/shared/inputs/useInputWarning.hook'
 import { validateAddress } from '@/shared/data-validation/addressValidation'
 import { validateString } from '@/shared/data-validation/stringValidation'
 import { validateDateComparison, validateDateTimeComparison, toDateOnly } from '@/shared/data-validation/timeValidation'
+import { formatDateOnlyInTimeZone } from '@/shared/utils/formatIsoDate'
 import type { address } from '@/types/address'
 import type { Phone } from '@/types/phone'
 
@@ -129,6 +130,72 @@ export const useOrderFormWarnings = () => {
     },
   )
 
+  const deliveryWindowsWarning = useInputWarning(
+    'Delivery window cannot be in the past.',
+    (value, setMessage) => {
+      const candidate = value as {
+        earliest_delivery_date: string | null
+        latest_delivery_date: string | null
+        preferred_time_start: string
+        preferred_time_end: string
+      }
+
+      const isValid = validation.validateDeliveryWindowNotInPast({
+        earliestDeliveryDate: candidate.earliest_delivery_date,
+        latestDeliveryDate: candidate.latest_delivery_date,
+        preferredTimeStart: candidate.preferred_time_start,
+        preferredTimeEnd: candidate.preferred_time_end,
+      })
+
+      if (!isValid) {
+        const earliestDateOnly = toDateOnly(candidate.earliest_delivery_date)
+        const latestDateOnly = toDateOnly(candidate.latest_delivery_date)
+
+        if (earliestDateOnly && !validation.validateDeliveryWindowNotInPast({
+          earliestDeliveryDate: candidate.earliest_delivery_date,
+          latestDeliveryDate: candidate.latest_delivery_date,
+          preferredTimeStart: candidate.preferred_time_start,
+          preferredTimeEnd: candidate.preferred_time_end,
+        })) {
+          const isEarliestPast = candidate.earliest_delivery_date
+            ? !validation.validateDeliveryWindowNotInPast({
+                earliestDeliveryDate: candidate.earliest_delivery_date,
+                latestDeliveryDate: candidate.earliest_delivery_date,
+                preferredTimeStart: candidate.preferred_time_start,
+                preferredTimeEnd: candidate.preferred_time_start,
+              })
+            : false
+          const isLatestPast = candidate.latest_delivery_date
+            ? !validation.validateDeliveryWindowNotInPast({
+                earliestDeliveryDate: candidate.latest_delivery_date,
+                latestDeliveryDate: candidate.latest_delivery_date,
+                preferredTimeStart: candidate.preferred_time_end,
+                preferredTimeEnd: candidate.preferred_time_end,
+              })
+            : false
+
+          if (isEarliestPast && candidate.preferred_time_start) {
+            setMessage(
+              `Delivery window start cannot be in the past for ${formatWindowDate(candidate.earliest_delivery_date)}`,
+            )
+          } else if (isLatestPast && candidate.preferred_time_end) {
+            setMessage(
+              `Delivery window end cannot be in the past for ${formatWindowDate(candidate.latest_delivery_date)}`,
+            )
+          } else {
+            setMessage(
+              `Delivery window date cannot be in the past: ${formatWindowDate(
+                candidate.earliest_delivery_date ?? candidate.latest_delivery_date,
+              )}`,
+            )
+          }
+        }
+      }
+
+      return isValid
+    },
+  )
+
   return {
     referenceWarning,
     firstNameWarning,
@@ -141,5 +208,10 @@ export const useOrderFormWarnings = () => {
     preferredTimeStartWarning,
     preferredTimeEndWarning,
     dateRangeWarning,
+    deliveryWindowsWarning,
   }
+}
+
+const formatWindowDate = (value: string | null | undefined) => {
+  return formatDateOnlyInTimeZone(value ?? null) ?? toDateOnly(value ?? null) ?? 'selected date'
 }

@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api/ApiClient'
 import type { ApiResult } from '@/lib/api/types'
+import type { QueryValue } from '@/lib/api/types'
 
 import type {
   Order,
@@ -18,6 +19,21 @@ export type OrderListResponse = {
   order: OrderMap
   order_stats: OrderStats
   order_pagination: OrderPagination
+}
+
+export type OrderMapMarkerResponse = {
+  markers: Array<{
+    id: string
+    coordinates: {
+      lat: number
+      lng: number
+    }
+    primary_order_client_id: string
+    order_client_ids: string[]
+    count: number
+  }>
+  order: OrderMap
+  truncated: boolean
 }
 
 export type OrderDetailResponse = {
@@ -120,6 +136,15 @@ export const updateOrdersDeliveryPlanBatch = (
     data: { selection },
   })
 
+export const listOrderMapMarkers = (
+  query?: Record<string, QueryValue>,
+): Promise<ApiResult<OrderMapMarkerResponse>> =>
+  apiClient.request<OrderMapMarkerResponse>({
+    path: '/orders/map_markers/',
+    method: 'GET',
+    query,
+  })
+
 export const useGetOrders = () => listOrders
 export const useGetOrder = () => getOrder
 export const useCreateOrder = () => createOrder
@@ -130,3 +155,4 @@ export const useResolveOrderBatchSelection = () => resolveOrderBatchSelection
 export const useUpdateOrdersDeliveryPlanBatch = () => updateOrdersDeliveryPlanBatch
 export const useArchiveOrder = ()=> archiveOrder
 export const useUnarchiveOrder = () => unarchiveOrder
+export const useListOrderMapMarkers = () => listOrderMapMarkers

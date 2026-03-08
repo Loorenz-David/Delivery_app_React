@@ -30,7 +30,7 @@ export const SelectInputWithPopoverOptionsList = <TValue,>({
   }
 
   return (
-    <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
+    <div className="flex max-h-64 flex-col gap-1 overflow-y-auto scroll-thin">
       {filteredOptions.map((option, index) => (
         <SelectInputWithPopoverOptionItem
           key={`${option.label}-${index}`}

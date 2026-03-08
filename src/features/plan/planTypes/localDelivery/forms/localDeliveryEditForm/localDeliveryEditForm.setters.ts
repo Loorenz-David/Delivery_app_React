@@ -84,7 +84,11 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
         start_date: value,
         end_date: nextEndDate,
       })
-      formWarnings.routeTimeWarning.validate({
+      formWarnings.routeStartTimeWarning.validate({
+        start_date: value,
+        start_time: prev.route_solution.set_start_time,
+      })
+      formWarnings.routeEndTimeWarning.validate({
         start_date: value,
         end_date: nextEndDate,
         start_time: prev.route_solution.set_start_time,
@@ -105,7 +109,11 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
         start_date: prev.delivery_plan.start_date,
         end_date: value,
       })
-      formWarnings.routeTimeWarning.validate({
+      formWarnings.routeStartTimeWarning.validate({
+        start_date: prev.delivery_plan.start_date,
+        start_time: prev.route_solution.set_start_time,
+      })
+      formWarnings.routeEndTimeWarning.validate({
         start_date: prev.delivery_plan.start_date,
         end_date: value,
         start_time: prev.route_solution.set_start_time,
@@ -122,7 +130,11 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
         ...prev,
         route_solution: { ...prev.route_solution, set_start_time: value },
       }
-      formWarnings.routeTimeWarning.validate({
+      formWarnings.routeStartTimeWarning.validate({
+        start_date: prev.delivery_plan.start_date,
+        start_time: value,
+      })
+      formWarnings.routeEndTimeWarning.validate({
         start_date: prev.delivery_plan.start_date,
         end_date: prev.delivery_plan.end_date,
         start_time: value,
@@ -139,7 +151,7 @@ export const useLocalDeliveryEditFormSetters = ({ setFormState, formWarnings }: 
         ...prev,
         route_solution: { ...prev.route_solution, set_end_time: value },
       }
-      formWarnings.routeTimeWarning.validate({
+      formWarnings.routeEndTimeWarning.validate({
         start_date: prev.delivery_plan.start_date,
         end_date: prev.delivery_plan.end_date,
         start_time: prev.route_solution.set_start_time,

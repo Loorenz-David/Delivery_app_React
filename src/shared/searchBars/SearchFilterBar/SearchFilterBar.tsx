@@ -111,7 +111,7 @@ export const SearchFilterBar = ({
           </div>
         )}
       >
-        <div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-page)] p-2 shadow-md">
+        <div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto scroll-thin rounded-xl border border-[var(--color-border)] bg-[var(--color-page)] p-2 shadow-md">
           {config.length === 0 ? (
             <div className="px-2 py-1 text-xs text-[var(--color-muted)]">
               No filters configured.

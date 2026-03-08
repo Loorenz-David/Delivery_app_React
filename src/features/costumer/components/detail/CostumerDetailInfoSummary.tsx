@@ -17,7 +17,7 @@ export const CostumerDetailInfoSummary = ({ costumer }: { costumer: Costumer | n
   const address = costumer.default_address?.address
 
   return (
-    <div className="h-[300px] overflow-y-auto rounded-xl border border-[var(--color-border)] bg-white p-4">
+    <div className="h-[300px] overflow-y-auto scroll-thin rounded-xl border border-[var(--color-border)] bg-white p-4">
       <div className={infoRowClassName}>
         <span className="text-xs text-[var(--color-muted)]">Name</span>
         <span className="text-right text-sm font-semibold text-[var(--color-text)]">{fullName}</span>

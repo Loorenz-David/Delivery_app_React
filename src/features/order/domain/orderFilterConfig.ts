@@ -2,6 +2,7 @@ import type { FilterConfig } from "@/shared/searchBars";
 import type { OrderQueryStringQueries, OrderQueryFilters } from "../types/orderMeta";
 
 export const orderStringFilters = new Set<OrderQueryStringQueries>([
+  'order_scalar_id',
   'reference_number',
   'external_source',
   'tracking_number',
@@ -53,6 +54,12 @@ export const filterConfig: FilterConfig[] = [
       value: "",
     },
 
+    {
+      type: 'option',
+      key: "order_scalar_id",
+      label: "Order #",
+      value: "",
+    },
     {
       type: 'option',
       key: "reference_number",

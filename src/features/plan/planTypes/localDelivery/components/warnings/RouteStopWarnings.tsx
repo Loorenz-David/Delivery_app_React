@@ -22,7 +22,7 @@ export const RouteStopWarnings = ({ stop, planStartDate }: RouteStopWarningsProp
         Boolean(stop?.has_constraint_violation)
 
     if (!hasWarnings) return null
-
+    console.log(constraintWarnings)
     return (
         <FloatingPopover
             open={warningOpen}
@@ -112,19 +112,19 @@ const buildWarningMeta = (warning: ConstraintWarning, planStartDate?: string | n
     if (warning.expected_time) {
         meta.push({
             label: 'Expected arrival time',
-            value: formatRouteTime(warning.expected_time, planStartDate),
+            value: formatRouteTime(warning.expected_time, planStartDate, true),
         })
     }
     if (warning.allowed_start) {
         meta.push({
             label: 'Allowed start',
-            value: formatRouteTime(warning.allowed_start, planStartDate),
+            value: formatRouteTime(warning.allowed_start, planStartDate, true),
         })
     }
     if (warning.allowed_end) {
         meta.push({
             label: 'Allowed end',
-            value: formatRouteTime(warning.allowed_end, planStartDate),
+            value: formatRouteTime(warning.allowed_end, planStartDate, true),
         })
     }
     if (typeof warning.slack_minutes === 'number') {
@@ -133,13 +133,13 @@ const buildWarningMeta = (warning: ConstraintWarning, planStartDate?: string | n
     if (warning.route_expected_end) {
         meta.push({
             label: 'Route expected end',
-            value: formatRouteTime(warning.route_expected_end, planStartDate),
+            value: formatRouteTime(warning.route_expected_end, planStartDate,  true),
         })
     }
     if (warning.route_allowed_end) {
         meta.push({
             label: 'Route allowed end',
-            value: formatRouteTime(warning.route_allowed_end, planStartDate),
+            value: formatRouteTime(warning.route_allowed_end, planStartDate, true),
         })
     }
     return meta

@@ -11,6 +11,7 @@ import { FeaturePopupFooter } from '@/shared/popups/featurePopup'
 import { ItemPropertiesInputs } from '../../components/ItemPropertiesInputs'
 import { useItemForm } from './ItemForm.context'
 import { CustomCounter } from '@/shared/inputs/CustomCounter'
+import { ITEM_FORM_ITEM_TYPE_INFO } from './info/itemType.info'
 
 
 
@@ -55,7 +56,7 @@ export const ItemFormLayout = () => {
           <InputWarning {...warnings.articleNumberWarning.warning} />
         ) : null}
 
-        <Field label="Item type:" required={true}>
+        <Field label="Item type:" required={true} info={ITEM_FORM_ITEM_TYPE_INFO}>
           <SelectInputWithPopover<ItemType>
             selectionMode="single"
             options={itemTypeOptions}

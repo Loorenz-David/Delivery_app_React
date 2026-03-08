@@ -1,5 +1,5 @@
 import type { MapOrder } from '../../domain/entities/MapOrder'
-import type { Coordinates } from '../../domain/types'
+import type { Coordinates, SetMarkerLayerOptions } from '../../domain/types'
 import {
   applyMarkerContent,
   applyOperationBadges,
@@ -62,7 +62,7 @@ export class MarkerLayerManager {
     this.mapInstanceManager = mapInstanceManager
   }
 
-  setLayerMarkers(layerId: string, orders: MapOrder[]) {
+  setLayerMarkers(layerId: string, orders: MapOrder[], options?: SetMarkerLayerOptions) {
     const map = this.mapInstanceManager.getMap()
     const AdvancedMarkerCtor = this.mapInstanceManager.getAdvancedMarkerCtor()
 
@@ -131,7 +131,7 @@ export class MarkerLayerManager {
     })
 
     return {
-      shouldFitBounds: layer.visible && orders.length > 0,
+      shouldFitBounds: Boolean(options?.fitBounds) && layer.visible && orders.length > 0,
       removedIds,
     }
   }

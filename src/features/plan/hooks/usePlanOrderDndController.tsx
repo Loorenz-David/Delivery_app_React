@@ -5,6 +5,7 @@ import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import type { Order } from '@/features/order/types/order'
 import { useOrderSelectionStore } from '@/features/order/store/orderSelection.store'
 import { buildBatchSelectionPayload } from '@/features/order/store/orderSelectionHooks.store'
+import { resolveSelectionAuthorityBatchCount } from '@/features/order/domain/orderBatchTargetIds'
 import type { RouteSolutionStop } from '@/features/plan/planTypes/localDelivery/types/routeSolutionStop'
 import { useMessageHandler } from '@/shared/message-handler'
 
@@ -12,6 +13,7 @@ import { useExecutePlanDndIntent } from '@/features/plan/controllers/useExecuteP
 import type { PlanDndIntent } from '@/features/plan/domain/planDndIntent'
 import { resolveDropIntent, type RouteReorderPreview } from '@/features/plan/dnd/controller/resolveDropIntent'
 import { resolveRouteSolutionPlanClientId } from '@/features/plan/dnd/domain/resolveRouteSolutionPlanClientId'
+import type { PlanDropFeedback } from '@/shared/resource-manager/ResourceManagerContext'
 import {
   selectRouteSolutionStopsBySolutionId,
   useRouteSolutionStopStore,
@@ -44,7 +46,7 @@ export type ActiveDrag =
 
 export const usePlanOrderDndController = () => {
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null)
-  const [droppedInPlan, setDroppedInPlan] = useState<string | null>(null)
+  const [planDropFeedback, setPlanDropFeedback] = useState<PlanDropFeedback | null>(null)
   const [routeReorderPreview, setRouteReorderPreview] = useState<RouteReorderPreview | null>(null)
   const pendingIntentRef = useRef<PlanDndIntent>(null)
   const routeDragSnapshotRef = useRef<{
@@ -62,15 +64,15 @@ export const usePlanOrderDndController = () => {
     }),
   )
 
-  const setDroppedInPlanFeedback = (planClientId: string) => {
+  const setPlanDropFeedbackWithTimeout = (feedback: PlanDropFeedback, timeoutMs = 900) => {
     if (dropFeedbackTimeoutRef.current) {
       clearTimeout(dropFeedbackTimeoutRef.current)
     }
-    setDroppedInPlan(planClientId)
+    setPlanDropFeedback(feedback)
     dropFeedbackTimeoutRef.current = setTimeout(() => {
-      setDroppedInPlan(null)
+      setPlanDropFeedback(null)
       dropFeedbackTimeoutRef.current = null
-    }, 350)
+    }, timeoutMs)
   }
 
   useEffect(() => {
@@ -131,27 +133,39 @@ export const usePlanOrderDndController = () => {
     state.manualSelectedServerIds.some((id) => !state.excludedServerIds.includes(id))
     || state.selectAllSnapshots.length > 0
 
-  const resolveBatchSelectedCount = (state: ReturnType<typeof useOrderSelectionStore.getState>) => {
-    if (state.resolvedSelection.count > 0) {
-      return state.resolvedSelection.count
-    }
-
-    const manualCount = state.manualSelectedServerIds.filter(
-      (id) => !state.excludedServerIds.includes(id),
-    ).length
-    const estimatedSnapshots = state.selectAllSnapshots.reduce(
-      (total, snapshot) => total + (snapshot.estimatedCount ?? 0),
-      0,
-    )
-    return manualCount + estimatedSnapshots
-  }
-
   const buildManualBatchSelection = (orderIds: number[]) => ({
     manual_order_ids: orderIds.filter((id) => Number.isFinite(id) && id > 0),
     select_all_snapshots: [],
     excluded_order_ids: [],
     source: 'group' as const,
   })
+
+  const resolveOptimisticMovedCount = (
+    intent: Exclude<PlanDndIntent, null>,
+    selectionState: ReturnType<typeof useOrderSelectionStore.getState>,
+  ): number => {
+    if (intent.kind === 'ASSIGN_ORDER_TO_PLAN') {
+      return 1
+    }
+    if (intent.kind !== 'ASSIGN_ORDERS_TO_PLAN_BATCH') {
+      return 0
+    }
+
+    const source = intent.selection.source
+    if (source === 'selection') {
+      return resolveSelectionAuthorityBatchCount(selectionState)
+    }
+
+    // Manual/group fallback only.
+    return intent.selection.manual_order_ids.length
+  }
+
+  const getAssignIntentPlanClientId = (intent: Exclude<PlanDndIntent, null>): string | null => {
+    if (intent.kind === 'ASSIGN_ORDER_TO_PLAN' || intent.kind === 'ASSIGN_ORDERS_TO_PLAN_BATCH') {
+      return intent.planClientId
+    }
+    return null
+  }
 
   const onDragStart = (event: DragStartEvent) => {
     const { active } = event
@@ -182,7 +196,7 @@ export const usePlanOrderDndController = () => {
         setActiveDrag({
           type: 'order_batch',
           order: draggedOrder,
-          selectedCount: resolveBatchSelectedCount(selectionState),
+          selectedCount: resolveSelectionAuthorityBatchCount(selectionState),
           isLoading: selectionState.resolvedSelection.isLoading,
         })
       } else {
@@ -338,9 +352,38 @@ export const usePlanOrderDndController = () => {
       intent = resolved.intent
     }
 
+    const isAssignIntent = intent.kind === 'ASSIGN_ORDER_TO_PLAN' || intent.kind === 'ASSIGN_ORDERS_TO_PLAN_BATCH'
+    let optimisticToken = ''
+
+    if (isAssignIntent) {
+      const movedCount = resolveOptimisticMovedCount(intent, selectionState)
+      optimisticToken = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      const planClientId = getAssignIntentPlanClientId(intent)
+      if (!planClientId) {
+        resetDragUi()
+        return
+      }
+      setPlanDropFeedbackWithTimeout({
+        planClientId,
+        movedCount,
+        status: 'success',
+        token: optimisticToken,
+      })
+    }
+
     const result = await execute(intent)
-    if (result?.droppedPlanClientId) {
-      setDroppedInPlanFeedback(result.droppedPlanClientId)
+    if (isAssignIntent && !result?.success) {
+      const planClientId = getAssignIntentPlanClientId(intent)
+      if (!planClientId) {
+        resetDragUi()
+        return
+      }
+      setPlanDropFeedbackWithTimeout({
+        planClientId,
+        movedCount: resolveOptimisticMovedCount(intent, selectionState),
+        status: 'error',
+        token: optimisticToken || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      }, 1200)
     }
 
     resetDragUi()
@@ -352,7 +395,7 @@ export const usePlanOrderDndController = () => {
     onDragStart,
     onDragCancel,
     sensors,
-    droppedInPlan,
+    planDropFeedback,
     activeDrag,
     routeReorderPreview,
   }

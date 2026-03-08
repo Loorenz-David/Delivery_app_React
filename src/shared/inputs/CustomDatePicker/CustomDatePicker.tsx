@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react'
 
 import { useCustomDatePickerController } from './model/useCustomDatePickerController'
-import { formatDateIso, isToday } from './model/customDatePicker.utils'
+import {
+  formatDateIso,
+  isToday,
+  resolveEffectiveMinDate,
+} from './model/customDatePicker.utils'
 import type { CustomDatePickerProps } from './model/customDatePicker.types'
 import { CustomDatePickerDesktopView } from './views/CustomDatePickerDesktopView'
 
@@ -9,20 +13,26 @@ export const CustomDatePicker = ({
   date,
   onChange,
   disabled,
+  disablePast,
   minDate,
   maxDate,
   className,
+  renderPopoverInPortal,
   open,
   onOpenChange,
   onCalendarSelect,
 }: CustomDatePickerProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const effectiveMinDate = useMemo(
+    () => resolveEffectiveMinDate({ minDate, disablePast }),
+    [disablePast, minDate],
+  )
 
   const controller = useCustomDatePickerController({
     date,
     onChange,
     disabled,
-    minDate,
+    minDate: effectiveMinDate,
     maxDate,
     open,
     onOpenChange,
@@ -51,7 +61,8 @@ export const CustomDatePicker = ({
       visibleMonth={controller.visibleMonth}
       disabled={disabled}
       className={className}
-      minDate={minDate}
+      renderPopoverInPortal={renderPopoverInPortal}
+      minDate={effectiveMinDate}
       maxDate={maxDate}
       inputRef={inputRef}
       onOpen={controller.openPopover}

@@ -45,7 +45,7 @@ export const OrderMarkerGroupOverlay = () => {
           </button>
         </div>
 
-        <div className="max-h-[300px] overflow-y-auto px-2 py-2">
+        <div className="max-h-[300px] overflow-y-auto scroll-thin px-2 py-2">
           <div className="flex flex-col gap-2">
             {orders.map((order) => {
               const address = order.client_address?.street_address ?? 'No address'

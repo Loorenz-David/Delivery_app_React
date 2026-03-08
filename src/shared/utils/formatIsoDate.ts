@@ -1,7 +1,34 @@
+import { getTeamTimeZone } from './teamTimeZone'
+
 export const formatIsoDate = (value: string | null | undefined) => {
   if (!value) return null
   const [datePart] = value.split('T')
   return datePart || null
+}
+
+export const formatDateOnlyInTimeZone = (
+  value: string | Date | null | undefined,
+  timeZone = getTeamTimeZone(),
+) => {
+  if (!value) return null
+
+  const parsed = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+
+  const parts = new Intl.DateTimeFormat('sv-SE', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(parsed)
+
+  const year = parts.find((part) => part.type === 'year')?.value
+  const month = parts.find((part) => part.type === 'month')?.value
+  const day = parts.find((part) => part.type === 'day')?.value
+
+  if (!year || !month || !day) return null
+
+  return `${year}-${month}-${day}`
 }
 
 const relativeTimeFormatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
@@ -21,11 +48,14 @@ const RELATIVE_UNITS: Array<{
 export const formatIsoDateRelative = (value: string | null | undefined) => {
   if (!value) return null
 
-  const parsedTime = new Date(value).getTime()
+  const parsed = new Date(value)
+  const parsedTime = parsed.getTime()
   if (Number.isNaN(parsedTime)) return null
 
-  const now = Date.now()
-  const diffSeconds = Math.round((parsedTime - now) / 1000)
+  const timeZone = getTeamTimeZone()
+  const zonedParsedTime = resolveZonedTime(parsed, timeZone)
+  const zonedNowTime = resolveZonedTime(new Date(), timeZone)
+  const diffSeconds = Math.round((zonedParsedTime - zonedNowTime) / 1000)
 
   if (Math.abs(diffSeconds) < 60) {
     return relativeTimeFormatter.format(0, 'second')
@@ -60,7 +90,9 @@ export const formatIsoDateFriendly = (value?: string | null) => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
 
+  const timeZone = getTeamTimeZone()
   return new Intl.DateTimeFormat('en', {
+    timeZone,
     day: 'numeric',
     month: 'long', // "Mar" | change to "long" for "March"
   }).format(date)
@@ -68,13 +100,35 @@ export const formatIsoDateFriendly = (value?: string | null) => {
 
 export const formatIsoTime = (value?: string | null) => {
   if (!value) return null
-
+  
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
 
+  const timeZone = getTeamTimeZone()
   return new Intl.DateTimeFormat('en', {
+    timeZone,
     hour: '2-digit',
     minute: '2-digit',
     hour12: false, // 24h format
   }).format(date)
+}
+
+const resolveZonedTime = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(date)
+
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? ''
+
+  return Date.parse(
+    `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}Z`,
+  )
 }

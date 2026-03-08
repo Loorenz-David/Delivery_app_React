@@ -37,7 +37,7 @@ export const SlideCarousel = ({ children, initialIndex = 0 }: SlideCarouselProps
         
       </div>
 
-        <div className="flex w-full items-center">
+        <div className="flex w-full items-center gap-1">
           <div className="flex flex-2 justify-end">
             {index > 0 ? (
               <button

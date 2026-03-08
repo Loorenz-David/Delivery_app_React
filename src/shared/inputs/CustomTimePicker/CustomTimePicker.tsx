@@ -15,6 +15,12 @@ import { TimeInputField } from './components/TimeInputField'
 import { TimePickerPopover } from './components/TimePickerPopover'
 import { TimeColumn } from './components/TimeColumn'
 import { PickerFooter } from './components/PickerFooter'
+import {
+  isTimeValueAllowedByConstraint,
+  resolveCurrentTeamTimeValue,
+  resolveTimePastConstraint,
+} from './utils/timePastConstraint'
+import type { TimeValue } from './types'
 
 type CustomTimePickerProps = {
   selectedTime: string | null | undefined
@@ -29,6 +35,7 @@ type CustomTimePickerProps = {
   closeOnDone?: boolean
   open?: boolean
   onOpenChange?: (isOpen: boolean) => void
+  disablePastForDate?: Date | string | null
 }
 
 export const CustomTimePicker = ({
@@ -44,6 +51,7 @@ export const CustomTimePicker = ({
   closeOnDone = true,
   open,
   onOpenChange,
+  disablePastForDate,
 }: CustomTimePickerProps) => {
   useEffect(() => {
     if (!import.meta.env.DEV) {
@@ -64,9 +72,7 @@ export const CustomTimePicker = ({
     open: internalOpen,
     setOpen: setInternalOpen,
     draft,
-    setDraftHour,
-    setDraftMinute,
-    setDraftPeriod,
+    setDraft,
     beginInteraction,
     cancel,
     done,
@@ -87,16 +93,72 @@ export const CustomTimePicker = ({
 
   const minuteValues = useMemo(() => minuteValuesByStep(minuteStep), [minuteStep])
   const draft12 = useMemo(() => to12HourParts(draft), [draft])
+  const pastConstraint = useMemo(
+    () => resolveTimePastConstraint({ comparisonDate: disablePastForDate, minuteStep }),
+    [disablePastForDate, minuteStep],
+  )
+
+  const isDraftAllowed = useMemo(
+    () => isTimeValueAllowedByConstraint(draft, pastConstraint),
+    [draft, pastConstraint],
+  )
+
+  const minimumAllowedTime = useMemo(
+    () => resolveCurrentTeamTimeValue(minuteStep),
+    [minuteStep],
+  )
+
+  useEffect(() => {
+    if (!resolvedOpen) {
+      return
+    }
+
+    if (pastConstraint.mode === 'none' || isDraftAllowed) {
+      return
+    }
+
+    setDraft(minimumAllowedTime)
+  }, [isDraftAllowed, minimumAllowedTime, pastConstraint.mode, resolvedOpen, setDraft])
+
+  const applyDraftUpdate = (updater: (current: TimeValue) => TimeValue) => {
+    const nextDraft = normalizeTimeValue(updater(draft), minuteStep)
+    if (!isTimeValueAllowedByConstraint(nextDraft, pastConstraint)) {
+      return
+    }
+    setDraft(nextDraft)
+  }
+
+  const setGuardedDraftHour = (hour: number) => {
+    applyDraftUpdate((current) => ({ ...current, hour }))
+  }
+
+  const setGuardedDraftMinute = (minute: number) => {
+    applyDraftUpdate((current) => ({ ...current, minute }))
+  }
+
+  const setGuardedDraftPeriod = (nextPeriod: Period) => {
+    applyDraftUpdate((current) => {
+      const as12 = to12HourParts(current)
+      const baseHour = nextPeriod === 'PM' ? (as12.hour % 12) + 12 : as12.hour % 12
+      return {
+        hour: baseHour,
+        minute: current.minute,
+      }
+    })
+  }
 
   const segmentedInput = useSegmentedTimeInput({
     format,
     minuteStep,
     value: draft,
-    onChangeHour24: setDraftHour,
-    onChangeMinute: setDraftMinute,
-    onChangePeriod: setDraftPeriod,
+    onChangeHour24: setGuardedDraftHour,
+    onChangeMinute: setGuardedDraftMinute,
+    onChangePeriod: setGuardedDraftPeriod,
     onCancel: cancel,
     onDone: () => {
+      if (!isDraftAllowed) {
+        return
+      }
       const normalized = done()
       onChange(normalized || '')
     },
@@ -118,6 +180,9 @@ export const CustomTimePicker = ({
   }
 
   const handleDone = () => {
+    if (!isDraftAllowed) {
+      return
+    }
     const normalized = done()
     onChange(normalized || '')
     if (!closeOnDone) {
@@ -133,19 +198,19 @@ export const CustomTimePicker = ({
   }
 
   const handleNow = () => {
-    const now = new Date()
-    now.setMinutes(now.getMinutes() + 1)
+    if (pastConstraint.mode === 'disabled-all') {
+      return
+    }
 
-    const normalized = normalizeTimeValue(
-      {
-        hour: now.getHours(),
-        minute: now.getMinutes(),
-      },
+    const nextMinute = new Date()
+    nextMinute.setMinutes(nextMinute.getMinutes() + 1)
+
+    const normalized = resolveCurrentTeamTimeValue(
       minuteStep,
+      nextMinute,
     )
 
-    setDraftHour(normalized.hour)
-    setDraftMinute(normalized.minute)
+    setDraft(normalized)
 
     onChange(formatHHmm(normalized))
 
@@ -185,13 +250,23 @@ export const CustomTimePicker = ({
             label="Hours"
             values={format === '12h' ? HOURS_12 : HOURS_24}
             value={format === '12h' ? draft12.hour : draft.hour}
+            isValueDisabled={(nextHour) => {
+              const candidateHour = format === '12h'
+                ? (draft12.period === 'PM' ? (nextHour % 12) + 12 : nextHour % 12)
+                : nextHour
+
+              return !isTimeValueAllowedByConstraint(
+                { hour: candidateHour, minute: draft.minute },
+                pastConstraint,
+              )
+            }}
             onChange={(nextHour) => {
               if (format === '12h') {
                 const hour24 = draft12.period === 'PM' ? (nextHour % 12) + 12 : nextHour % 12
-                setDraftHour(hour24)
+                setGuardedDraftHour(hour24)
                 return
               }
-              setDraftHour(nextHour)
+              setGuardedDraftHour(nextHour)
             }}
             formatter={(entry) => to2(entry)}
           />
@@ -200,7 +275,13 @@ export const CustomTimePicker = ({
             label="Minutes"
             values={minuteValues}
             value={draft.minute}
-            onChange={(nextMinute) => setDraftMinute(nextMinute)}
+            isValueDisabled={(nextMinute) =>
+              !isTimeValueAllowedByConstraint(
+                { hour: draft.hour, minute: nextMinute },
+                pastConstraint,
+              )
+            }
+            onChange={(nextMinute) => setGuardedDraftMinute(nextMinute)}
             formatter={(entry) => to2(entry)}
           />
 
@@ -209,7 +290,18 @@ export const CustomTimePicker = ({
               label="Period"
               values={[0, 1]}
               value={draft12.period === 'AM' ? 0 : 1}
-              onChange={(next) => setDraftPeriod(next === 0 ? 'AM' : 'PM')}
+              isValueDisabled={(next) => {
+                const nextPeriod = next === 0 ? 'AM' : 'PM'
+                const candidateHour = nextPeriod === 'PM'
+                  ? (draft12.hour % 12) + 12
+                  : draft12.hour % 12
+
+                return !isTimeValueAllowedByConstraint(
+                  { hour: candidateHour, minute: draft.minute },
+                  pastConstraint,
+                )
+              }}
+              onChange={(next) => setGuardedDraftPeriod(next === 0 ? 'AM' : 'PM')}
               formatter={(entry) => PERIODS[entry] as Period}
             />
           ) : null}

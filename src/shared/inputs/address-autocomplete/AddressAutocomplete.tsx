@@ -14,6 +14,7 @@ type PropsAddressAutocomplete = {
     intentKey?: string
     fieldClassName?: string
     inputClassName?: string
+    containerClassName?:string
     inputStyle?: CSSProperties
     placeholder?: string
 }
@@ -27,6 +28,7 @@ export const AddressAutocomplete = ({
     intentKey,
     fieldClassName,
     inputClassName,
+    containerClassName,
     inputStyle,
     placeholder = 'Search address...',
 }:PropsAddressAutocomplete)=>{
@@ -44,6 +46,7 @@ export const AddressAutocomplete = ({
             <AddressAutocompleteLayout
                 fieldClassName={fieldClassName}
                 inputClassName={inputClassName}
+                containerClassName={containerClassName}
                 inputStyle={inputStyle}
                 placeholder={placeholder}
             />

@@ -40,7 +40,7 @@ export const RouteOptimizationDropdownButton = ({
       onClick={localDeliveryActions.optimizeRoute}
     >
       <div className="w-full">
-        <div className="max-h-[300px] overflow-y-auto">
+        <div className="max-h-[300px] overflow-y-auto scroll-thin">
           {routeSolutionsOrdered.length ? (
             routeSolutionsOrdered.map((solution, index) => {
               const label = solution.label || `variant ${index + 1}`

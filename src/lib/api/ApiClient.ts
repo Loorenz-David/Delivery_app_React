@@ -1,7 +1,7 @@
 import { gzipPayload, serializePayload, MAX_COMPRESSED_BYTES, MAX_DECOMPRESSED_BYTES } from './compression'
 import type { ApiClientOptions, ApiEnvelope, ApiErrorPayload, ApiResult, RequestOptions } from './types'
 
-import type { SessionSnapshot, SessionUser } from '@/features/auth/login/store/sessionStorage'
+import type { SessionIdentity, SessionSnapshot, SessionUser } from '@/features/auth/login/store/sessionStorage'
 import { sessionStorage } from '@/features/auth/login/store/sessionStorage'
 
 export class ApiError extends Error {
@@ -54,6 +54,16 @@ export class ApiClient {
   getSessionUser(): SessionUser | null {
     const session = this.options.sessionStorage.getSession()
     return session?.user ?? null
+  }
+
+  getSessionIdentity(): SessionIdentity | null {
+    const session = this.options.sessionStorage.getSession()
+    return session?.identity ?? null
+  }
+
+  getSessionTimeZone(): string | null {
+    const timeZone = this.getSessionIdentity()?.time_zone
+    return typeof timeZone === 'string' && timeZone.trim() ? timeZone.trim() : null
   }
 
   async request<T>(options: RequestOptions, attempt = 0): Promise<ApiResult<T>> {
@@ -272,11 +282,11 @@ export class ApiClient {
         throw new Error('Refresh response missing access token')
       }
 
-      this.options.sessionStorage.setSession({
+      this.options.sessionStorage.setSession(this.normalizeSession({
         ...existing,
         accessToken: nextAccess,
         socketToken: nextSocket ?? existing.socketToken,
-      })
+      }))
       return true
     })()
       .catch((error) => {
@@ -299,17 +309,17 @@ export class ApiClient {
   ): void {
     const existing = this.options.sessionStorage.getSession()
     const base: Partial<SessionSnapshot> = existing ?? {}
-    this.options.sessionStorage.setSession({
+    this.options.sessionStorage.setSession(this.normalizeSession({
       accessToken: nextAccessToken,
       refreshToken: nextRefreshToken,
       socketToken: nextSocketToken ?? base.socketToken,
       user: nextUser ?? base.user ?? null,
       identity: base.identity ?? null,
-    })
+    }))
   }
 
   setSession(session: Omit<SessionSnapshot, 'updatedAt'>): void {
-    this.options.sessionStorage.setSession(session)
+    this.options.sessionStorage.setSession(this.normalizeSession(session))
   }
 
   clearSession(): void {
@@ -320,6 +330,80 @@ export class ApiClient {
     // this.options.sessionStorage.clear()
     this.options.onUnauthenticated?.()
   }
+
+  private normalizeSession(session: Omit<SessionSnapshot, 'updatedAt'>): Omit<SessionSnapshot, 'updatedAt'> {
+    const tokenIdentity = decodeJwtIdentity(session.accessToken)
+    const mergedIdentity = tokenIdentity ?? session.identity ?? null
+    return {
+      ...session,
+      identity: mergedIdentity,
+      user: this.mergeSessionUser(session.user ?? null, mergedIdentity),
+    }
+  }
+
+  private mergeSessionUser(
+    user: SessionUser | null | undefined,
+    identity: SessionIdentity | null,
+  ): SessionUser | null {
+    if (!user && !identity) {
+      return null
+    }
+
+    const nextUser: SessionUser = { ...(user ?? {}) }
+    const teamId = identity?.team_id
+    if (teamId !== undefined) {
+      nextUser.teamId = teamId
+    }
+    const userRoleId = identity?.user_role_id
+    if (typeof userRoleId === 'number') {
+      nextUser.user_role_id = userRoleId
+    }
+    const baseRoleId = identity?.base_role_id
+    if (typeof baseRoleId === 'number') {
+      nextUser.base_role_id = baseRoleId
+    }
+    return nextUser
+  }
+}
+
+
+const decodeJwtIdentity = (token: string | null | undefined): SessionIdentity | null => {
+  if (!token) {
+    return null
+  }
+
+  const parts = token.split('.')
+  if (parts.length < 2) {
+    return null
+  }
+
+  try {
+    const payload = decodeBase64Url(parts[1] ?? '')
+    const parsed = JSON.parse(payload) as Record<string, unknown>
+    if (!parsed || typeof parsed !== 'object') {
+      return null
+    }
+    return parsed as SessionIdentity
+  } catch (error) {
+    console.warn('Failed to decode access token identity', error)
+    return null
+  }
+}
+
+const decodeBase64Url = (value: string): string => {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/')
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+
+  if (typeof globalThis.atob === 'function') {
+    const decoded = globalThis.atob(padded)
+    return decodeURIComponent(
+      Array.from(decoded)
+        .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
+        .join(''),
+    )
+  }
+
+  throw new Error('Base64 decoder unavailable')
 }
 
 

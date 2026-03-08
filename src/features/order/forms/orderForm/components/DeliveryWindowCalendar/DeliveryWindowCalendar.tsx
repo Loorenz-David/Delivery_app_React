@@ -15,6 +15,7 @@ import {
   type DeliveryWindowDisplayRow,
   toDeliveryWindowDisplayRows,
 } from '../../flows/orderFormDeliveryWindows.flow'
+import { formatDateOnlyInTimeZone } from '@/shared/utils/formatIsoDate'
 import { doesDeliveryWindowMatchRow, useDeliveryWindowCalendarActions } from './DeliveryWindowCalendar.action'
 import { DeliveryWindowCalendarDesktopLayout } from './components/layout/DeliveryWindowCalendarDesktop.layout'
 import { DeliveryWindowCalendarMobileLayout } from './components/layout/DeliveryWindowCalendarMobile.layout'
@@ -55,7 +56,7 @@ export const OrderFormDeliveryWindowCalendar = ({
   sizePreset,
   sizeOverrides,
 }: OrderFormDeliveryWindowCalendarProps) => {
-  const [mode, setMode] = useState<DeliveryWindowCalendarMode>('range')
+  const [mode, setMode] = useState<DeliveryWindowCalendarMode>('multiple')
   const [selectionValue, setSelectionValue] = useState<CalendarValue>(null)
   const [manualEditorDates, setManualEditorDates] = useState<string[] | null>(null)
   const [editingWindow, setEditingWindow] = useState<DeliveryWindowDisplayRow | null>(null)
@@ -65,7 +66,7 @@ export const OrderFormDeliveryWindowCalendar = ({
   const [message, setMessage] = useState<string | null>(null)
   const [activePopover, setActivePopover] = useState<DeliveryWindowCalendarDayPopoverState | null>(null)
 
-  const { formState, formSetters } = useOrderFormFormSlice()
+  const { formState, formSetters, warnings } = useOrderFormFormSlice()
   const { meta } = useOrderFormMetaSlice()
   const timeZone = useMemo(() => resolveOrderFormTimeZone(), [])
   const operatingHours = meta.selectedCostumer?.operating_hours ?? []
@@ -81,6 +82,14 @@ export const OrderFormDeliveryWindowCalendar = ({
   )
 
   const editorLocalDates = manualEditorDates ?? selectedLocalDates
+  const comparisonDate = useMemo(() => {
+    const today = formatDateOnlyInTimeZone(new Date(), timeZone)
+    if (!today) {
+      return null
+    }
+
+    return editorLocalDates.includes(today) ? today : null
+  }, [editorLocalDates, timeZone])
   const resolvedSizePreset = sizePreset ?? (compact ? 'desktopPopup550' : 'desktopRegular')
 
   const calendarModel = useCalendarModel({
@@ -247,6 +256,7 @@ export const OrderFormDeliveryWindowCalendar = ({
         const editorNode = (
           <DeliveryWindowCalendarEditor
             isOpen={isEditorOpen}
+            comparisonDate={comparisonDate}
             startTime={startTime}
             endTime={endTime}
             onChangeStartTime={setStartTime}
@@ -296,7 +306,9 @@ export const OrderFormDeliveryWindowCalendar = ({
               />
             )}
             <DeliveryWindowCalendarWarningNotice
-              message={message}
+              message={message ?? (warnings.deliveryWindowsWarning.warning.isVisible
+                ? warnings.deliveryWindowsWarning.warning.message ?? null
+                : null)}
               helperText={helperText}
               compact={compact}
             />

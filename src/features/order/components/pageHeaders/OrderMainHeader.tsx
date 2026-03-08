@@ -8,6 +8,8 @@ import { useSectionPanel } from '@/shared/section-panel/SectionPanelContext'
 import { useEffect } from 'react'
 import { pluralLabel } from '@/shared/utils/formatStrings'
 import { ThreeDotMenu } from '@/shared/buttons/ThreeDotMenu'
+import { InfoHover } from '@/shared/layout/InfoHover'
+import { ORDER_MAIN_HEADER_INFO } from '../../info/orderMainHeader.info'
 
 
 
@@ -56,7 +58,10 @@ export const OrderMainHeader = ({
 
     const title = (
             <div>
-              <span>Orders</span>
+              <div className="flex items-center gap-2">
+                <span>Orders</span>
+                <InfoHover content={ORDER_MAIN_HEADER_INFO} />
+              </div>
               <span className="text-xs flex text-[var(--color-muted)] font-normal">
                 { ordersCount} {pluralLabel('order', ordersCount)} • {itemsCount} {pluralLabel('item', itemsCount)} 
               </span>
@@ -105,8 +110,7 @@ export const OrderMainHeader = ({
               dotClassName={'bg-[var(--color-muted)]'}
               triggerClassName={' p-2 w-5 rounded-full    ml-auto  cursor-pointer'}
               options={[
-                  {label:'Update optimization', action: ()=>{}, icon:''},
-                  {label:'Download route', action: ()=>{}, icon:''},
+                  {label:'Auto create plans', action: ()=>{}, icon:''},
                   {...(isSelectionMode 
                         ? { label: 'Exit selection', action: onExitSelectionMode, icon: '' }
                         : { label: 'Selection mode', action: onEnterSelectionMode, icon: '' }

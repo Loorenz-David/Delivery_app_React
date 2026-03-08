@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
-import type { MapBridge, MapConfig, MapViewportInsets } from '../domain/types'
+import type { MapBounds, MapBridge, MapConfig, MapViewportInsets, SetMarkerLayerOptions } from '../domain/types'
 import type { MapOrder } from '../domain/entities/MapOrder'
 import type { Route } from '../domain/entities/Route'
 import { MapController } from '../domain/services/MapController'
@@ -67,8 +67,8 @@ export const useMap = (options?: MapConfig): MapBridge => {
   )
 
   const setMarkerLayer = useCallback(
-    (layerId: string, orders: MapOrder[]) => {
-      controller.setMarkerLayer(layerId, orders)
+    (layerId: string, orders: MapOrder[], options?: SetMarkerLayerOptions) => {
+      controller.setMarkerLayer(layerId, orders, options)
     },
     [controller],
   )
@@ -115,6 +115,11 @@ export const useMap = (options?: MapConfig): MapBridge => {
   const reframeToVisibleArea = useCallback(() => {
     controller.reframeToVisibleArea()
   }, [controller])
+
+  const subscribeBoundsChanged = useCallback(
+    (callback: (bounds: MapBounds | null) => void) => controller.subscribeBoundsChanged(callback),
+    [controller],
+  )
 
   const getUserCoordinates = (): Promise<{ lat: number; lng: number } | null> => {
     return new Promise((resolve) => {
@@ -164,8 +169,9 @@ export const useMap = (options?: MapConfig): MapBridge => {
       setHoveredMarker,
       setViewportInsets,
       reframeToVisibleArea,
+      subscribeBoundsChanged,
       resize
     }),
-    [clearMarkerLayer, disableCircleSelection, enableCircleSelection, initialize, reframeToVisibleArea, resize, selectOrder, setHoveredMarker, setMarkerLayer, setMarkerLayerVisibility, setSelectedMarker, setViewportInsets, showOrders, showRoute],
+    [clearMarkerLayer, disableCircleSelection, enableCircleSelection, initialize, reframeToVisibleArea, resize, selectOrder, setHoveredMarker, setMarkerLayer, setMarkerLayerVisibility, setSelectedMarker, setViewportInsets, showOrders, showRoute, subscribeBoundsChanged],
   )
 }

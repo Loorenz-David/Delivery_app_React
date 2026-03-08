@@ -3,6 +3,7 @@ import { useDeliveryWindowCalendarShellScale } from '../shell/DeliveryWindowCale
 
 type DeliveryWindowCalendarEditorProps = {
   isOpen: boolean
+  comparisonDate?: string | null
   startTime: string | null
   endTime: string | null
   onChangeStartTime: (value: string | null) => void
@@ -13,6 +14,7 @@ type DeliveryWindowCalendarEditorProps = {
 
 export const DeliveryWindowCalendarEditor = ({
   isOpen,
+  comparisonDate,
   startTime,
   endTime,
   onChangeStartTime,
@@ -37,6 +39,7 @@ export const DeliveryWindowCalendarEditor = ({
               <CustomTimePicker
                 selectedTime={startTime}
                 onChange={(value) => onChangeStartTime(value || null)}
+                disablePastForDate={comparisonDate}
                 className={editor.pickerClassName}
               />
             </div>
@@ -45,6 +48,7 @@ export const DeliveryWindowCalendarEditor = ({
               <CustomTimePicker
                 selectedTime={endTime}
                 onChange={(value) => onChangeEndTime(value || null)}
+                disablePastForDate={comparisonDate}
                 className={editor.pickerClassName}
               />
             </div>

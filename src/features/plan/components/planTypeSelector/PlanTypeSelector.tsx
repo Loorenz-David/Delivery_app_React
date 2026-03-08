@@ -9,6 +9,8 @@ export const PlanTypeSelector = ({
   defaultTitle = 'Select a plan type',
   selectedValue,
   onChange,
+  sectionClassName,
+  buttonClassName,
 }: PlanTypeSelectorProps) => {
 
   const selectedOption = useMemo(()=>
@@ -35,6 +37,8 @@ export const PlanTypeSelector = ({
      <CollapsibleSection 
       title={ displayValue } 
       closeOnInsideClick={ true }
+      sectionClassName={sectionClassName}
+      buttonClassName={buttonClassName}
       >
          <PlanTypeOptionList
           selectedValue = { selectedValue }

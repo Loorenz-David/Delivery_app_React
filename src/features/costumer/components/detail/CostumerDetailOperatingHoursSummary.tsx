@@ -6,7 +6,7 @@ export const CostumerDetailOperatingHoursSummary = ({ costumer }: { costumer: Co
   const rows = [...(costumer?.operating_hours ?? [])].sort((a, b) => a.weekday - b.weekday)
 
   return (
-    <div className="h-[300px] overflow-y-auto rounded-xl border border-[var(--color-border)] bg-white p-4">
+    <div className="h-[300px] overflow-y-auto scroll-thin rounded-xl border border-[var(--color-border)] bg-white p-4">
       <div className="mb-3 text-sm font-semibold text-[var(--color-text)]">Operating hours</div>
 
       {!rows.length ? (

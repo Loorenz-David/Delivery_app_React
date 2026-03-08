@@ -1,6 +1,8 @@
 import type{ ReactNode } from 'react'
 import { AnimatePresence } from 'framer-motion'
+import { createPortal } from 'react-dom'
 import {
+    type Placement,
     useFloating,
     offset,
     flip,
@@ -23,6 +25,9 @@ type PropsConfrimPopup = {
    removeFlip?:boolean
    closeOnInsideClick?:boolean
    outsidePressEvent?: 'pointerdown' | 'mousedown' | 'click'
+   renderInPortal?: boolean
+   strategy?: 'absolute' | 'fixed'
+   placement?: Placement
 }
 
 export const FloatingPopover = ({
@@ -36,7 +41,10 @@ export const FloatingPopover = ({
     matchReferenceWidth,
     removeFlip,
     closeOnInsideClick,
-    outsidePressEvent
+    outsidePressEvent,
+    renderInPortal,
+    strategy,
+    placement,
 }: PropsConfrimPopup) => {
 
     const {
@@ -46,7 +54,8 @@ export const FloatingPopover = ({
     } = useFloating({
         open: open,
         onOpenChange: onOpenChange,
-        placement: 'bottom-start',
+        placement: placement ?? 'bottom-start',
+        strategy: strategy ?? (renderInPortal ? 'fixed' : 'absolute'),
         middleware: [
             offset({
                 mainAxis: typeof offSetNum == 'number' ? offSetNum : 8,
@@ -68,6 +77,32 @@ export const FloatingPopover = ({
         outsidePressEvent: outsidePressEvent ?? 'mousedown'
     })
     const { getReferenceProps, getFloatingProps } = useInteractions([ dismiss ])
+
+    const floatingNode = (
+        <AnimatePresence initial={false}>
+            {open && 
+                <div
+                    ref={refs.setFloating}
+                    style={floatingStyles}
+                    {...getFloatingProps()}
+                    className={renderInPortal ? 'z-[130]' : 'z-50'}
+                    onClick={(e) => {
+                        if (!closeOnInsideClick) return
+
+                        const target = e.target as HTMLElement
+                        if (target.closest('[data-popover-close]')) {
+                            onOpenChange(false)
+                        }else{
+                            console.error('closeOnInsideClick is set to true on component FloatingPopover, but missing to add [data-popover-close] on the children.')
+                        }
+                    }}
+                >
+                    {children}
+                </div>
+            }
+        </AnimatePresence>
+    )
+
     return ( 
         <div className={`${classes} flex-1`}>
             <div
@@ -77,28 +112,9 @@ export const FloatingPopover = ({
             >
                 {reference}
             </div>
-            <AnimatePresence initial={false}>
-                {open && 
-                    <div
-                        ref={refs.setFloating}
-                        style={floatingStyles}
-                        {...getFloatingProps()}
-                        className="z-50 "
-                        onClick={(e) => {
-                            if (!closeOnInsideClick) return
-
-                            const target = e.target as HTMLElement
-                            if (target.closest('[data-popover-close]')) {
-                                onOpenChange(false)
-                            }else{
-                                console.error('closeOnInsideClick is set to true on component FloatingPopover, but missing to add [data-popover-close] on the children.')
-                            }
-                        }}
-                    >
-                        {children}
-                    </div>
-                }
-            </AnimatePresence>
+            {renderInPortal && typeof document !== 'undefined'
+                ? createPortal(floatingNode, document.body)
+                : floatingNode}
         </div>
     );
 }

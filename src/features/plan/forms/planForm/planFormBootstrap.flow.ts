@@ -5,14 +5,17 @@ import { buildClientId } from '@/lib/utils/clientId'
 import type { DeliveryPlan, PlanTypeKey } from '../../types/plan'
 
 import { usePlanStateRegistryFlow } from '../../flows/planStateRegistry.flow'
+import { formatIsoDateFriendly } from '@/shared/utils/formatIsoDate'
 
 
 
 const createInitialPlanForm = (planStateId: number | null | undefined): DeliveryPlan => {
   const nowIso = new Date().toISOString()
+
+  const planLabel = `Plan for ${formatIsoDateFriendly(nowIso)}`
   return {
     client_id: buildClientId('delivery_plan'),
-    label: 'Plan',
+    label: planLabel,
     plan_type: 'local_delivery',
     start_date: nowIso,
     end_date: nowIso,

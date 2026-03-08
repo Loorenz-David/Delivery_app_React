@@ -10,7 +10,7 @@ export const CurrentLocationCard = ({ onSelect }: CurrentLocationCardProps) => {
     <li>
       <button
         type="button"
-        className="flex w-full items-center gap-2 px-3 py-3 text-left text-xs hover:bg-[var(--color-page)]"
+        className="flex w-full items-center gap-2 px-3 py-3 text-left text-xs hover:bg-[var(--color-ligth-bg)] cursor-pointer"
         onMouseDown={(event) => {
           event.preventDefault()
           onSelect()

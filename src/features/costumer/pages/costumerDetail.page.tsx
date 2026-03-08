@@ -16,8 +16,8 @@ const CostumerDetailPageBody = () => {
   const { costumer, closeCostumerDetail, openCostumerEditForm } = useCostumerDetailContext()
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-y-auto border-l-1 border-l-[var(--color-primary)]/30 bg-[var(--color-page)]">
-      <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-y-auto border-l-1 border-l-[var(--color-primary)]/30 bg-[var(--color-muted)]/10">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-y-auto scroll-thin border-l-1 border-l-[var(--color-primary)]/30 bg-[var(--color-page)]">
+      <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-y-auto scroll-thin border-l-1 border-l-[var(--color-primary)]/30 bg-[var(--color-muted)]/10">
         <CostumerDetailHeader
           onClose={closeCostumerDetail}
           onEdit={costumer?.client_id ? () => openCostumerEditForm(costumer.client_id) : undefined}

@@ -1,6 +1,9 @@
 import { InputWarning, type InputWarningState } from './InputWarning'
 import type { InputWarningController } from './useInputWarning.hook'
 import type { ReactNode } from 'react'
+import { InfoHover } from '@/shared/layout/InfoHover'
+import type { InfoHoverMessage } from '@/shared/layout/InfoHover'
+import type { Placement } from '@floating-ui/react'
 
 export function Field({
   label,
@@ -9,7 +12,17 @@ export function Field({
   warning,
   warningController,
   gap = 1,
-  warningPlacement ='atBottom'
+  warningPlacement ='atBottom',
+  info,
+  infoTriggerVariant,
+  infoTriggerText,
+  infoTriggerClassName,
+  infoOverlayClassName,
+  infoIconClassName,
+  infoRenderInPortal = true,
+  infoPlacement,
+  infoOffset,
+  infoInteractive,
 }: {
   label: string
   children: ReactNode
@@ -18,16 +31,41 @@ export function Field({
   warningController?: InputWarningController
   gap?: number
   warningPlacement?: 'atBottom' | 'besidesLabel'
+  info?: InfoHoverMessage | InfoHoverMessage[]
+  infoTriggerVariant?: 'icon' | 'text'
+  infoTriggerText?: string
+  infoTriggerClassName?: string
+  infoOverlayClassName?: string
+  infoIconClassName?: string
+  infoRenderInPortal?: boolean
+  infoPlacement?: Placement
+  infoOffset?: number
+  infoInteractive?: boolean
 }) {
   const resolvedWarning = warningController?.warning ?? warning
   return (
     <label className={`flex w-full flex-col  ${'gap-' + gap}`}>
       <div className="flex justify-between">
-        <span className="text-[10px] font-semibold text-[var(--color-muted)]">
-          {label}
-          {required && <span className="ml-1 text-red-500">*</span>}
-
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold text-[var(--color-muted)]">
+            {label}
+            {required && <span className="ml-1 text-red-500">*</span>}
+          </span>
+          {info ? (
+            <InfoHover
+              content={info}
+              triggerVariant={infoTriggerVariant}
+              triggerText={infoTriggerText}
+              triggerClassName={infoTriggerClassName}
+              overlayClassName={infoOverlayClassName}
+              iconClassName={infoIconClassName}
+              renderInPortal={infoRenderInPortal}
+              placement={infoPlacement}
+              offset={infoOffset}
+              interactive={infoInteractive}
+            />
+          ) : null}
+        </div>
         {warningPlacement == 'besidesLabel' && 
           <div>
               {resolvedWarning && <InputWarning {...resolvedWarning} />}

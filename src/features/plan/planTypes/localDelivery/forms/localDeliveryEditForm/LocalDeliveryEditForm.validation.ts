@@ -1,6 +1,7 @@
 import type { RefObject } from 'react'
 
 import { hasFormChanges } from '@/shared/data-validation/compareChanges'
+import { isDateOnOrAfterToday } from '@/shared/data-validation/timeValidation'
 
 import type { LocalDeliveryEditFormState } from './LocalDeliveryEditForm.types'
 import type { LocalDeliveryEditFormWarnings } from './LocalDeliveryEditForm.types'
@@ -22,7 +23,13 @@ export const useLocalDeliveryEditFormValidation = ({
         start_date: formState.delivery_plan.start_date,
         end_date: formState.delivery_plan.end_date,
       }),
-      formWarnings.routeTimeWarning.validate({
+      isDateOnOrAfterToday(formState.delivery_plan.start_date),
+      isDateOnOrAfterToday(formState.delivery_plan.end_date),
+      formWarnings.routeStartTimeWarning.validate({
+        start_date: formState.delivery_plan.start_date,
+        start_time: formState.route_solution.set_start_time,
+      }),
+      formWarnings.routeEndTimeWarning.validate({
         start_date: formState.delivery_plan.start_date,
         end_date: formState.delivery_plan.end_date,
         start_time: formState.route_solution.set_start_time,

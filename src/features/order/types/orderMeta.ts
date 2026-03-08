@@ -10,17 +10,12 @@ export type OrderStats = {
 
 export type OrderPagination = {
   has_more: boolean
-  next_cursor: {
-    after_date: string
-    after_id: number
-  } | null
-  prev_cursor: {
-    before_date: string
-    before_id: number
-  } | null
+  next_cursor: string | null
+  prev_cursor: string | null
 }
 
 export type OrderQueryStringQueries = 
+ |'order_scalar_id'
  |'reference_number'
   |'external_source'
   |'tracking_number'
@@ -43,10 +38,8 @@ export type OrderQueryFilters = {
   
   schedule_order?: boolean
   unschedule_order?:boolean
-  after_date?: string
-  after_id?: number
-  before_date?: string
-  before_id?: number
+  after_cursor?: string
+  before_cursor?: string
   limit?: number
   sort?: 'date_asc' | 'date_desc'
   show_archived?:boolean

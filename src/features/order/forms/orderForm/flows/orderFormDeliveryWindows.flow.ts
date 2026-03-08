@@ -1,5 +1,5 @@
 import { buildClientId } from '@/lib/utils/clientId'
-import { sessionStorage } from '@/features/auth/login/store/sessionStorage'
+import { apiClient } from '@/lib/api/ApiClient'
 import type { CostumerOperatingHours } from '@/features/costumer'
 
 import type { OrderDeliveryWindow } from '../../../types/order'
@@ -26,10 +26,9 @@ export type DeliveryWindowDisplayRow = {
 }
 
 export const resolveOrderFormTimeZone = () => {
-  const session = sessionStorage.getSession()
-  const identityTimeZone = session?.identity?.time_zone
-  if (typeof identityTimeZone === 'string' && identityTimeZone.trim()) {
-    return identityTimeZone.trim()
+  const sessionTimeZone = apiClient.getSessionTimeZone()
+  if (sessionTimeZone) {
+    return sessionTimeZone
   }
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 }

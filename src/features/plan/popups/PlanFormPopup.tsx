@@ -11,17 +11,29 @@ import {
 
 import { PlanFormFeature } from '@/features/plan/forms/planForm/PlanForm'
 import type { PopupPayload, PlanFormMode } from '@/features/plan/forms/planForm/PlanForm.types'
+import { InfoHover } from '@/shared/layout/InfoHover'
+import { PLAN_MAIN_HEADER_INFO } from '@/features/plan/info/planMainHeader.info'
 
 const resolveHeaderModel = (mode: PlanFormMode) => {
   if (mode === 'create') {
     return {
-      title: 'Create a Plan',
+      title: (
+        <span className="inline-flex items-center gap-2">
+          <span>Create a Plan</span>
+          <InfoHover content={PLAN_MAIN_HEADER_INFO} />
+        </span>
+      ),
       subtitle: 'choose between the plan types.',
     }
   }
 
   return {
-    title: 'Edit plan',
+    title: (
+      <span className="inline-flex items-center gap-2">
+        <span>Edit plan</span>
+        <InfoHover content={PLAN_MAIN_HEADER_INFO} />
+      </span>
+    ),
     subtitle: 'update plan.',
   }
 }
@@ -38,13 +50,13 @@ export const PlanFormPopup = ({ payload, onClose }: StackComponentProps<PopupPay
 
   return (
     <>
-      <FeaturePopupShell onRequestClose={closeController.requestClose} size="md" variant="center">
+      <FeaturePopupShell onRequestClose={closeController.requestClose} size="mdNoHeight" variant="center">
         <FeaturePopupHeader
           title={header.title}
           subtitle={header.subtitle}
           onClose={closeController.requestClose}
         />
-        <FeaturePopupBody className="px-3 py-5">
+        <FeaturePopupBody >
           <PlanFormFeature
             payload={payload}
             onSuccessClose={closeController.confirmClose}

@@ -36,7 +36,7 @@ export const OrderStateList = ({ order }: OrderStateListProps) => {
   }
 
   return (
-    <div className="w-full max-h-[280px] overflow-y-auto">
+    <div className="w-full max-h-[280px] overflow-y-auto scroll-thin">
       {orderedStates.map((state) => {
         const isCurrent = state.id === currentStateId
         const isDisabled = isCurrent

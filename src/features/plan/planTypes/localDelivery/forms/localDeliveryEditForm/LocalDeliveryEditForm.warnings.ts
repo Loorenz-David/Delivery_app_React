@@ -1,6 +1,11 @@
 import { useInputWarning } from '@/shared/inputs/useInputWarning.hook'
 import { validateString } from '@/shared/data-validation/stringValidation'
-import { validateDateComparison, validateDateTimeComparison } from '@/shared/data-validation/timeValidation'
+import {
+  isDateOnOrAfterToday,
+  isDateTimeOnOrAfterNow,
+  validateDateComparison,
+  validateDateTimeComparison,
+} from '@/shared/data-validation/timeValidation'
 
 type PlanDatePayload = { start_date: string; end_date: string }
 
@@ -23,6 +28,14 @@ export const useLocalDeliveryEditFormWarnings = () => {
         setWarningMessage('Plan must have an end date')
         return false
       }
+      if (!isDateOnOrAfterToday(start_date)) {
+        setWarningMessage('Plan start date cannot be in the past')
+        return false
+      }
+      if (!isDateOnOrAfterToday(end_date)) {
+        setWarningMessage('Plan end date cannot be in the past')
+        return false
+      }
       if (!validateDateComparison(start_date, end_date)) {
         setWarningMessage("'Start' date must be before 'End' date")
         return false
@@ -31,9 +44,24 @@ export const useLocalDeliveryEditFormWarnings = () => {
     },
   )
 
-  const routeTimeWarning = useInputWarning(
+  const routeStartTimeWarning = useInputWarning(
+    'Start time cannot be in the past for today',
+    ({ start_date, start_time }: Pick<RouteTimePayload, 'start_date' | 'start_time'>, setWarningMessage) => {
+      if (!isDateTimeOnOrAfterNow(start_date, start_time)) {
+        setWarningMessage('Start time cannot be in the past for today')
+        return false
+      }
+      return true
+    },
+  )
+
+  const routeEndTimeWarning = useInputWarning(
     'End time must be after start time',
     ({ start_date, end_date, start_time, end_time }: RouteTimePayload, setWarningMessage) => {
+      if (!isDateTimeOnOrAfterNow(end_date, end_time)) {
+        setWarningMessage('End time cannot be in the past for today')
+        return false
+      }
       const isValid = validateDateTimeComparison(start_date, start_time, end_date, end_time)
       if (!isValid) {
         setWarningMessage('End time must be after start time')
@@ -45,6 +73,7 @@ export const useLocalDeliveryEditFormWarnings = () => {
 
   return {
     planDateWarning,
-    routeTimeWarning,
+    routeStartTimeWarning,
+    routeEndTimeWarning,
   }
 }

@@ -24,7 +24,9 @@ export const OrderDetailTimeWindows = ({ order }: OrderDetailSummaryProps) => {
   order?.delivery_windows?.forEach( t =>{
     const serializeDate = formatIsoDateFriendly(t.start_at)
     if ( !serializeDate ) return
+
     const start_at = formatIsoTime(t.start_at)! 
+
     const end_at = formatIsoTime(t.end_at)!
 
     if( serializeDate in timeWindows ){
@@ -34,12 +36,13 @@ export const OrderDetailTimeWindows = ({ order }: OrderDetailSummaryProps) => {
   })
 
   return (
-      <div className="border-1 rounded-lg border-[var(--color-muted)]/40  px-4 py-4 h-[300px]  gap-3 flex flex-col overflow-y-auto">
+      <div className="border-1 rounded-lg border-[var(--color-muted)]/40  px-4 py-4 h-[300px]  gap-3 flex flex-col overflow-y-auto scroll-thin">
         { order && order.delivery_windows?.length ?
           order?.delivery_windows?.map( (t,i) =>{
             const serializeDate = formatIsoDateFriendly(t.start_at)
             if ( !serializeDate ) return
             const timeWindow = timeWindows[serializeDate]
+
             return(
              <div className={`flex flex-col  gap-2 `} key={`order_time_window_group_${order.id}_${i}`}>
                 <span className="font-bold text-xs">

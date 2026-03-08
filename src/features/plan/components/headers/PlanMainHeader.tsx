@@ -3,6 +3,8 @@ import { BasicButton } from '@/shared/buttons/BasicButton'
 import type { PlanQueryFilters, PlanStats } from '../../types/planMeta'
 import { CalendarIcon } from '@mui/x-date-pickers'
 import { pluralLabel } from '@/shared/utils/formatStrings'
+import { InfoHover } from '@/shared/layout/InfoHover'
+import { PLAN_MAIN_HEADER_INFO } from '../../info/planMainHeader.info'
 
 
 
@@ -84,9 +86,12 @@ const HeaderTitle = ({planStats}:{planStats?:PlanStats})=>{
   return (
     <div className="flex gap-2">
       <div className="flex flex-col">
-        <span className="font-semibold text-lg text-[var(--color-muted)]/80">
-          Plans
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-lg text-[var(--color-muted)]/80">
+            Plans
+          </span>
+          <InfoHover content={PLAN_MAIN_HEADER_INFO} />
+        </div>
         <div className="text-xs flex text-[var(--color-muted)] font-normal flex gap-1">
           <span > {plansCount} {pluralLabel('plan',plansCount)} •  </span>
           <span > {ordersCount} {pluralLabel('order',ordersCount)} •  </span>
@@ -96,4 +101,3 @@ const HeaderTitle = ({planStats}:{planStats?:PlanStats})=>{
     </div>
   )
 }
-

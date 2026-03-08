@@ -1,5 +1,7 @@
 import { validateAddress } from '@/shared/data-validation/addressValidation'
 import {
+  isDateOnOrAfterToday,
+  isDateTimeOnOrAfterNow,
   validateDateComparison,
   validateDateTimeComparison,
   toDateOnly,
@@ -89,6 +91,36 @@ export const useOrderValidation = () => {
       latestDeliveryDate,
       preferredTimeEnd ?? null,
     )
+  }
+
+  const validateDeliveryWindowNotInPast = ({
+    earliestDeliveryDate,
+    latestDeliveryDate,
+    preferredTimeStart,
+    preferredTimeEnd,
+  }: {
+    earliestDeliveryDate: string | null | undefined
+    latestDeliveryDate: string | null | undefined
+    preferredTimeStart: string | null | undefined
+    preferredTimeEnd: string | null | undefined
+  }) => {
+    if (earliestDeliveryDate && !isDateOnOrAfterToday(earliestDeliveryDate)) {
+      return false
+    }
+
+    if (latestDeliveryDate && !isDateOnOrAfterToday(latestDeliveryDate)) {
+      return false
+    }
+
+    if (!isDateTimeOnOrAfterNow(earliestDeliveryDate, preferredTimeStart ?? null)) {
+      return false
+    }
+
+    if (!isDateTimeOnOrAfterNow(latestDeliveryDate, preferredTimeEnd ?? null)) {
+      return false
+    }
+
+    return true
   }
 
   const validateOrderFields = (fields: OrderUpdateFields) => {
@@ -234,7 +266,13 @@ export const useOrderValidation = () => {
         preferredTimeStart: fields.preferred_time_start ?? null,
         preferredTimeEnd: fields.preferred_time_end ?? null,
       })
-      if (!isWindowValid) {
+      const isWindowNotInPast = validateDeliveryWindowNotInPast({
+        earliestDeliveryDate: fields.earliest_delivery_date ?? null,
+        latestDeliveryDate: fields.latest_delivery_date ?? null,
+        preferredTimeStart: fields.preferred_time_start ?? null,
+        preferredTimeEnd: fields.preferred_time_end ?? null,
+      })
+      if (!isWindowValid || !isWindowNotInPast) {
         return false
       }
     }
@@ -255,6 +293,7 @@ export const useOrderValidation = () => {
     validateAddressValue,
     validateTimeValue,
     validateDeliveryWindow,
+    validateDeliveryWindowNotInPast,
     validateOrderFields,
   }
 }

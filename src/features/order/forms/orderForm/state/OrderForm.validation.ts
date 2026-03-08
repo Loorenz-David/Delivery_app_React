@@ -22,6 +22,12 @@ export const useOrderFormValidation = ({
       preferred_time_start: formState.preferred_time_start,
       preferred_time_end: formState.preferred_time_end,
     })
+    const deliveryWindowsValid = warnings.deliveryWindowsWarning.validate({
+      earliest_delivery_date: formState.earliest_delivery_date,
+      latest_delivery_date: formState.latest_delivery_date,
+      preferred_time_start: formState.preferred_time_start,
+      preferred_time_end: formState.preferred_time_end,
+    })
 
     return (
       referenceValid &&
@@ -30,7 +36,8 @@ export const useOrderFormValidation = ({
       emailValid &&
       primaryPhoneValid &&
       addressValid &&
-      dateRangeValid
+      dateRangeValid &&
+      deliveryWindowsValid
     )
   }
 

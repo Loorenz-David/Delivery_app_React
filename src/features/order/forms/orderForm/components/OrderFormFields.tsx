@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 
 import { BasicButton } from '@/shared/buttons/BasicButton'
 import { Field } from '@/shared/inputs/FieldContainer'
-import { InputField } from '@/shared/inputs/InputField'
+import { InputField, PLAIN_INPUT_CLASS, PLAIN_INPUT_CONTAINER_CLASS } from '@/shared/inputs/InputField'
 import { OptionPopoverSelect } from '@/shared/inputs/OptionPopoverSelect'
 import { PhoneField } from '@/shared/inputs/PhoneField'
 import { AddressAutocomplete } from '@/shared/inputs/address-autocomplete/AddressAutocomplete'
@@ -13,18 +13,15 @@ import {
 } from '../OrderForm.layout.model'
 import { OrderFormDeliveryWindowCalendar } from './DeliveryWindowCalendar'
 import { Cell, SplitRow } from '@/shared/layout/cells'
+import { ORDER_PLAN_OBJECTIVE_INFO } from '../info/orderPlanObjective.info'
 
 type OrderFormFieldsProps = {
   model: OrderFormLayoutModel
   compact?: boolean
 }
 
-const PLAIN_INPUT_CONTAINER_CLASS = 'w-full'
-const PLAIN_INPUT_CLASS =
-  'w-full border-0 bg-transparent p-0 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-muted)]/70'
 
-const createCellClass = (compact: boolean) =>
-  `py-2 px-4`
+
 
 
 
@@ -121,8 +118,9 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
             <AddressAutocomplete
               onSelectedAddress={formSetters.handleAddress}
               selectedAddress={formState.client_address}
-              fieldClassName={' flex w-full items-center px-4 py-1 pb-2 gap-2'}
-              inputClassName={'text-sm w-full'}
+              fieldClassName={' flex w-full items-center'}
+              containerClassName={' px-4 py-2  gap-2'}
+              inputClassName={'text-sm w-full '}
               intentKey={'order-form-delivery-address'}
               enableCurrentLocation
               enableSavedLocations
@@ -185,7 +183,11 @@ export const OrderFormFields = ({ model, compact = false }: OrderFormFieldsProps
 
             {formState.delivery_plan_id == null ? (
               <div className={`border-t border-[var(--color-border-accent)] px-3 py-2`}>
-                <Field  warningPlacement ='besidesLabel' label="Order plan objective:">
+                <Field
+                  warningPlacement ='besidesLabel'
+                  label="Order plan objective:"
+                  info={ORDER_PLAN_OBJECTIVE_INFO}
+                >
                   <OptionPopoverSelect
                     options={ORDER_PLAN_OBJECTIVE_OPTIONS}
                     value={formState.order_plan_objective}

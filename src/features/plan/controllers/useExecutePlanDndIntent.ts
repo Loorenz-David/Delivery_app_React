@@ -12,12 +12,12 @@ export const useExecutePlanDndIntent = () => {
   const execute = async (intent: PlanDndIntent) => {
 
     if (!intent) {
-      return { droppedPlanClientId: null as string | null }
+      return { droppedPlanClientId: null as string | null, success: false }
     }
 
     if (intent.kind === 'MOVE_ROUTE_STOP') {
       await updateRouteStopPositionOptimistic(intent.fromStopClientId, intent.toStopClientId)
-      return { droppedPlanClientId: null as string | null }
+      return { droppedPlanClientId: null as string | null, success: true }
     }
     else if (intent.kind === 'MOVE_ROUTE_STOP_GROUP') {
       await updateRouteStopGroupPositionOptimistic({
@@ -26,31 +26,32 @@ export const useExecutePlanDndIntent = () => {
         position: intent.position,
         anchorStopId: intent.anchorStopId,
       })
-      return { droppedPlanClientId: null as string | null }
+      return { droppedPlanClientId: null as string | null, success: true }
     }
     else if( intent.kind === 'ASSIGN_ORDER_TO_PLAN'){
       const deliveryPlan = selectPlanByClientId(intent.planClientId)(usePlanStore.getState())
       if (!deliveryPlan?.id) {
-        return { droppedPlanClientId: null as string | null }
+        return { droppedPlanClientId: null as string | null, success: false }
       }
   
-      await updateOrderDeliveryPlan(intent.orderClientId, deliveryPlan.id)
-      return { droppedPlanClientId: intent.planClientId }
+      const success = await updateOrderDeliveryPlan(intent.orderClientId, deliveryPlan.id)
+      return { droppedPlanClientId: intent.planClientId, success }
     }
     else if (intent.kind === 'ASSIGN_ORDERS_TO_PLAN_BATCH') {
       const deliveryPlan = selectPlanByClientId(intent.planClientId)(usePlanStore.getState())
       if (!deliveryPlan?.id) {
-        return { droppedPlanClientId: null as string | null }
+        return { droppedPlanClientId: null as string | null, success: false }
       }
 
-      await updateOrdersDeliveryPlanBatch({
+      const success = await updateOrdersDeliveryPlanBatch({
         planId: deliveryPlan.id,
         planType: deliveryPlan.plan_type,
         selection: intent.selection,
       })
-      return { droppedPlanClientId: intent.planClientId }
+      return { droppedPlanClientId: intent.planClientId, success }
     }
     
+    return { droppedPlanClientId: null as string | null, success: false }
   }
 
   return { execute }

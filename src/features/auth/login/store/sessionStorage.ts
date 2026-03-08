@@ -12,12 +12,21 @@ export interface SessionUser {
   [key: string]: unknown
 }
 
+export interface SessionIdentity {
+  user_id?: string | number
+  team_id?: string | number | null
+  user_role_id?: number | null
+  base_role_id?: number | null
+  time_zone?: string | null
+  [key: string]: unknown
+}
+
 export interface SessionSnapshot {
   accessToken: string
   refreshToken: string
   socketToken?: string
   user?: SessionUser | null
-  identity?: Record<string, unknown> | null
+  identity?: SessionIdentity | null
   updatedAt: number
 }
 

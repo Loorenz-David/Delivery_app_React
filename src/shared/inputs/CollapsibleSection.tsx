@@ -10,12 +10,16 @@ export function CollapsibleSection({
     title,
     children,
     defaultOpen = false,
-    closeOnInsideClick
+    closeOnInsideClick,
+    sectionClassName,
+    buttonClassName,
 }: {
     title: string | ReactNode
     children: ReactNode
     defaultOpen?: boolean
     closeOnInsideClick?: boolean
+    sectionClassName?: string
+    buttonClassName?: string
 }) {   
     const [isOpen, setIsOpen] = useState(defaultOpen)
 
@@ -27,12 +31,13 @@ export function CollapsibleSection({
             onOpenChange={ setIsOpen }
             matchReferenceWidth={true}
             closeOnInsideClick={ closeOnInsideClick }
+            offSetNum={2}
             reference={
-                <section className="rounded-xl border border-[var(--color-border)] bg-white">
+                <section className={sectionClassName ?? 'rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-page)]'}>
                     <button
                         type="button"
                         onClick={() => setIsOpen((prev) => !prev)}
-                        className="flex w-full items-center justify-between px-4 py-3 text-left"
+                        className={buttonClassName ?? 'flex w-full items-center justify-between px-4 py-3 text-left'}
                     >
                         {typeof title == 'string' ? 
                             <span className="text-base  text-[var(--color-text)]">
@@ -60,7 +65,7 @@ export function CollapsibleSection({
                     animate={{ height: 'auto', opacity: 1, y: 0 }}
                     exit={{ height: 0, opacity: 0, y: -4 }}
                     transition={{ duration: 0.18, ease: 'easeOut' }}
-                    className=" border border-[var(--color-border)] px-2 bg-[var(--color-page)] rounded-xl shadow-md"
+                    className=" border border-[var(--color-border-accent)] px-2 bg-[var(--color-page)] rounded-xl shadow-md"
                 >
                 <div className="py-3">
                     {children}

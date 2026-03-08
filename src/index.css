@@ -140,12 +140,12 @@ select:focus {
 /* Firefox */
 .scroll-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(118, 118, 118, 0.35) transparent;
+  scrollbar-color: #d9d9d9 transparent;
 }
 
 /* Chrome, Edge, Safari */
 .scroll-thin::-webkit-scrollbar {
-  width: 2px;               /* thickness */
+  width: 1px;               /* ultra thin scrollbar */
 }
 
 .scroll-thin::-webkit-scrollbar-track {
@@ -154,7 +154,7 @@ select:focus {
 }
 
 .scroll-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(100, 100, 100, 0.35);
+  background-color: #d9d9d9;
   border-radius: 999px;
 }
 

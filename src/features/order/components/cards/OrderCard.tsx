@@ -16,7 +16,7 @@ type OrderCardProps = {
 }
 
 export const OrderCard = ({ order, onOpen, onArchive, onUnarchive, isHovered = false }: OrderCardProps) => {
-  const orderLabel = order.reference_number ?? order.external_order_id ?? order.client_id
+  const orderLabel = order.order_scalar_id != null ? `#${order.order_scalar_id}` : '#—'
   const streetAddress = order.client_address?.street_address ?? 'No address'
   const itemCount = order.total_items ?? 0
 

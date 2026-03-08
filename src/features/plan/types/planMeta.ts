@@ -15,14 +15,8 @@ export type PlanStats = {
 
 export type PlanPagination = {
   has_more: boolean
-  next_cursor: {
-    after_date: string
-    after_id: number
-  } | null
-  prev_cursor: {
-    before_date: string
-    before_id: number
-  } | null
+  next_cursor: string | null
+  prev_cursor: string | null
 }
 
 export type DeliveryPlanStatePagination = {
@@ -45,10 +39,8 @@ export type PlanQueryFilters = {
   created_at_to?: string
   plan_state_id?: number
   sort?: 'date_asc' | 'date_desc'
-  after_date?: string
-  after_id?: number
-  before_date?: string
-  before_id?: number
+  after_cursor?: string
+  before_cursor?: string
   orders?: Record<string, unknown>
   limit?: number
 }

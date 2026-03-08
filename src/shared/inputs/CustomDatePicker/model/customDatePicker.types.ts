@@ -4,9 +4,11 @@ export type CustomDatePickerProps = {
   date?: Date | null
   onChange?: (value: string | null) => void
   disabled?: boolean
+  disablePast?: boolean
   minDate?: Date
   maxDate?: Date
   className?: string
+  renderPopoverInPortal?: boolean
   open?: boolean
   onOpenChange?: (isOpen: boolean) => void
   onCalendarSelect?: (date: Date) => void

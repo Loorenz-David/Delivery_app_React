@@ -6,7 +6,7 @@ import { useMessageHandler } from '@/shared/message-handler'
 import { useGetOrders } from '../api/orderApi'
 import { useOrderModel } from '../domain/useOrderModel'
 
-import { setOrderListError, setOrderListLoading, setOrderListResult } from '../store/orderList.store'
+import { setOrderListError, setOrderListResult } from '../store/orderList.store'
 import { useUpsertOrdersStore } from '../store/orderHooks.store'
 import { setVisibleOrders } from '../store/order.store'
 import type {  OrderQueryStoreFilters } from '../types/orderMeta'
@@ -14,7 +14,7 @@ import { normalizeQuery } from '../../../shared/utils/queryNormalization'
 import { orderStringFilters } from '../domain/orderFilterConfig'
 
 
-const buildQueryKey = (query?:  OrderQueryStoreFilters) => JSON.stringify(query ?? {})
+export const buildOrderQueryKey = (query?:  OrderQueryStoreFilters) => JSON.stringify(query ?? {})
 
 export const useOrderFlow = () => {
   const getOrders = useGetOrders()
@@ -23,12 +23,8 @@ export const useOrderFlow = () => {
   const { showMessage } = useMessageHandler()
   
 
-  const loadOrders = useCallback(
-    async (query?: OrderQueryStoreFilters, firstLoad?: boolean) => {
-    
-
-      const queryKey = buildQueryKey(query)
-      setOrderListLoading(true)
+  const loadOrdersPage = useCallback(
+    async (query?: OrderQueryStoreFilters) => {
       const normalizedQuery = normalizeQuery(query ?? {}, orderStringFilters)
      
       try {
@@ -44,16 +40,12 @@ export const useOrderFlow = () => {
         const normalized = normalizeOrderPayload(payload.order)
 
         upsertOrdersStore(normalized)
-        setVisibleOrders(normalized.allIds)
 
-        setOrderListResult({
-          queryKey,
-          query,
-          stats: payload.order_stats,
+        return {
+          normalized,
           pagination: payload.order_pagination,
-        })
-
-        return normalized
+          stats: payload.order_stats,
+        }
       } catch (error) {
         const message = error instanceof ApiError ? error.message : 'Unable to load orders.'
         const status = error instanceof ApiError ? error.status : 500
@@ -65,7 +57,28 @@ export const useOrderFlow = () => {
     [],
   )
 
+  const loadOrders = useCallback(
+    async (query?: OrderQueryStoreFilters, _firstLoad?: boolean) => {
+      const response = await loadOrdersPage(query)
+      if (!response) {
+        return null
+      }
+
+      setVisibleOrders(response.normalized.allIds)
+      setOrderListResult({
+        queryKey: buildOrderQueryKey(query),
+        query,
+        stats: response.stats,
+        pagination: response.pagination,
+      })
+
+      return response.normalized
+    },
+    [loadOrdersPage],
+  )
+
   return {
+    loadOrdersPage,
     loadOrders,
   }
 }
