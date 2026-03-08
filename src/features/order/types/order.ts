@@ -30,6 +30,7 @@ export type Order = {
   client_id: string
   order_plan_objective?: string | null
   operation_type?: OrderOperationTypes | null
+  order_scalar_id?: number | null
   reference_number?: string | null
   external_order_id?: string | null
   external_source?: string | null
@@ -55,6 +56,7 @@ export type Order = {
   preferred_time_end?: string | null
   delivery_windows?: OrderDeliveryWindow[]
   creation_date?: string | null
+  items_updated_at?: string | null
   order_state_id?: number | null
   delivery_plan_id?: number | null
   total_weight?: number | null

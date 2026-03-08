@@ -18,7 +18,7 @@ export const PrintTemplatePreview = ({
     <div className="mt-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/8 p-3">
       <p className="text-xs font-semibold text-[var(--color-text)]">{selectedVariantDefinition.previewTitle}</p>
       <p className="mt-1 text-xs text-[var(--color-muted)]">{selectedVariantDefinition.previewBody}</p>
-      <div className="flex justify-center items-start overflow-auto py-6 ">
+      <div className="flex justify-center items-start overflow-auto scroll-thin py-6 ">
         <div className="relative inline-block" style={{ paddingLeft: '2.4rem', paddingTop: '1.8rem' }}>
           <div
             className="pointer-events-none absolute border-t border-[var(--color-muted)]/70"

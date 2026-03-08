@@ -20,7 +20,7 @@ export const CostumerDetailItemsListView = ({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-5 pt-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scroll-thin px-4 pb-5 pt-3">
       {items.map((item) => {
         const fallbackKey = `${item.client_id}-${item.order_id}`
         const parentOrder = orderById.get(item.order_id)

@@ -70,4 +70,5 @@ export { default as CsvIcon } from './CsvIcon.svg?react'
 export { default as CurrentLocationIcon } from './CurrentLocationIcon.svg?react'
 export { default as EraseIcon } from './EraseIcon.svg?react'
 export { default as RetryIcon } from './RetryIcon.svg?react'
+export { default as QuestionIcon } from './QuestionIcon.svg?react'
 

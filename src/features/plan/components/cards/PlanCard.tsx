@@ -11,16 +11,17 @@ import { planIconTypeMap } from '../../utils/planIconTypeMap'
 import { PlusIcon } from '@/assets/icons/index'
 import { coerceUtcFromOffset } from '@/shared/data-validation/timeValidation'
 import { usePlanHeaderAction } from '../../actions/usePlanActions'
+import type { PlanDropFeedback } from '@/shared/resource-manager/ResourceManagerContext'
 
 
 type PropsPlanCard = {
     plan: DeliveryPlan;
     isOver?: boolean
-    isDropped?: boolean
+    dropFeedback?: PlanDropFeedback | null
 }
 
 
-export const PlanCard = ({ plan, isOver, isDropped }: PropsPlanCard) => {
+export const PlanCard = ({ plan, isOver, dropFeedback }: PropsPlanCard) => {
 
    
     const {openPlanSection} = usePlanHeaderAction()
@@ -49,7 +50,7 @@ export const PlanCard = ({ plan, isOver, isDropped }: PropsPlanCard) => {
                 <div className="flex items-start gap-3">
 
                     <AnimatePresence>
-                        { (isOver || isDropped) ? 
+                        { isOver ? 
                             <RoundAvatar 
                                 Icon={ 
                                 <PlusIcon className="h-5 w-5"
@@ -58,7 +59,6 @@ export const PlanCard = ({ plan, isOver, isDropped }: PropsPlanCard) => {
                                 }
                                 bgColor={'#00c531'}
                                 isOver={isOver}
-                                isDropped={isDropped}
                             />
                         :   
                             <RoundAvatar 
@@ -69,15 +69,36 @@ export const PlanCard = ({ plan, isOver, isDropped }: PropsPlanCard) => {
                                     }
                                     bgColor={'#7a7a7a'}
                                     isOver={isOver}
-                                    isDropped={isDropped}
                             />
                         }
                     </AnimatePresence>
                         
                     <div className="flex flex-col">
-                        <span className="text-base font-semibold text-[var(--color-text)]">
-                            {plan.label}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-semibold text-[var(--color-text)]">
+                              {plan.label}
+                          </span>
+                          <AnimatePresence mode="popLayout">
+                            {dropFeedback ? (
+                              <motion.span
+                                key={dropFeedback.token}
+                                initial={{ x: -10, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                exit={{ x: 6, opacity: 0 }}
+                                transition={{ duration: 0.2, ease: 'easeOut' }}
+                                className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium  ${
+                                  dropFeedback.status === 'error'
+                                    ? 'border-[#B42318]/35 bg-[#B42318]/10 text-[#B42318]'
+                                    : 'border-[#0B8A3D]/35 bg-[#0B8A3D]/10 text-[#0B8A3D]'
+                                }`}
+                              >
+                                <span className="text-nowrap">
+                                    {dropFeedback.status === 'error' ? 'Move failed' : `${dropFeedback.movedCount} moved`}
+                                </span>
+                              </motion.span>
+                            ) : null}
+                          </AnimatePresence>
+                        </div>
                         <span className="text-xs text-[var(--color-muted)]">
                             {startDate} - {endDate}
                         </span>
@@ -116,7 +137,6 @@ type PropsRoundAvatar = {
     Icon: ReactNode
     bgColor?: string | null
     isOver?: boolean
-    isDropped?:boolean
 }
 
 const avatarVariants = {
@@ -130,18 +150,11 @@ const avatarVariants = {
     boxShadow: '0px 0px 0px 6px rgba(0,197,49,0.20)',
     
   },
-  dropped: {
-  scale: [1.1, 1.2, 1],
-  boxShadow: '0px 0px 0px 10px rgba(0,197,49,0.20)',
-  
-},
 }
 
-export const RoundAvatar = ({ Icon, bgColor, isOver, isDropped }: PropsRoundAvatar) => {
+export const RoundAvatar = ({ Icon, bgColor, isOver }: PropsRoundAvatar) => {
 
-    let variant = isDropped
-          ? "dropped"  
-          : isOver
+    let variant = isOver
           ? "over"
           : "idle"
 

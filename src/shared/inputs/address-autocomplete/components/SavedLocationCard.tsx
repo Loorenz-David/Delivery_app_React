@@ -11,7 +11,7 @@ export const SavedLocationCard = ({ savedLocation, onSelect }: SavedLocationCard
     <li>
       <button
         type="button"
-        className="flex w-full flex-col gap-0.5 px-3 py-3 text-left text-xs hover:bg-[var(--color-page)]"
+        className="flex w-full flex-col gap-0.5 px-3 py-3 text-left text-xs hover:bg-[var(--color-ligth-bg)] cursor-pointer"
         onMouseDown={(event) => {
           event.preventDefault()
           onSelect(savedLocation)

@@ -5,6 +5,7 @@ type UseSnapScrollParams = {
   value: number
   itemHeight: number
   onChange: (nextValue: number) => void
+  isValueDisabled?: (value: number) => boolean
 }
 
 export const useSnapScroll = ({
@@ -12,6 +13,7 @@ export const useSnapScroll = ({
   value,
   itemHeight,
   onChange,
+  isValueDisabled,
 }: UseSnapScrollParams) => {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const wheelCaptureRef = useRef(false)
@@ -31,6 +33,28 @@ export const useSnapScroll = ({
     setVisualIndex(selectedIndex)
   }, [selectedIndex])
 
+  const resolveNearestEnabledIndex = useCallback((requestedIndex: number) => {
+    const clampedIndex = Math.max(0, Math.min(values.length - 1, requestedIndex))
+    const requestedValue = values[clampedIndex]
+    if (!isValueDisabled?.(requestedValue)) {
+      return clampedIndex
+    }
+
+    for (let offset = 1; offset < values.length; offset += 1) {
+      const forwardIndex = clampedIndex + offset
+      if (forwardIndex < values.length && !isValueDisabled?.(values[forwardIndex])) {
+        return forwardIndex
+      }
+
+      const backwardIndex = clampedIndex - offset
+      if (backwardIndex >= 0 && !isValueDisabled?.(values[backwardIndex])) {
+        return backwardIndex
+      }
+    }
+
+    return clampedIndex
+  }, [isValueDisabled, values])
+
   const scrollToIndex = useCallback(
     (
       index: number,
@@ -42,7 +66,7 @@ export const useSnapScroll = ({
         return
       }
 
-      const clampedIndex = Math.max(0, Math.min(values.length - 1, index))
+      const clampedIndex = resolveNearestEnabledIndex(index)
       setVisualIndex(clampedIndex)
       if (suppressScrollHandler) {
         suppressNextScrollRef.current = true
@@ -52,7 +76,7 @@ export const useSnapScroll = ({
         behavior,
       })
     },
-    [itemHeight, values.length],
+    [itemHeight, resolveNearestEnabledIndex],
   )
 
   const scrollToValue = useCallback(
@@ -81,16 +105,16 @@ export const useSnapScroll = ({
     }
 
     const nearestIndex = Math.round(node.scrollTop / itemHeight)
-    const clampedIndex = Math.max(0, Math.min(values.length - 1, nearestIndex))
+    const clampedIndex = resolveNearestEnabledIndex(nearestIndex)
     const nextValue = values[clampedIndex]
     setVisualIndex(clampedIndex)
 
-    if (nextValue !== value) {
+    if (nextValue !== value && !isValueDisabled?.(nextValue)) {
       onChange(nextValue)
     }
     scrollToIndex(clampedIndex, 'auto', true)
     isUserScrollingRef.current = false
-  }, [itemHeight, onChange, scrollToIndex, value, values])
+  }, [isValueDisabled, itemHeight, onChange, resolveNearestEnabledIndex, scrollToIndex, value, values])
 
   const onWheel = useCallback(
     () => {
@@ -112,14 +136,14 @@ export const useSnapScroll = ({
     const node = scrollRef.current
     if (node) {
       const nearestIndex = Math.round(node.scrollTop / itemHeight)
-      const clampedIndex = Math.max(0, Math.min(values.length - 1, nearestIndex))
+      const clampedIndex = resolveNearestEnabledIndex(nearestIndex)
       setVisualIndex(clampedIndex)
       const nextValue = values[clampedIndex]
-      if (nextValue !== value) {
+      if (nextValue !== value && !isValueDisabled?.(nextValue)) {
         onChange(nextValue)
       }
     }
-  }, [itemHeight, onChange, value, values])
+  }, [isValueDisabled, itemHeight, onChange, resolveNearestEnabledIndex, value, values])
 
   useEffect(() => {
     const node = scrollRef.current

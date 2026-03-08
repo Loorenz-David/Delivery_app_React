@@ -92,7 +92,7 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
         onDragEnd,
         onDragCancel,
         activeDrag,
-        droppedInPlan,
+        planDropFeedback,
         routeReorderPreview,
         sensors,
     }  = usePlanOrderDndController()
@@ -103,7 +103,7 @@ export function HomeManagersProvider({children}: ManagerContextProps) {
             mapManager,
             popupManager,
             baseControlls,
-            droppedInPlan,
+            planDropFeedback,
             routeReorderPreview,
         }}>
                 <DndContext

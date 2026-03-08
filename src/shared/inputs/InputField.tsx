@@ -15,6 +15,10 @@ interface InputFieldProps
   inputRef?: Ref<HTMLInputElement>
 }
 
+export const PLAIN_INPUT_CONTAINER_CLASS = 'w-full'
+export const PLAIN_INPUT_CLASS =
+  'form-plain-input'
+
 
 
 export function InputField({

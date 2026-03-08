@@ -20,7 +20,7 @@ export const EmailTemplateList = () => {
         />
       </div>
       <div className="flex min-h-0 flex-1 bg-[var(--color-muted)]/15 ">
-        <div className="grid h-full w-full auto-rows-max gap-x-3 gap-y-6 overflow-y-auto xl:grid-cols-2 py-10 px-6">
+        <div className="grid h-full w-full auto-rows-max gap-x-3 gap-y-6 overflow-y-auto scroll-thin xl:grid-cols-2 py-10 px-6">
           {filteredTriggers.map(({ trigger, status }) => (
             <TemplateTriggerCard
               key={trigger.key}

@@ -27,9 +27,10 @@ const OrderDetailContent = () => {
   } = useOrderDetailContext()
 
   return (
-    <div className="flex min-h-0 h-full w-full flex-1 flex-col bg-[var(--color-page)]   border-l-[var(--color-primary)]/30 border-l-1 overflow-y-auto">
+    <div className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[var(--color-page)]">
+    <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-px bg-[var(--color-primary)]/30" />
     <div
-        className="flex min-h-0 h-full w-full flex-1 flex-col bg-[var(--color-muted)]/10   border-l-[var(--color-primary)]/30 border-l-1 overflow-y-auto"
+        className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto scroll-thin bg-[var(--color-muted)]/10"
 
     >
       <OrderDetailHeader
@@ -40,7 +41,7 @@ const OrderDetailContent = () => {
         order={order}
       />
 
-    <div className="flex min-h-0 flex-1 h-full flex-col gap-6 pt-3 bg-[var(--color-page)]">
+    <div className="flex w-full flex-col gap-6 bg-[var(--color-page)] pt-3">
         <div className="flex flex-col gap-4 px-5 ">
           <SlideCarousel>
             {order ? (
@@ -58,11 +59,13 @@ const OrderDetailContent = () => {
         </div>
 
         { orderServerId !== null ? 
-          <div className="flex min-h-0 flex-1 flex-col bg-[var(--color-muted)]/10"
+          <div className="flex w-full flex-col bg-[var(--color-muted)]/10"
           
           >
             <ItemsOrderPreview 
               orderId={orderServerId} 
+              expectedItemCount={order?.total_items ?? null}
+              itemsUpdatedAt={order?.items_updated_at ?? null}
               stickyHeader
             />
           </div>
@@ -83,5 +86,3 @@ export const OrderDetailPage = ({ payload, onClose }: StackComponentProps<OrderD
     <OrderDetailContent />
   </OrderDetailProvider>
 )
-
-

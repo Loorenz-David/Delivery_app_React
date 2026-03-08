@@ -21,7 +21,7 @@ export const CostumerOperatingHoursEditor = ({ model }: CostumerOperatingHoursEd
   }, [model.formState.operating_hours])
 
   return (
-    <div className="flex flex-col divide-y divide-[var(--color-border)] rounded-xl overflow-hidden border border-[var(--color-border)]/70 bg-[var(--color-page)]">
+    <div className="flex flex-col divide-y divide-[var(--color-border)] rounded-xl overflow-hidden border border-[var(--color-border)]/70 bg-[var(--color-page)] shadow-sm">
       {WEEKDAY_OPTIONS.map((day) => {
         const entry = entriesByWeekday.get(day.weekday)
         const isSelected = Boolean(entry)

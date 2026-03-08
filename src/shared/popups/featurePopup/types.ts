@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type FeaturePopupSize = 'sm' | 'md' | 'lg' | 'full'
+export type FeaturePopupSize = 'sm' | 'md' | 'lg' | 'full' | 'mdNoHeight'
 export type FeaturePopupVariant = 'center' | 'side' | 'fullscreen'
 
 export type FeaturePopupShellProps = {

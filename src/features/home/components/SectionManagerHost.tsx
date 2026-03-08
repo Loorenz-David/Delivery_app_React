@@ -47,8 +47,6 @@ export function SectionManagerHost({ stackKey, isBaseOpen, containerClassName, w
 
   
 
-  console.log(sectionManager.getOpenCount())
-
 
   const stack = (
     <AnimatePresence mode="sync">

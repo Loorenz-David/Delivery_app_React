@@ -1,6 +1,8 @@
 import { CloseIcon, ThunderIcon } from "@/assets/icons"
 import { BasicButton } from "@/shared/buttons"
+import { InfoHover } from "@/shared/layout/InfoHover"
 import type { LocalDeliveryEditFormHeaderModel } from "../views/LocalDeliveryEditForm.views.types"
+import { LOCAL_DELIVERY_ROUTE_SOLUTION_PREFERENCES_INFO } from "../info/routeSolutionPreferences.info"
 
 type Props = {
  onClose: ()=>void
@@ -19,7 +21,10 @@ export const LocalDeliveryFormDesktopHeader = ({
                     </div>
                 </div>
                 <div className="min-w-0 pr-3">
-                    <div className="text-sm font-semibold text-[var(--color-text)]">{header.title}</div>
+                    <div className="flex items-center gap-2">
+                        <div className="text-sm font-semibold text-[var(--color-text)]">{header.title}</div>
+                        <InfoHover content={LOCAL_DELIVERY_ROUTE_SOLUTION_PREFERENCES_INFO} />
+                    </div>
                     <div className="flex  text-[9px] text-[var(--color-muted)] gap-2">
                         <span>{header.variant}</span>
                         <span>/</span>

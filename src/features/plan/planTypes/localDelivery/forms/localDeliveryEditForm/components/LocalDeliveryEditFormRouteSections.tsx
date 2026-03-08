@@ -8,6 +8,7 @@ import SegmentedSelect from '@/shared/inputs/SegmentedSelect'
 import { toDateOnly } from '@/shared/data-validation/timeValidation'
 
 import { useLocalDeliveryEditForm } from '../LocalDeliveryEditForm.context'
+import { LOCAL_DELIVERY_ROUTE_END_STRATEGY_INFO } from '../info/routeEndStrategy.info'
 import { LocalDeliveryEditFormSectionGroup } from './LocalDeliveryEditFormSectionGroup'
 
 export const LocalDeliveryEditFormRouteSections = () => {
@@ -31,7 +32,9 @@ export const LocalDeliveryEditFormRouteSections = () => {
           <AddressAutocomplete
             onSelectedAddress={formSetters.handleRouteStartLocation}
             selectedAddress={formState.route_solution.start_location}
-            inputClassName={'text-sm w-full'}
+            fieldClassName={' flex w-full items-center'}
+            containerClassName={' px-4 py-2  gap-2 border border-[var(--color-border-accent)] rounded-lg'}
+            inputClassName={'text-sm w-full '}
             placeholder="search for start address..."
             intentKey={'local-delivery-start-address'}
             enableSavedLocations
@@ -45,6 +48,8 @@ export const LocalDeliveryEditFormRouteSections = () => {
             onChangeDate={formSetters.handlePlanStartDate}
             selectedTime={formState.route_solution.set_start_time}
             onChangeTime={formSetters.handleRouteStartTime}
+            disablePastDate
+            disablePastTime
             datePickerClassName={"py-3 ml-3"}
             timePickerClassName={"py-3"}
           />
@@ -52,9 +57,15 @@ export const LocalDeliveryEditFormRouteSections = () => {
         {formWarnings.planDateWarning.warning && (
           <InputWarning {...formWarnings.planDateWarning.warning} />
         )}
+        {formWarnings.routeStartTimeWarning.warning && (
+          <InputWarning {...formWarnings.routeStartTimeWarning.warning} />
+        )}
       </LocalDeliveryEditFormSectionGroup>
 
-      <LocalDeliveryEditFormSectionGroup label="End">
+      <LocalDeliveryEditFormSectionGroup
+        label="End"
+        info={LOCAL_DELIVERY_ROUTE_END_STRATEGY_INFO}
+      >
         <Field label="">
           <SegmentedSelect
             options={[
@@ -80,7 +91,9 @@ export const LocalDeliveryEditFormRouteSections = () => {
                 <AddressAutocomplete
                   onSelectedAddress={formSetters.handleRouteEndLocation}
                   selectedAddress={formState.route_solution.end_location}
-                  inputClassName={'text-sm w-full'}
+                  fieldClassName={' flex w-full items-center'}
+                  containerClassName={' px-4 py-2  gap-2 border border-[var(--color-border-accent)] rounded-lg'}
+                  inputClassName={'text-sm w-full '}
                   placeholder="search for end address..."
                   intentKey={'local-delivery-end-address'}
                   enableSavedLocations
@@ -96,12 +109,14 @@ export const LocalDeliveryEditFormRouteSections = () => {
             onChangeDate={formSetters.handlePlanEndDate}
             selectedTime={formState.route_solution.set_end_time}
             onChangeTime={formSetters.handleRouteEndTime}
+            disablePastDate
+            disablePastTime
             datePickerClassName={"py-3 ml-3"}
             timePickerClassName={"py-3"}
           />
         </Field>
-        {formWarnings.routeTimeWarning.warning && (
-          <InputWarning {...formWarnings.routeTimeWarning.warning} />
+        {formWarnings.routeEndTimeWarning.warning && (
+          <InputWarning {...formWarnings.routeEndTimeWarning.warning} />
         )}
       </LocalDeliveryEditFormSectionGroup>
     </>

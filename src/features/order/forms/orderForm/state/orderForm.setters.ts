@@ -76,6 +76,12 @@ export const useOrderFormSetters = ({
       preferred_time_start: state.preferred_time_start,
       preferred_time_end: state.preferred_time_end,
     })
+    warnings.deliveryWindowsWarning.validate({
+      earliest_delivery_date: state.earliest_delivery_date,
+      latest_delivery_date: state.latest_delivery_date,
+      preferred_time_start: state.preferred_time_start,
+      preferred_time_end: state.preferred_time_end,
+    })
   }
 
   const updateFormState = (updater: (prev: OrderFormState) => OrderFormState) => {

@@ -1,18 +1,21 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 
-import { BasicButton } from '@/shared/buttons/BasicButton'
-
 import { useItemRules } from '../../domain/useItemRules'
 import { useItemActions } from '../../hooks/useItemActions'
-import { useItemFlow } from '../../hooks/useItemFlow'
+import { shouldRefreshItemsForOrder, useItemFlow } from '../../hooks/useItemFlow'
 import type { Item } from '../../types'
 import { ItemCard } from '../ItemCard'
+import { ItemsOrderPreviewDefaultLayout } from './ItemsOrderPreviewDefault.layout'
+import { ItemsOrderPreviewScrollLayout } from './ItemsOrderPreviewScroll.layout'
+import { ItemsOrderPreviewStickyLayout } from './ItemsOrderPreviewSticky.layout'
 
 export type ItemsOrderPreviewProps = {
   orderId?: number
   controlled?: boolean
   items?: Item[]
+  expectedItemCount?: number | null
+  itemsUpdatedAt?: string | null
   header?: ReactNode
   onAddItem?: () => void
   onEditItem?: (item: Item) => void
@@ -24,6 +27,8 @@ export const ItemsOrderPreview = ({
   orderId,
   controlled = false,
   items: controlledItems,
+  expectedItemCount,
+  itemsUpdatedAt,
   header,
   onAddItem,
   onEditItem,
@@ -37,8 +42,17 @@ export const ItemsOrderPreview = ({
 
   useEffect(() => {
     if (controlled || typeof orderId !== 'number') return
-    void loadItemsByOrderId(orderId)
-  }, [controlled, loadItemsByOrderId, orderId])
+    if (
+      !shouldRefreshItemsForOrder({
+        orderId,
+        itemsUpdatedAt,
+        expectedItemCount,
+      })
+    ) {
+      return
+    }
+    void loadItemsByOrderId(orderId, { itemsUpdatedAt })
+  }, [controlled, expectedItemCount, itemsUpdatedAt, loadItemsByOrderId, orderId])
 
   const resolvedItems: Item[] = controlled ? (controlledItems ?? []) : flowItems
   const resolvedLoading = controlled ? false : isLoadingItems
@@ -63,59 +77,43 @@ export const ItemsOrderPreview = ({
     openCreateItem(orderId)
   }
 
+  const commonLayoutProps = {
+    header,
+    resolvedLoading,
+    resolvedItems,
+    controlled,
+    expandedItemClientId,
+    onToggleExpand: (clientId: string) => {
+      setExpandedItemClientId((current) => (current === clientId ? null : clientId))
+    },
+    onEditItem,
+    orderId,
+    onOpenEditItem: openEditItem,
+    onAddItem: handleAddItem,
+    totalItems: stats.totalItems,
+    totalWeight: stats.totalWeight,
+    totalVolume: stats.totalVolume,
+    testNodes: [],
+  }
+
+  if (stickyHeader) {
+    return (
+      <ItemsOrderPreviewStickyLayout
+        {...commonLayoutProps}
+        enableScrollBody={scrollBody}
+      />
+    )
+  }
+
+  if (scrollBody) {
+    return <ItemsOrderPreviewScrollLayout {...commonLayoutProps} />
+  }
+
   return (
-    <section
-      className="flex h-full min-h-0 w-full flex-col "
-    >
-      {header ?? (
-        <div
-          className={`flex items-center justify-between gap-3 bg-[var(--color-page)] px-5 py-5 shadow-md ${
-            stickyHeader ? 'sticky top-0 ' : ''
-          }`}
-        >
-          <div>
-            <p className="text-sm font-semibold text-[var(--color-text)]">Items</p>
-            <p className="text-xs text-[var(--color-muted)]">
-              {stats.totalItems} items • {stats.totalWeight.toFixed(2)} kg • {stats.totalVolume.toFixed(2)} ㎥
-            </p>
-          </div>
-
-          <BasicButton params={{ variant: 'primary', onClick: handleAddItem, ariaLabel: 'Add item' }}>
-            + Item
-          </BasicButton>
-        </div>
-      )}
-
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 px-5 py-5  ${scrollBody ? 'overflow-y-scroll': ''}`}>
-        {resolvedLoading ? (
-            <div className="text-xs text-[var(--color-muted)]">Loading items...</div>
-          ) : resolvedItems.length ? (
-              resolvedItems.map((item) => (
-                <ItemCard
-                  key={item.client_id}
-                  item={item}
-                  showDelete={!controlled}
-                  isExpanded={expandedItemClientId === item.client_id}
-                  onToggleExpand={() => {
-                    setExpandedItemClientId((current) =>
-                      current === item.client_id ? null : item.client_id,
-                    )
-                  }}
-                  onEdit={
-                    onEditItem
-                      ? () => onEditItem(item)
-                      : () => {
-                          if (typeof orderId !== 'number') return
-                          openEditItem(orderId, item.client_id)
-                        }
-                  }
-                />
-              ))
-          
-          ) : (
-            <div className="text-xs text-[var(--color-muted)]">No items yet.</div>
-          )}
-       </div>
-    </section>
+    <ItemsOrderPreviewDefaultLayout
+      {...commonLayoutProps}
+    />
   )
 }
+
+

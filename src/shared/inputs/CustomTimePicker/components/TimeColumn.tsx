@@ -7,6 +7,7 @@ type TimeColumnProps = {
   values: number[]
   value: number
   onChange: (value: number) => void
+  isValueDisabled?: (value: number) => boolean
   itemHeight?: number
   visibleCount?: number
   formatter?: (value: number) => string
@@ -28,6 +29,7 @@ export const TimeColumn = ({
   values,
   value,
   onChange,
+  isValueDisabled,
   itemHeight = 36,
   visibleCount = 5,
   formatter,
@@ -50,6 +52,7 @@ export const TimeColumn = ({
     value,
     itemHeight,
     onChange,
+    isValueDisabled,
   })
 
   const setScrollNode = useCallback((node: HTMLDivElement | null) => {
@@ -80,7 +83,7 @@ export const TimeColumn = ({
           ref={setScrollNode}
           role="listbox"
           aria-label={label}
-          className="h-full overflow-y-auto"
+          className="h-full overflow-y-auto scroll-thin"
           style={{
             paddingTop: topBottomPadding,
             paddingBottom: topBottomPadding,
@@ -94,18 +97,28 @@ export const TimeColumn = ({
           {values.map((entry, index) => {
             const distance = Math.abs(index - selectedIndex)
             const visual = getVisualStyleByDistance(distance)
+            const isDisabled = isValueDisabled?.(entry) ?? false
 
             return (
               <button
                 key={`${label}-${entry}`}
                 type="button"
                 role="option"
+                disabled={isDisabled}
                 aria-selected={entry === value}
-                onClick={() => onChange(entry)}
-                className="flex w-full items-center justify-center px-2 text-sm text-[var(--color-text)] transition-[transform,opacity] duration-150"
+                onClick={() => {
+                  if (isDisabled) {
+                    return
+                  }
+                  onChange(entry)
+                }}
+                className={`flex w-full items-center justify-center px-2 text-sm transition-[transform,opacity] duration-150 ${isDisabled ? 'cursor-not-allowed text-[var(--color-muted)]/70' : 'text-[var(--color-text)]'}`}
                 style={{
                   height: itemHeight,
                   ...visual,
+                  opacity: isDisabled
+                    ? Math.max((visual.opacity ?? 1) * 0.8, 0.3)
+                    : visual.opacity,
                 }}
               >
                 {formatter ? formatter(entry) : entry}

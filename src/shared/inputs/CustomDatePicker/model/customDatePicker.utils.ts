@@ -1,3 +1,6 @@
+import { formatDateOnlyInTimeZone } from '@/shared/utils/formatIsoDate'
+import { getTeamTimeZone } from '@/shared/utils/teamTimeZone'
+
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const ISO_COMPACT_PATTERN = /^\d{8}$/
 
@@ -123,6 +126,34 @@ export const resolveVisibleMonthAnchor = ({
   }
 
   return normalizeToDay(new Date())
+}
+
+export const resolveTodayInTeamTimeZone = (
+  timeZone = getTeamTimeZone(),
+): Date => {
+  const today = formatDateOnlyInTimeZone(new Date(), timeZone)
+  const parsed = today ? parseIsoDate(today) : null
+  return parsed ?? normalizeToDay(new Date())
+}
+
+export const resolveEffectiveMinDate = ({
+  minDate,
+  disablePast,
+}: {
+  minDate?: Date
+  disablePast?: boolean
+}) => {
+  if (!disablePast) {
+    return minDate
+  }
+
+  const today = resolveTodayInTeamTimeZone()
+  if (!isValidDate(minDate)) {
+    return today
+  }
+
+  const normalizedMin = normalizeToDay(minDate)
+  return normalizedMin.getTime() > today.getTime() ? normalizedMin : today
 }
 
 export const formatCommittedInput = (date: Date | null): string => {

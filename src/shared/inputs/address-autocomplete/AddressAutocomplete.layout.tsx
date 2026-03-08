@@ -12,6 +12,7 @@ import { CURRENT_LOCATION_INPUT_LABEL } from './constants/location.constants'
 type AddressAutocompleteLayoutProps = {
     fieldClassName?: string
     inputClassName?: string
+    containerClassName?:string
     inputStyle?: CSSProperties
     placeholder?: string
 }
@@ -19,6 +20,7 @@ type AddressAutocompleteLayoutProps = {
 export const AddressAutocompleteLayout = ({
     fieldClassName,
     inputClassName,
+    containerClassName,
     inputStyle,
     placeholder,
 }: AddressAutocompleteLayoutProps) => {
@@ -42,9 +44,9 @@ export const AddressAutocompleteLayout = ({
             matchReferenceWidth={ true }
             removeFlip={ true }
             reference={
-                <div className="relative flex">
+                <div className={`relative flex items-center ${containerClassName}`}>
                     {isCurrentLocationMode ? (
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-primary)]">
+                      <span className="pointer-events-none text-[var(--color-primary)]">
                         <CurrentLocationIcon className="h-4 w-4 text-[var(--color-dark-blue)]" />
                       </span>
                     ) : null}
@@ -57,7 +59,7 @@ export const AddressAutocompleteLayout = ({
                           handleToogle({ value: true })
                         } }
                         fieldClassName={fieldClassName}
-                        inputClassName={[inputClassName, isCurrentLocationMode ? 'pl-6' : null].filter(Boolean).join(' ')}
+                        inputClassName={inputClassName}
                         style={inputStyle}
                         value={displayedValue}
                         placeholder={placeholder}

@@ -1,28 +1,28 @@
 import { createListStore } from '@/shared/store/ListStoreFactory'
 import type { ListState } from '@/shared/store/ListStoreFactory'
 
-import type { OrderPagination, OrderQueryFilters, OrderStats } from '../types/orderMeta'
+import type { OrderPagination, OrderQueryStoreFilters, OrderStats } from '../types/orderMeta'
 
 
-export const useOrderListStore = createListStore<OrderStats, OrderQueryFilters, OrderPagination>()
+export const useOrderListStore = createListStore<OrderStats, OrderQueryStoreFilters, OrderPagination>()
 
-export const selectOrderListStats = (state: ListState<OrderStats, OrderQueryFilters, OrderPagination>) => state.stats
+export const selectOrderListStats = (state: ListState<OrderStats, OrderQueryStoreFilters, OrderPagination>) => state.stats
 
 export const selectOrderListPagination = (
-  state: ListState<OrderStats, OrderQueryFilters, OrderPagination>,
+  state: ListState<OrderStats, OrderQueryStoreFilters, OrderPagination>,
 ) => state.pagination
 
-export const selectOrderListQuery = (state: ListState<OrderStats, OrderQueryFilters, OrderPagination>) => state.query
+export const selectOrderListQuery = (state: ListState<OrderStats, OrderQueryStoreFilters, OrderPagination>) => state.query
 
-export const selectOrderListLoading = (state: ListState<OrderStats, OrderQueryFilters, OrderPagination>) =>
+export const selectOrderListLoading = (state: ListState<OrderStats, OrderQueryStoreFilters, OrderPagination>) =>
   state.isLoading
 
-export const selectOrderListError = (state: ListState<OrderStats, OrderQueryFilters, OrderPagination>) =>
+export const selectOrderListError = (state: ListState<OrderStats, OrderQueryStoreFilters, OrderPagination>) =>
   state.error
 
 export const setOrderListResult = (payload: {
   queryKey: string
-  query?: OrderQueryFilters
+  query?: OrderQueryStoreFilters
   stats?: OrderStats
   pagination?: OrderPagination
 }) => useOrderListStore.getState().setResult(payload)

@@ -57,7 +57,7 @@ export const DeliveryWindowCalendarDayPopover = ({
         ) : (
           <>
             <div className="mb-2 px-2 text-xs font-semibold text-[var(--color-text)]">{localDate}</div>
-            <div className="mb-2 max-h-44 overflow-y-auto px-1">
+            <div className="mb-2 max-h-44 overflow-y-auto scroll-thin px-1">
               {rows.length ? (
                 <div className="flex flex-col gap-1 max-h-[200px]">
                   {rows.map((row) => (

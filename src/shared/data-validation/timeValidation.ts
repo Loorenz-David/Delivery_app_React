@@ -1,4 +1,6 @@
 import { validateString } from './stringValidation'
+import { formatDateOnlyInTimeZone } from '@/shared/utils/formatIsoDate'
+import { getTeamTimeZone } from '@/shared/utils/teamTimeZone'
 
 
 
@@ -76,6 +78,55 @@ export const toDateOnly = (value: string | Date | null) => {
   return trimmed.split(/[T\s]/)[0]
 }
 
+export const isDateOnOrAfterToday = (
+  value: string | Date | null | undefined,
+  timeZone = getTeamTimeZone(),
+) => {
+  const candidate = formatDateOnlyInTimeZone(value ?? null, timeZone)
+  const today = formatDateOnlyInTimeZone(new Date(), timeZone)
+
+  if (!candidate || !today) {
+    return false
+  }
+
+  return candidate >= today
+}
+
+export const isDateTimeOnOrAfterNow = (
+  dateValue: string | Date | null | undefined,
+  timeValue: string | null | undefined,
+  timeZone = getTeamTimeZone(),
+) => {
+  const candidateDate = formatDateOnlyInTimeZone(dateValue ?? null, timeZone)
+  const today = formatDateOnlyInTimeZone(new Date(), timeZone)
+
+  if (!candidateDate || !today) {
+    return false
+  }
+
+  if (candidateDate > today) {
+    return true
+  }
+
+  if (candidateDate < today) {
+    return false
+  }
+
+  const normalizedTime = normalizeHhmmValue(timeValue)
+  if (!normalizedTime) {
+    return true
+  }
+
+  const currentTime = new Intl.DateTimeFormat('sv-SE', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date())
+
+  return normalizedTime >= currentTime
+}
+
 export const applyTimezone = (value: string | Date, timeZone?: string) => {
   if (!timeZone) {
     const date = value instanceof Date ? value : new Date(value)
@@ -143,4 +194,30 @@ export const coerceUtcFromOffset = (value: string | Date) => {
   const millis = milliPart ? milliPart.padEnd(3, '0').slice(0, 3) : '000'
 
   return new Date(`${datePart}T${timePart}.${millis}Z`)
+}
+
+const normalizeHhmmValue = (value: string | null | undefined) => {
+  if (!validateString(value ?? '')) {
+    return null
+  }
+
+  const parts = String(value).trim().split(':')
+  if (parts.length < 2) {
+    return null
+  }
+
+  const hours = Number(parts[0])
+  const minutes = Number(parts[1])
+  if (
+    Number.isNaN(hours)
+    || Number.isNaN(minutes)
+    || hours < 0
+    || hours > 23
+    || minutes < 0
+    || minutes > 59
+  ) {
+    return null
+  }
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
 }

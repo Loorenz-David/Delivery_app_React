@@ -13,6 +13,7 @@ type CustomDatePickerDesktopViewProps = {
   visibleMonth: Date
   disabled?: boolean
   className?: string
+  renderPopoverInPortal?: boolean
   minDate?: Date
   maxDate?: Date
   inputRef: RefObject<HTMLInputElement | null>
@@ -33,6 +34,7 @@ export const CustomDatePickerDesktopView = ({
   visibleMonth,
   disabled,
   className,
+  renderPopoverInPortal,
   minDate,
   maxDate,
   inputRef,
@@ -56,6 +58,7 @@ export const CustomDatePickerDesktopView = ({
         onClose()
       }}
       classes='relative'
+      renderInPortal={renderPopoverInPortal}
       reference={
         <CustomDatePickerInput
           value={inputValue}

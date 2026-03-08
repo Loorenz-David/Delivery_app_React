@@ -137,7 +137,7 @@ const DELIVERY_WINDOW_CALENDAR_SHELL_PRESETS: Record<
       subtitleClassName: 'mt-1 text-[11px] text-[var(--color-muted)]',
       clearActionClassName:
         'h-auto border-0 bg-transparent px-0 py-0 text-[9px] font-normal normal-case tracking-normal text-[var(--color-muted)] underline hover:bg-transparent',
-      groupsClassName: 'flex flex-col gap-3 h-full px-3 overflow-y-auto pb-10',
+      groupsClassName: 'flex flex-col gap-3 h-full px-3 overflow-y-auto scroll-thin pb-10',
       groupClassName: 'flex flex-col gap-1.5',
       groupDateClassName: 'text-[10px] font-semibold text-[var(--color-text)]',
       windowsStackClassName: 'flex flex-col gap-1.5',

@@ -27,7 +27,7 @@ export const PrintTemplateMainPage = () => {
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto gap-4 bg-[var(--color-muted)]/15 p-4">
+      <div className="min-h-0 flex-1 overflow-auto scroll-thin gap-4 bg-[var(--color-muted)]/15 p-4">
         <Outlet />
       </div>
     </div>

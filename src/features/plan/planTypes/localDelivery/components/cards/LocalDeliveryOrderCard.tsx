@@ -22,7 +22,7 @@ type LocalDeliveryOrderCardProps = {
 export const LocalDeliveryOrderCard = ({ order, stop, displayStopOrder, planStartDate }: LocalDeliveryOrderCardProps) => {
     const {openOrderDetail} = useOrderActions()
     const mapManager = useMapManager()
-    const orderLabel = order.reference_number ?? 'undf'
+    const orderLabel = order.order_scalar_id != null ? `#${order.order_scalar_id}` : '#—'
     const streetAddress = order.client_address?.street_address ?? 'No address'
     const expectedArrival = stop && stop.expected_arrival_time !== 'loading'  ? formatRouteTime(stop.expected_arrival_time, planStartDate) : null
     const itemCount = order.total_items ?? 0
@@ -42,7 +42,6 @@ export const LocalDeliveryOrderCard = ({ order, stop, displayStopOrder, planStar
         
     }
     
-
 
     return ( 
         <div className="flex flex-col gap-3 rounded-2xl border border-[var(--color-muted)]/30 bg-white p-4 pl-2 "

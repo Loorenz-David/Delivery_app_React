@@ -1,6 +1,7 @@
 import type { RefObject } from 'react'
 
 import { hasFormChanges } from '@/shared/data-validation/compareChanges'
+import { isDateOnOrAfterToday } from '@/shared/data-validation/timeValidation'
 
 import type { DeliveryPlan } from '../../types/plan'
 import type { PlanWarningsControllers, PlanTypeState } from './PlanForm.types'
@@ -22,7 +23,9 @@ export const usePlanFormValidation = ({
 
         const valid =[
             v.planNameWarning.validate(planForm.label),
-            v.planStartDateWarning.validate({start_date: planForm.start_date, end_date: planForm.end_date })
+            v.planStartDateWarning.validate({start_date: planForm.start_date, end_date: planForm.end_date }),
+            isDateOnOrAfterToday(planForm.start_date),
+            isDateOnOrAfterToday(planForm.end_date),
         ]
         
         return valid.every( v => v === true)

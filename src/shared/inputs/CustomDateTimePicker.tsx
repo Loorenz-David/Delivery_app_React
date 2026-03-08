@@ -8,6 +8,8 @@ type CustomDateTimePickerProps = {
   onChangeDate?: (value: string | null) => void
   selectedTime?: string | null
   onChangeTime?: (value: string | null) => void
+  disablePastDate?: boolean
+  disablePastTime?: boolean
   className?: string
   dateSectionClassName?: string
   timeSectionClassName?: string
@@ -20,6 +22,8 @@ export const CustomDateTimePicker = ({
   onChangeDate,
   selectedTime,
   onChangeTime,
+  disablePastDate = false,
+  disablePastTime = false,
   className,
   dateSectionClassName,
   timeSectionClassName,
@@ -164,6 +168,7 @@ export const CustomDateTimePicker = ({
         <CustomDatePicker
           date={date}
           onChange={handleDateChange}
+          disablePast={disablePastDate}
           className={datePickerClassName}
           open={isDatePickerOpen}
           onOpenChange={handleDatePickerOpenChange}
@@ -192,6 +197,7 @@ export const CustomDateTimePicker = ({
         <CustomTimePicker
           selectedTime={resolvedTime}
           onChange={(value) => handleTimeChange(value || null)}
+          disablePastForDate={disablePastTime ? (date ?? lastSelectedDateRef.current) : null}
           containerClassName={timePickerClassName}
           open={isTimePickerOpen}
           onOpenChange={handleTimePickerOpenChange}

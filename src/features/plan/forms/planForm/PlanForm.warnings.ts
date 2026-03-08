@@ -1,6 +1,9 @@
 import { useInputWarning } from '@/shared/inputs/useInputWarning.hook'
 import { validateString } from '@/shared/data-validation/stringValidation'
-import { validateDateComparison } from '@/shared/data-validation/timeValidation'
+import {
+    isDateOnOrAfterToday,
+    validateDateComparison,
+} from '@/shared/data-validation/timeValidation'
 
 export const usePlanFormWarnings = () => {
 
@@ -20,6 +23,14 @@ export const usePlanFormWarnings = () => {
                 setWarningMessage("Plan must have a start date")
                 return false
             }
+            if ( !isDateOnOrAfterToday(start_date) ){
+                setWarningMessage("Plan start date cannot be in the past")
+                return false
+            }
+            if (validateString(end_date) && !isDateOnOrAfterToday(end_date)) {
+                setWarningMessage("Plan end date cannot be in the past")
+                return false
+            }
             if ( !validateDateComparison( start_date, end_date ) ){
                 setWarningMessage("'From' date must be set before 'To' date")
                 return false
@@ -34,5 +45,4 @@ export const usePlanFormWarnings = () => {
         planStartDateWarning
     }
 }
-
 

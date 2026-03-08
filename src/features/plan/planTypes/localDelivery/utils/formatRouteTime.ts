@@ -1,18 +1,35 @@
+import { formatIsoToTeamTimeZone } from '@/shared/utils/teamTimeZone'
+
 export const formatRouteTime = (
   value?: string | null,
-  planStartDate?: string | 'today' | null,
+  planStartDateOrForceDate?: string | 'today' | boolean | null,
+  forceDateOrFallback?: boolean | string,
   fallback: string = '--',
 ) => {
   if (!value) return fallback
-  const parsed = new Date(value)
+
+  const forceDate = typeof forceDateOrFallback === 'boolean'
+    ? forceDateOrFallback
+    : typeof planStartDateOrForceDate === 'boolean'
+      ? planStartDateOrForceDate
+      : false
+
+  const resolvedFallback = typeof forceDateOrFallback === 'string'
+    ? forceDateOrFallback
+    : fallback
+
+  const teamIso = formatIsoToTeamTimeZone(value)
+  if (!teamIso) return resolvedFallback
+
+  const parsed = new Date(teamIso)
   if (Number.isNaN(parsed.getTime())) return value
 
-  const timePart = parsed.toLocaleTimeString('en-GB', {
-    timeZone: 'UTC',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
+  const planStartDate =
+    typeof planStartDateOrForceDate === 'string' || planStartDateOrForceDate === null
+      ? planStartDateOrForceDate
+      : null
+
+  const timePart = teamIso.slice(11, 16)
 
   if (!planStartDate) return timePart
 
@@ -24,18 +41,17 @@ export const formatRouteTime = (
   if (Number.isNaN(planDate.getTime())) return timePart
 
   const sameDay =
-    parsed.getUTCFullYear() === planDate.getUTCFullYear() &&
-    parsed.getUTCMonth() === planDate.getUTCMonth() &&
-    parsed.getUTCDate() === planDate.getUTCDate()
+    parsed.getFullYear() === planDate.getFullYear() &&
+    parsed.getMonth() === planDate.getMonth() &&
+    parsed.getDate() === planDate.getDate()
   
-  if(sameDay && planStartDate === 'today'){
+  if(sameDay && (planStartDate === 'today' || forceDate)){
     return `Today - ${timePart}`
   }
   
   if (sameDay) return timePart
 
   const datePart = parsed.toLocaleDateString('en-US', {
-    timeZone: 'UTC',
     month: 'short',
     day: 'numeric',
   })

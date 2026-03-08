@@ -14,6 +14,13 @@ export interface isMobileObject {
   setIsMobileViewport: (isMobile: boolean) => void
 }
 
+export type PlanDropFeedback = {
+  planClientId: string
+  movedCount: number
+  status: 'success' | 'error'
+  token: string
+}
+
 export type KnownResourceRegistry = {
   popupManager?: StackActionManager<Record<string, unknown>>
   sectionManager?: StackActionManager<Record<string, unknown>>
@@ -22,7 +29,7 @@ export type KnownResourceRegistry = {
   popupConfirmationManager?: StackActionManager<Record<string, unknown>>
   isMobileObject?: isMobileObject
   baseControlls?: BaseControls<unknown>
-  droppedInPlan?: string | null
+  planDropFeedback?: PlanDropFeedback | null
   routeReorderPreview?: unknown
 }
 

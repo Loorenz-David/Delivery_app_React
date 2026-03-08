@@ -3,6 +3,7 @@ import type { PlanTypeDefaults, PlanTypeKey } from '@/features/plan/types/plan'
 
 export type PlanTypeDefaultsContext = {
   getCurrentLocationAddress: () => Promise<address>
+  planStartDate?: string | Date | null
 }
 
 export type PlanTypeDefaultsGenerator = (

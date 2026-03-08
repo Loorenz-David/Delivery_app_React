@@ -5,6 +5,7 @@ import type { address } from '@/types/address'
 import { SectionHeader } from '@/shared/section-panel/SectionHeader'
 import { DimensionsIcon, ItemIcon, OrderIcon, StatsIcon, WeightIcon } from '@/assets/icons'
 import { formatMetric } from '@/shared/utils/formatMetrics'
+import { formatIsoToTeamTimeZone } from '@/shared/utils/teamTimeZone'
 import { coerceUtcFromOffset } from '@/shared/data-validation/timeValidation'
 import { formatRouteTime } from '@/features/plan/planTypes/localDelivery/utils/formatRouteTime'
 import { useOrdersByPlanId } from '@/features/order/store/orderHooks.store'
@@ -107,7 +108,7 @@ export const LocalDeliveryStatsPage = ({ payload }: LocalDeliveryStatsPageProps)
   }, [routeSolution?.has_route_warnings, routeSolution?.route_warnings])
 
   return (
-    <div className="w-full h-full flex flex-col bg-[var(--color-primary)]/2 overflow-y-auto">
+    <div className="w-full h-full flex flex-col bg-[var(--color-primary)]/2 overflow-y-auto scroll-thin">
       <SectionHeader
         title={headerTitle}
         headerButtonsBgClass={"bg-[var(--color-primary)]/2"}
@@ -224,10 +225,10 @@ const resolveId = (value: number | string | null | undefined) => {
 
 const formatDate = (value?: string | null) => {
   if (!value) return '—'
-  const date = coerceUtcFromOffset(value)
+  const teamIso = formatIsoToTeamTimeZone(value)
+  const date = coerceUtcFromOffset(teamIso)
   if (!date || Number.isNaN(date.getTime())) return '—'
   return date.toLocaleDateString('en-US', {
-    timeZone: 'UTC',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -236,10 +237,10 @@ const formatDate = (value?: string | null) => {
 
 const formatDateFromIso = (value?: string | null) => {
   if (!value) return '—'
-  const date = coerceUtcFromOffset(value)
+  const teamIso = formatIsoToTeamTimeZone(value)
+  const date = coerceUtcFromOffset(teamIso)
   if (!date || Number.isNaN(date.getTime())) return '—'
   return date.toLocaleDateString('en-US', {
-    timeZone: 'UTC',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -247,7 +248,7 @@ const formatDateFromIso = (value?: string | null) => {
 }
 
 const formatTimeFromIso = (value?: string | null) =>
-  formatRouteTime(value, null, '—')
+  formatRouteTime(value, null)
 
 const formatDistance = (meters?: number | null) => {
   if (!Number.isFinite(meters)) return '—'
@@ -325,12 +326,12 @@ const formatOptimizeStatus = (value?: string | null) => {
 
 const buildWarningMeta = (warning: Record<string, unknown>, planStartDate?: string | null) => {
   if (typeof warning.route_expected_end === 'string' || typeof warning.route_allowed_end === 'string') {
-    const expected = formatRouteTime(warning.route_expected_end as string | null, planStartDate, '—')
-    const allowed = formatRouteTime(warning.route_allowed_end as string | null, planStartDate, '—')
+    const expected = formatRouteTime(warning.route_expected_end as string | null, planStartDate)
+    const allowed = formatRouteTime(warning.route_allowed_end as string | null, planStartDate)
     return `Expected ${expected} · Allowed ${allowed}`
   }
   if (typeof warning.expected_time === 'string') {
-    const expected = formatRouteTime(warning.expected_time as string | null, planStartDate, '—')
+    const expected = formatRouteTime(warning.expected_time as string | null, planStartDate)
     return `Expected ${expected}`
   }
   return null

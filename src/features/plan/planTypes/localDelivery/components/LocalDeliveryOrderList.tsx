@@ -77,7 +77,7 @@ export const LocalDeliveryOrderList = () => {
    
     return ( 
         <div className="flex h-full min-h-0 flex-col overflow-x-hidden">
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 ">
+            <div className="flex-1 min-h-0 overflow-y-auto scroll-thin px-4 ">
                 <div className="flex flex-col gap-4  h-full ">
                     { boundaryLocations.start.location &&
                         <LocalDeliveryBoundaryLocationCard

@@ -9,6 +9,7 @@ import type { FeaturePopupShellProps } from './types'
 const sizeClassMap = {
   sm: 'w-[min(520px,96vw)] h-[min(86vh,760px)]',
   md: 'w-[min(600px,96vw)] h-[min(88vh,820px)]',
+  mdNoHeight:'w-[min(600px,96vw)]',
   lg: 'w-[min(860px,96vw)] h-[min(90vh,900px)]',
   full: 'w-[min(1140px,98vw)] h-[min(92vh,960px)]',
 } as const

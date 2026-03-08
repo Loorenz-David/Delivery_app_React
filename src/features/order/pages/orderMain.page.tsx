@@ -1,5 +1,8 @@
+import type { RefObject } from 'react'
+import { useRef } from 'react'
 
 import type { StackComponentProps } from '@/shared/stack-manager/types'
+import { BasicButton } from '@/shared/buttons/BasicButton'
 
 import { OrderMainHeader } from '../components/pageHeaders/OrderMainHeader'
 import { OrderList } from '../components/lists/OrderList'
@@ -7,7 +10,7 @@ import { OrderProvider } from '../context/OrderProvider'
 import { useOrderContext } from '../context/OrderContext'
 import type { Order } from '../types/order'
 
-const OrderMainContent = () => {
+const OrderMainContent = ({ scrollContainerRef }: { scrollContainerRef: RefObject<HTMLDivElement | null> }) => {
   const {
     orders,
     orderActions,
@@ -19,6 +22,10 @@ const OrderMainContent = () => {
     hoveredClientId,
     handleOrderRowMouseEnter,
     handleOrderRowMouseLeave,
+    currentPage,
+    hasMorePages,
+    isLoadingNextPage,
+    loadNextPage,
   } = useOrderContext()
 
   const handleOpenOrder = (order: Order) => {
@@ -45,9 +52,10 @@ const OrderMainContent = () => {
         orderStats={orderStats}
 
       />
-      <div className="flex-1 overflow-y-auto p-2">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-thin p-2">
         <OrderList
           orders={orders}
+          scrollContainerRef={scrollContainerRef}
           isSelectionMode={isSelectionMode}
           isOrderSelected={isOrderSelected}
           onToggleSelection={orderSelectionActions.handleToggleOrderSelection}
@@ -58,13 +66,29 @@ const OrderMainContent = () => {
           onOrderMouseEnter={handleOrderRowMouseEnter}
           onOrderMouseLeave={handleOrderRowMouseLeave}
         />
+        <div className="flex justify-center pb-6 pt-2">
+          <BasicButton
+            params={{
+              onClick: () => { void loadNextPage() },
+              disabled: isLoadingNextPage || !hasMorePages,
+              variant: 'secondary',
+              ariaLabel: 'Load next page of orders',
+            }}
+          >
+            {isLoadingNextPage ? 'Loading…' : hasMorePages ? `Next Page (${currentPage + 1})` : 'No more orders'}
+          </BasicButton>
+        </div>
       </div>
     </div>
   )
 }
 
-export const OrderMainPage = (_: StackComponentProps<undefined>) => (
-  <OrderProvider>
-    <OrderMainContent />
-  </OrderProvider>
-)
+export const OrderMainPage = (_: StackComponentProps<undefined>) => {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+
+  return (
+    <OrderProvider scrollContainerRef={scrollContainerRef}>
+      <OrderMainContent scrollContainerRef={scrollContainerRef} />
+    </OrderProvider>
+  )
+}

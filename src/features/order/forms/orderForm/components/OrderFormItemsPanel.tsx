@@ -52,7 +52,7 @@ export const OrderFormItemsPanel = ({
         },
       }}
     >
-      <div className="relative h-full w-full rounded-lg border border-[var(--color-muted)]/20 shadow-sm">
+      <div className="relative h-full w-full min-h-0 rounded-lg border border-[var(--color-muted)]/20 shadow-sm">
         <AnimatePresence mode="wait" initial={false}>
           {isItemEditorOpen && itemEditorPayload ? (
             <motion.div
@@ -81,7 +81,7 @@ export const OrderFormItemsPanel = ({
                   </BasicButton>
                 </div>
 
-                <div className="h-full w-full min-h-0 overflow-y-auto">
+                <div className="h-full w-full min-h-0 overflow-y-auto scroll-thin">
                   <ItemFormProvider payload={itemEditorPayload} onSuccessClose={closeItemEditor}>
                     <ItemFormLayout />
                   </ItemFormProvider>
@@ -95,7 +95,7 @@ export const OrderFormItemsPanel = ({
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -24, opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex min-h-0 flex-1 flex-col bg-[var(--color-muted)]/10"
+              className="flex min-h-0 h-full flex-col   bg-[var(--color-ligth-bg)]"
             >
               {isLoadingInitialItems ? (
                 <div className="px-4 py-3 text-xs text-[var(--color-muted)]">Loading items...</div>
@@ -105,7 +105,8 @@ export const OrderFormItemsPanel = ({
                   items={visibleItemDrafts}
                   onAddItem={openItemCreateForm}
                   onEditItem={openItemEditForm}
-                  stickyHeader
+
+                  scrollBody
                 />
               )}
             </motion.div>

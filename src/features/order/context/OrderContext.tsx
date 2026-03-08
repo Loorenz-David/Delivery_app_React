@@ -17,6 +17,10 @@ export type OrderContextValue = {
   hoveredClientId: string | null
   handleOrderRowMouseEnter: (order: Order) => void
   handleOrderRowMouseLeave: () => void
+  currentPage: number
+  hasMorePages: boolean
+  isLoadingNextPage: boolean
+  loadNextPage: () => Promise<unknown>
   query: {
     q: string
     filters: OrderQueryFilters

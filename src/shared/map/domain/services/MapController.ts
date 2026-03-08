@@ -1,4 +1,4 @@
-import type { MapAdapter, MapConfig, MapViewportInsets } from '../types'
+import type { MapAdapter, MapBounds, MapConfig, MapViewportInsets, SetMarkerLayerOptions } from '../types'
 import type { MapOrder } from '../entities/MapOrder'
 import type { Route } from '../entities/Route'
 import { MAP_MARKER_LAYERS } from '../constants/markerLayers'
@@ -27,11 +27,11 @@ export class MapController {
     this.adapter.setHoveredMarker(id)
   }
   showOrders(orders: MapOrder[]) {
-    this.adapter.setLayerMarkers(MAP_MARKER_LAYERS.default, orders)
+    this.adapter.setLayerMarkers(MAP_MARKER_LAYERS.default, orders, { fitBounds: true })
   }
 
-  setMarkerLayer(layerId: string, orders: MapOrder[]) {
-    this.adapter.setLayerMarkers(layerId, orders)
+  setMarkerLayer(layerId: string, orders: MapOrder[], options?: SetMarkerLayerOptions) {
+    this.adapter.setLayerMarkers(layerId, orders, options)
   }
 
   setMarkerLayerVisibility(layerId: string, visible: boolean) {
@@ -64,6 +64,10 @@ export class MapController {
 
   reframeToVisibleArea() {
     this.adapter.reframeToVisibleArea()
+  }
+
+  subscribeBoundsChanged(callback: (bounds: MapBounds | null) => void) {
+    return this.adapter.subscribeBoundsChanged(callback)
   }
 
   resize(){

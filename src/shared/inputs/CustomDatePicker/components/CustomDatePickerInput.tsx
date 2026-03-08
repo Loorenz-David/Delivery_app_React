@@ -21,7 +21,7 @@ export const CustomDatePickerInput = ({
   value,
   showTodayLabel,
   disabled,
-  className,
+  className = fieldContainer,
   onOpen,
   onBlur,
   onKeyDown,
@@ -30,7 +30,7 @@ export const CustomDatePickerInput = ({
 }: CustomDatePickerInputProps) => {
   return (
     <div
-      className={`${fieldContainer} flex items-center gap-2 ${disabled ? 'opacity-60' : ''} ${className ?? ''}`}
+      className={`flex items-center gap-2 ${disabled ? 'opacity-60' : ''} ${className ?? ''}`}
       onClick={() => {
         if (disabled) return
         onOpen()

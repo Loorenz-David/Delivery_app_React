@@ -90,7 +90,7 @@ export const CostumerSearchBar = ({
         hideFilterIcon
       />
 
-      <div className="mt-2  overflow-y-auto rounded-lg border border-[var(--color-border)]/60 bg-[var(--color-page)]/50">
+      <div className="mt-2  overflow-y-auto scroll-thin rounded-lg border border-[var(--color-border)]/60 bg-[var(--color-page)]/50">
           <div className="flex w-full justify start items-center py-2 px-3 gap-3 cursor-pointer hover:bg-[var(--color-muted)]/10"
             onClick={()=>handleStartCreate()}
           > 

@@ -11,14 +11,12 @@ import type { PlanQueryFilters } from '@/features/plan/types/planMeta'
 import { insertPlans, selectPlanByServerId, upsertPlan, usePlanStore } from '@/features/plan/store/plan.slice'
 import {
   setPlanListError,
-  setPlanListLoading,
-  setPlanListResult,
 } from '@/features/plan/store/planList.store'
 import { upsertInternationalShippingPlans } from '@/features/plan/planTypes/internationalShipping/store/internationalShipping.slice'
 import { upsertLocalDeliveryPlans } from '@/features/plan/planTypes/localDelivery/store/localDelivery.slice'
 import { upsertStorePickupPlans } from '@/features/plan/planTypes/storePickup/store/storePickup.slice'
 
-const buildQueryKey = (query?: PlanQueryFilters) => JSON.stringify(query ?? {})
+export const buildPlanQueryKey = (query?: PlanQueryFilters) => JSON.stringify(query ?? {})
 
 
 
@@ -49,10 +47,8 @@ const upsertPlanTypePayload = (
 export function usePlanQueries() {
   const { showMessage } = useMessageHandler()
 
-  const fetchPlans = useCallback(
+  const fetchPlansPage = useCallback(
     async (query?: PlanQueryFilters) => {
-      const queryKey = buildQueryKey(query)
-      setPlanListLoading(true)
       try {
         const response = await planApi.listPlans(query)
 
@@ -65,13 +61,6 @@ export function usePlanQueries() {
         }
 
         insertPlans(payload.delivery_plan)
-        setPlanListResult({
-          queryKey,
-          query,
-          stats: payload.delivery_plan_stats,
-          pagination: payload.delivery_plan_pagination,
-        })
-
         return payload
       } catch (error) {
         const message = error instanceof ApiError ? error.message : 'Unable to load delivery plans.'
@@ -145,7 +134,7 @@ export function usePlanQueries() {
   )
 
   return {
-    fetchPlans,
+    fetchPlansPage,
     fetchPlanById,
     fetchPlanTypeForPlan,
   }

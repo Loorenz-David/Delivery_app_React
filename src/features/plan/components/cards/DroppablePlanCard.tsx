@@ -18,14 +18,16 @@ export const DroppablePlanCard = ({ plan }: PropsPlanCard) => {
         }
 
     })
-    const { droppedInPlan } = useResourceManager()
-    const isDropped = Boolean(droppedInPlan && droppedInPlan == plan.client_id)
+    const { planDropFeedback } = useResourceManager()
+    const planFeedback = planDropFeedback && planDropFeedback.planClientId === plan.client_id
+      ? planDropFeedback
+      : null
 
     return(
         <div
             ref={setNodeRef}
         >
-            <PlanCard plan={plan} isOver={isOver} isDropped={isDropped} />
+            <PlanCard plan={plan} isOver={isOver} dropFeedback={planFeedback} />
         </div>
     )
 }

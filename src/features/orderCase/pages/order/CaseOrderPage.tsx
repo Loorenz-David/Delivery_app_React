@@ -24,7 +24,7 @@ const CaseOrderPageContent = ({ orderId, orderReference }: { orderId: number; or
         }}
       />
 
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto scroll-thin p-3">
         <OrderCaseList
           cases={cases}
           onOpenCase={caseOrderActions.openCaseDetails}

@@ -58,7 +58,7 @@ export const EmailTemplateEditorPage = () => {
             </BasicButton>
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto scroll-thin p-6">
         <h2 className="text-base font-semibold text-[var(--color-text)]">{activeTrigger.label}</h2>
         <p className="text-sm text-[var(--color-muted)]">{activeTrigger.description}</p>
 

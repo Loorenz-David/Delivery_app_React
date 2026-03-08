@@ -5,9 +5,11 @@ import { InputField } from '@/shared/inputs/InputField'
 import { PhoneField } from '@/shared/inputs/PhoneField'
 import { AddressAutocomplete } from '@/shared/inputs/address-autocomplete/AddressAutocomplete'
 import { Cell, SplitRow } from '@/shared/layout/cells'
+import { InfoHover } from '@/shared/layout/InfoHover'
 
 import type { CostumerFormLayoutModel } from '../CostumerForm.layout.model'
 import { CostumerOperatingHoursEditor } from './CostumerOperatingHoursEditor'
+import { COSTUMER_OPERATING_HOURS_INFO } from '../info/operatingHours.info'
 
 type CostumerFormFieldsProps = {
   model: CostumerFormLayoutModel
@@ -29,7 +31,7 @@ export const CostumerFormFields = ({ model, compact = false }: CostumerFormField
         compact ? 'pb-24' : 'h-full pb-[100px]'
       }`}
     >
-      <div className="rounded-2xl border border-[var(--color-border-accent)] bg-[var(--color-page)]">
+      <div className="rounded-2xl border border-[var(--color-border-accent)] bg-[var(--color-page)] shadow-sm">
 
         <SplitRow splitRowClass="grid grid-cols-1 divide-[var(--color-border-accent)] border-t-0">
           <Cell>
@@ -108,11 +110,16 @@ export const CostumerFormFields = ({ model, compact = false }: CostumerFormField
         <SplitRow splitRowClass="grid grid-cols-1 divide-[var(--color-border-accent)]">
           <Cell>
             <Field warningPlacement="besidesLabel" label="Default Address:">
-              <AddressAutocomplete
-                onSelectedAddress={model.formSetters.handleDefaultAddress}
-                selectedAddress={defaultAddress}
-                fieldClassName=""
-              />
+
+                <AddressAutocomplete
+                  onSelectedAddress={model.formSetters.handleDefaultAddress}
+                  selectedAddress={defaultAddress}
+                  fieldClassName={' flex w-full items-center'}
+                  containerClassName={' px-4 py-2  gap-2'}
+                  inputClassName={'text-sm w-full '}
+                  enableCurrentLocation
+                />
+
             </Field>
           </Cell>
         </SplitRow>
@@ -121,9 +128,12 @@ export const CostumerFormFields = ({ model, compact = false }: CostumerFormField
       </div>
       <div className="flex px-2 py-5">
         <div className="flex w-full flex-col gap-1">
-          <span className="text-[10px] font-semibold text-[var(--color-muted)]">
-            Operating Hours:
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-[var(--color-muted)]">
+              Operating Hours:
+            </span>
+            <InfoHover content={COSTUMER_OPERATING_HOURS_INFO} />
+          </div>
           <CostumerOperatingHoursEditor model={model} />
           <InputWarning {...model.warnings.operatingHoursWarning.warning} />
         </div>

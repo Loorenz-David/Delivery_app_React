@@ -95,6 +95,19 @@ export const setOrder = (order: Order) => {
 export const setVisibleOrders = (clientIds: string[] | null) =>
   useOrderStore.getState().setVisibleIds(clientIds)
 
+export const appendVisibleOrders = (clientIds: string[]) => {
+  if (clientIds.length === 0) return
+
+  const { visibleIds, setVisibleIds } = useOrderStore.getState()
+  const existingIds = visibleIds ?? []
+  const existingIdSet = new Set(existingIds)
+  const dedupedIncoming = clientIds.filter((clientId) => !existingIdSet.has(clientId))
+
+  if (dedupedIncoming.length === 0) return
+
+  setVisibleIds([...existingIds, ...dedupedIncoming])
+}
+
 export const addVisibleOrder = (clientId: string) => {
   const { visibleIds, setVisibleIds } = useOrderStore.getState()
   if (!visibleIds) return
