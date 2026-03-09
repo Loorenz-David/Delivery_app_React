@@ -4,35 +4,44 @@ export type LocalDeliveryDriverOverlayStats = {
   registration: string
 }
 
-export type LocalDeliveryRouteSummaryStats = {
-  distanceLabel: string
-  durationLabel: string
-  pickupCount: number
-  dropoffCount: number
-}
-
-export type LocalDeliveryGaugeMetric = {
-  type: 'gauge'
+export type LocalDeliverySummaryMetric = {
   id: string
   label: string
-  value: number
+  value: string
+}
+
+export type LocalDeliveryRouteSummaryStats = {
+  rows: [
+    [LocalDeliverySummaryMetric, LocalDeliverySummaryMetric, LocalDeliverySummaryMetric],
+    [LocalDeliverySummaryMetric, LocalDeliverySummaryMetric, LocalDeliverySummaryMetric],
+    [LocalDeliverySummaryMetric, LocalDeliverySummaryMetric, LocalDeliverySummaryMetric],
+  ]
+}
+
+export type LocalDeliveryGaussianMetricFace = {
+  id: string
+  label: string
   displayValue: string
+  progressValue: number
   accentClassName?: string
 }
 
-export type LocalDeliveryValueMetric = {
-  type: 'value'
+export type LocalDeliveryGaussianMetricCard = {
+  id: string
+  faces: LocalDeliveryGaussianMetricFace[]
+}
+
+export type LocalDeliveryConsumptionMetric = {
   id: string
   label: string
   displayValue: string
 }
-
-export type LocalDeliveryOverlayMetric =
-  | LocalDeliveryGaugeMetric
-  | LocalDeliveryValueMetric
 
 export type LocalDeliveryStatsOverlayData = {
   routeSummary: LocalDeliveryRouteSummaryStats
   driver: LocalDeliveryDriverOverlayStats
-  metrics: LocalDeliveryOverlayMetric[]
+  gaussianCards: LocalDeliveryGaussianMetricCard[]
+  consumptionMetrics: LocalDeliveryConsumptionMetric[]
 }
+
+export type LocalDeliveryStatsLayoutMode = 'wide' | 'medium' | 'narrow'

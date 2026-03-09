@@ -16,9 +16,7 @@ export const LocalDeliveryStatsOverlay = () => {
       <LocalDeliveryStatsOverlayShell
         data={controller.statsData}
         hidden={controller.hidden}
-        compactMetrics={controller.compactMetrics}
-        showScrollHint={controller.showScrollHint}
-        scrollContainerRef={controller.scrollContainerRef}
+        layoutMode={controller.layoutMode}
         onHide={controller.hide}
         onShow={controller.show}
       />
