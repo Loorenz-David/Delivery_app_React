@@ -131,23 +131,23 @@ const buildGaussianCards = ({
     {
       id: 'timing',
       faces: [
-        { id: 'on-time', label: 'On time stops', displayValue: `${onTimeStops}`, progressValue: clampPercent(totalStops === 0 ? 0 : (onTimeStops / totalStops) * 100), accentClassName: 'bg-emerald-400' },
-        { id: 'late', label: 'Late stops', displayValue: `${lateStops}`, progressValue: clampPercent(totalStops === 0 ? 0 : (lateStops / totalStops) * 100), accentClassName: 'bg-amber-400' },
-        { id: 'early', label: 'Early stops', displayValue: `${earlyStops}`, progressValue: clampPercent(totalStops === 0 ? 0 : (earlyStops / totalStops) * 100), accentClassName: 'bg-sky-400' },
+        { id: 'on-time', label: 'On time stops', displayValue: `${onTimeStops}`, progressValue: clampPercent(totalStops === 0 ? 0 : (onTimeStops / totalStops) * 100), accentClassName: 'stroke-emerald-400' },
+        { id: 'late', label: 'Late stops', displayValue: `${lateStops}`, progressValue: clampPercent(totalStops === 0 ? 0 : (lateStops / totalStops) * 100), accentClassName: 'stroke-amber-400' },
+        { id: 'early', label: 'Early stops', displayValue: `${earlyStops}`, progressValue: clampPercent(totalStops === 0 ? 0 : (earlyStops / totalStops) * 100), accentClassName: 'stroke-sky-400' },
       ],
     },
     {
       id: 'capacity',
       faces: [
-        { id: 'volume', label: 'Route capacity volume', displayValue: `${volumeRatio}%`, progressValue: volumeRatio, accentClassName: 'bg-cyan-400' },
-        { id: 'weight', label: 'Route weight', displayValue: `${weightRatio}%`, progressValue: weightRatio, accentClassName: 'bg-violet-400' },
+        { id: 'volume', label: 'Route capacity volume', displayValue: `${volumeRatio}%`, progressValue: volumeRatio, accentClassName: 'stroke-cyan-400' },
+        { id: 'weight', label: 'Route weight', displayValue: `${weightRatio}%`, progressValue: weightRatio, accentClassName: 'stroke-violet-400' },
       ],
     },
     {
       id: 'completion',
       faces: [
-        { id: 'completed-orders', label: 'Orders completed', displayValue: `${completedOrders}`, progressValue: clampPercent(totalStops === 0 ? 0 : (completedOrders / totalStops) * 100), accentClassName: 'bg-lime-400' },
-        { id: 'failed-orders', label: 'Orders fail', displayValue: `${failedOrders}`, progressValue: clampPercent(totalStops === 0 ? 0 : (failedOrders / totalStops) * 100), accentClassName: 'bg-rose-400' },
+        { id: 'completed-orders', label: 'Orders completed', displayValue: `${completedOrders}`, progressValue: clampPercent(totalStops === 0 ? 0 : (completedOrders / totalStops) * 100), accentClassName: 'stroke-lime-400' },
+        { id: 'failed-orders', label: 'Orders fail', displayValue: `${failedOrders}`, progressValue: clampPercent(totalStops === 0 ? 0 : (failedOrders / totalStops) * 100), accentClassName: 'stroke-rose-400' },
       ],
     },
   ]
